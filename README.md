@@ -198,7 +198,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 **Hamza Damra**
 - GitHub: [@hamza-damra](https://github.com/hamza-damra)
-- Email: hamza@example.com
+- Email: hamza.damra@students.alquds.edu
 
 ## 🙏 Acknowledgments
 
