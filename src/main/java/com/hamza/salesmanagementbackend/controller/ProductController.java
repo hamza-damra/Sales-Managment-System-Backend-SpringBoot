@@ -3,6 +3,7 @@ package com.hamza.salesmanagementbackend.controller;
 import com.hamza.salesmanagementbackend.dto.ProductDTO;
 import com.hamza.salesmanagementbackend.exception.ResourceNotFoundException;
 import com.hamza.salesmanagementbackend.service.ProductService;
+import com.hamza.salesmanagementbackend.util.SortingUtils;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -31,13 +32,10 @@ public class ProductController {
             @RequestParam(defaultValue = "asc") String sortDir,
             @RequestParam(required = false) String category) {
 
-        // Validate pagination parameters
-        if (page < 0) page = 0;
-        if (size <= 0 || size > 100) size = 10; // Limit max page size
-
-        Sort sort = sortDir.equalsIgnoreCase("desc") ?
-                Sort.by(sortBy).descending() : Sort.by(sortBy).ascending();
-        Pageable pageable = PageRequest.of(page, size, sort);
+        // Validate pagination and sorting parameters
+        SortingUtils.PaginationParams paginationParams = SortingUtils.validatePaginationParams(page, size);
+        Sort sort = SortingUtils.createProductSort(sortBy, sortDir);
+        Pageable pageable = PageRequest.of(paginationParams.page, paginationParams.size, sort);
 
         Page<ProductDTO> products;
         if (category != null && !category.trim().isEmpty()) {
@@ -97,10 +95,8 @@ public class ProductController {
             @RequestParam(defaultValue = "10") int size) {
 
         // Validate parameters
-        if (page < 0) page = 0;
-        if (size <= 0 || size > 100) size = 10;
-
-        Pageable pageable = PageRequest.of(page, size);
+        SortingUtils.PaginationParams paginationParams = SortingUtils.validatePaginationParams(page, size);
+        Pageable pageable = PageRequest.of(paginationParams.page, paginationParams.size);
         Page<ProductDTO> products = productService.searchProducts(query, pageable);
         return ResponseEntity.ok(products);
     }

@@ -1,5 +1,6 @@
 package com.hamza.salesmanagementbackend.exception;
 
+import org.springframework.data.mapping.PropertyReferenceException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.FieldError;
@@ -128,6 +129,29 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
     }
 
+    @ExceptionHandler(PropertyReferenceException.class)
+    public ResponseEntity<ErrorResponse> handlePropertyReferenceException(PropertyReferenceException ex) {
+        String propertyName = ex.getPropertyName();
+        String entityType = ex.getType().getType().getSimpleName();
+
+        ErrorResponse errorResponse = ErrorResponse.builder()
+                .status(HttpStatus.BAD_REQUEST.value())
+                .error("Invalid Sort Parameter")
+                .message(String.format("Invalid sort field '%s' for %s. Please use a valid field name.", propertyName, entityType))
+                .errorCode("INVALID_SORT_FIELD")
+                .timestamp(LocalDateTime.now())
+                .suggestions("Please check the API documentation for valid sort fields or use 'id' as a default sort field.")
+                .build();
+
+        Map<String, Object> details = new HashMap<>();
+        details.put("invalidField", propertyName);
+        details.put("entityType", entityType);
+        details.put("availableFields", getSuggestedFields(entityType));
+        errorResponse.setDetails(details);
+
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
+    }
+
     @ExceptionHandler(IllegalArgumentException.class)
     public ResponseEntity<ErrorResponse> handleIllegalArgumentException(IllegalArgumentException ex) {
         ErrorResponse errorResponse = ErrorResponse.builder()
@@ -158,6 +182,22 @@ public class GlobalExceptionHandler {
         ex.printStackTrace();
 
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
+    }
+
+    /**
+     * Helper method to provide suggested valid fields based on entity type
+     */
+    private java.util.List<String> getSuggestedFields(String entityType) {
+        switch (entityType.toLowerCase()) {
+            case "customer":
+                return java.util.List.of("id", "name", "firstName", "lastName", "email", "createdAt", "updatedAt");
+            case "product":
+                return java.util.List.of("id", "name", "price", "stockQuantity", "category", "sku", "createdAt", "updatedAt");
+            case "sale":
+                return java.util.List.of("id", "saleDate", "totalAmount", "status", "paymentMethod", "createdAt", "updatedAt");
+            default:
+                return java.util.List.of("id", "createdAt", "updatedAt");
+        }
     }
 
     public static class ErrorResponse {

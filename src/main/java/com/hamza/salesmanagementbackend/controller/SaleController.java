@@ -4,6 +4,7 @@ import com.hamza.salesmanagementbackend.dto.SaleDTO;
 import com.hamza.salesmanagementbackend.entity.SaleStatus;
 import com.hamza.salesmanagementbackend.exception.ResourceNotFoundException;
 import com.hamza.salesmanagementbackend.service.SaleService;
+import com.hamza.salesmanagementbackend.util.SortingUtils;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -35,13 +36,10 @@ public class SaleController {
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime startDate,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime endDate) {
 
-        // Validate pagination parameters
-        if (page < 0) page = 0;
-        if (size <= 0 || size > 100) size = 10; // Limit max page size
-
-        Sort sort = sortDir.equalsIgnoreCase("desc") ?
-                Sort.by(sortBy).descending() : Sort.by(sortBy).ascending();
-        Pageable pageable = PageRequest.of(page, size, sort);
+        // Validate pagination and sorting parameters
+        SortingUtils.PaginationParams paginationParams = SortingUtils.validatePaginationParams(page, size);
+        Sort sort = SortingUtils.createSaleSort(sortBy, sortDir);
+        Pageable pageable = PageRequest.of(paginationParams.page, paginationParams.size, sort);
 
         Page<SaleDTO> sales;
         if (status != null) {
@@ -80,10 +78,8 @@ public class SaleController {
         }
 
         // Validate pagination parameters
-        if (page < 0) page = 0;
-        if (size <= 0 || size > 100) size = 10;
-
-        Pageable pageable = PageRequest.of(page, size, Sort.by("saleDate").descending());
+        SortingUtils.PaginationParams paginationParams = SortingUtils.validatePaginationParams(page, size);
+        Pageable pageable = PageRequest.of(paginationParams.page, paginationParams.size, Sort.by("saleDate").descending());
         Page<SaleDTO> sales = saleService.getSalesByCustomer(customerId, pageable);
         return ResponseEntity.ok(sales);
     }
