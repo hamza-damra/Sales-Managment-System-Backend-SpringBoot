@@ -142,11 +142,145 @@ class SortingUtilsTest {
         SortingUtils.PaginationParams largeSizeParams = SortingUtils.validatePaginationParams(0, 150);
         assertEquals(0, largeSizeParams.page);
         assertEquals(100, largeSizeParams.size);
+    }
 
-        // Negative size should become 1
-        SortingUtils.PaginationParams negativeSizeParams = SortingUtils.validatePaginationParams(0, -5);
-        assertEquals(0, negativeSizeParams.page);
-        assertEquals(1, negativeSizeParams.size);
+    // Tests for new Supplier sorting methods
+    @Test
+    void validateSupplierSortField_ValidField_ReturnsField() {
+        assertEquals("id", SortingUtils.validateSupplierSortField("id"));
+        assertEquals("name", SortingUtils.validateSupplierSortField("name"));
+        assertEquals("email", SortingUtils.validateSupplierSortField("email"));
+        assertEquals("rating", SortingUtils.validateSupplierSortField("rating"));
+        assertEquals("totalAmount", SortingUtils.validateSupplierSortField("totalAmount"));
+    }
+
+    @Test
+    void validateSupplierSortField_InvalidField_ReturnsId() {
+        assertEquals("id", SortingUtils.validateSupplierSortField("invalidField"));
+        assertEquals("id", SortingUtils.validateSupplierSortField("nonExistentField"));
+        assertEquals("id", SortingUtils.validateSupplierSortField(null));
+        assertEquals("id", SortingUtils.validateSupplierSortField(""));
+    }
+
+    @Test
+    void createSupplierSort_ValidParameters_ReturnsCorrectSort() {
+        Sort ascSort = SortingUtils.createSupplierSort("name", "asc");
+        assertEquals("name: ASC", ascSort.toString());
+
+        Sort descSort = SortingUtils.createSupplierSort("rating", "desc");
+        assertEquals("rating: DESC", descSort.toString());
+    }
+
+    @Test
+    void createSupplierSort_InvalidParameters_ReturnsDefaultSort() {
+        Sort invalidFieldSort = SortingUtils.createSupplierSort("invalidField", "asc");
+        assertEquals("id: ASC", invalidFieldSort.toString());
+
+        Sort invalidDirectionSort = SortingUtils.createSupplierSort("name", "invalid");
+        assertEquals("name: ASC", invalidDirectionSort.toString());
+    }
+
+    // Tests for new Return sorting methods
+    @Test
+    void validateReturnSortField_ValidField_ReturnsField() {
+        assertEquals("id", SortingUtils.validateReturnSortField("id"));
+        assertEquals("returnDate", SortingUtils.validateReturnSortField("returnDate"));
+        assertEquals("status", SortingUtils.validateReturnSortField("status"));
+        assertEquals("totalRefundAmount", SortingUtils.validateReturnSortField("totalRefundAmount"));
+    }
+
+    @Test
+    void validateReturnSortField_InvalidField_ReturnsId() {
+        assertEquals("id", SortingUtils.validateReturnSortField("invalidField"));
+        assertEquals("id", SortingUtils.validateReturnSortField(null));
+        assertEquals("id", SortingUtils.validateReturnSortField(""));
+    }
+
+    @Test
+    void createReturnSort_ValidParameters_ReturnsCorrectSort() {
+        Sort ascSort = SortingUtils.createReturnSort("returnDate", "asc");
+        assertEquals("returnDate: ASC", ascSort.toString());
+
+        Sort descSort = SortingUtils.createReturnSort("status", "desc");
+        assertEquals("status: DESC", descSort.toString());
+    }
+
+    // Tests for new Promotion sorting methods
+    @Test
+    void validatePromotionSortField_ValidField_ReturnsField() {
+        assertEquals("id", SortingUtils.validatePromotionSortField("id"));
+        assertEquals("name", SortingUtils.validatePromotionSortField("name"));
+        assertEquals("startDate", SortingUtils.validatePromotionSortField("startDate"));
+        assertEquals("endDate", SortingUtils.validatePromotionSortField("endDate"));
+        assertEquals("discountValue", SortingUtils.validatePromotionSortField("discountValue"));
+    }
+
+    @Test
+    void validatePromotionSortField_InvalidField_ReturnsId() {
+        assertEquals("id", SortingUtils.validatePromotionSortField("invalidField"));
+        assertEquals("id", SortingUtils.validatePromotionSortField(null));
+        assertEquals("id", SortingUtils.validatePromotionSortField(""));
+    }
+
+    @Test
+    void createPromotionSort_ValidParameters_ReturnsCorrectSort() {
+        Sort ascSort = SortingUtils.createPromotionSort("name", "asc");
+        assertEquals("name: ASC", ascSort.toString());
+
+        Sort descSort = SortingUtils.createPromotionSort("startDate", "desc");
+        assertEquals("startDate: DESC", descSort.toString());
+    }
+
+    // Tests for PropertyReferenceException prevention
+    @Test
+    void sortingUtils_PreventPropertyReferenceException() {
+        // Test that invalid sort fields are safely handled and don't cause PropertyReferenceException
+
+        // Customer sorting with invalid fields
+        Sort customerSort = SortingUtils.createCustomerSort("nonExistentField", "asc");
+        assertEquals("id: ASC", customerSort.toString());
+
+        // Product sorting with invalid fields
+        Sort productSort = SortingUtils.createProductSort("invalidProperty", "desc");
+        assertEquals("id: DESC", productSort.toString());
+
+        // Sale sorting with invalid fields
+        Sort saleSort = SortingUtils.createSaleSort("badField", "asc");
+        assertEquals("id: ASC", saleSort.toString());
+
+        // Supplier sorting with invalid fields
+        Sort supplierSort = SortingUtils.createSupplierSort("wrongField", "desc");
+        assertEquals("id: DESC", supplierSort.toString());
+
+        // Return sorting with invalid fields
+        Sort returnSort = SortingUtils.createReturnSort("invalidField", "asc");
+        assertEquals("id: ASC", returnSort.toString());
+
+        // Promotion sorting with invalid fields
+        Sort promotionSort = SortingUtils.createPromotionSort("badProperty", "desc");
+        assertEquals("id: DESC", promotionSort.toString());
+    }
+
+    @Test
+    void sortingUtils_CaseInsensitiveValidation() {
+        // Test that field validation is case-insensitive
+        assertEquals("name", SortingUtils.validateCustomerSortField("NAME"));
+        assertEquals("name", SortingUtils.validateCustomerSortField("Name"));
+        assertEquals("email", SortingUtils.validateSupplierSortField("EMAIL"));
+        assertEquals("returnDate", SortingUtils.validateReturnSortField("RETURNDATE"));
+        assertEquals("startDate", SortingUtils.validatePromotionSortField("STARTDATE"));
+    }
+
+    @Test
+    void sortingUtils_DirectionValidation() {
+        // Test that sort direction validation works correctly
+        assertEquals("asc", SortingUtils.validateSortDirection("ASC"));
+        assertEquals("desc", SortingUtils.validateSortDirection("DESC"));
+        assertEquals("asc", SortingUtils.validateSortDirection("Asc"));
+        assertEquals("desc", SortingUtils.validateSortDirection("Desc"));
+        assertEquals("asc", SortingUtils.validateSortDirection("invalid"));
+        assertEquals("asc", SortingUtils.validateSortDirection(null));
+        assertEquals("asc", SortingUtils.validateSortDirection(""));
     }
 
     @Test

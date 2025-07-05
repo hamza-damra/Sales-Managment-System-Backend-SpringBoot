@@ -33,6 +33,37 @@ public class SortingUtils {
             "createdAt", "updatedAt"
     );
 
+    // Valid sort fields for Supplier entity
+    public static final Set<String> VALID_SUPPLIER_SORT_FIELDS = Set.of(
+            "id", "name", "contactPerson", "phone", "email", "address",
+            "city", "country", "taxNumber", "rating", "status",
+            "totalOrders", "totalAmount", "lastOrderDate", "createdAt", "updatedAt"
+    );
+
+    // Valid sort fields for Return entity
+    public static final Set<String> VALID_RETURN_SORT_FIELDS = Set.of(
+            "id", "returnDate", "reason", "status", "totalRefundAmount",
+            "processedDate", "refundMethod", "createdAt", "updatedAt"
+    );
+
+    // Valid sort fields for Promotion entity
+    public static final Set<String> VALID_PROMOTION_SORT_FIELDS = Set.of(
+            "id", "name", "type", "discountValue", "startDate", "endDate",
+            "isActive", "usageCount", "usageLimit", "createdAt", "updatedAt"
+    );
+
+    // Valid sort fields for Warehouse entity
+    public static final Set<String> VALID_WAREHOUSE_SORT_FIELDS = Set.of(
+            "id", "name", "code", "address", "city", "country",
+            "isActive", "createdAt", "updatedAt"
+    );
+
+    // Valid sort fields for StockMovement entity
+    public static final Set<String> VALID_STOCK_MOVEMENT_SORT_FIELDS = Set.of(
+            "id", "movementType", "quantity", "unitCost", "totalValue",
+            "date", "reference", "createdAt"
+    );
+
     // Valid sort directions
     public static final Set<String> VALID_SORT_DIRECTIONS = Set.of("asc", "desc");
 
@@ -137,10 +168,105 @@ public class SortingUtils {
     public static Sort createSaleSort(String sortBy, String sortDir) {
         String validSortBy = validateSaleSortField(sortBy);
         String validSortDir = validateSortDirection(sortDir);
-        
-        return validSortDir.equals("desc") ? 
-                Sort.by(validSortBy).descending() : 
+
+        return validSortDir.equals("desc") ?
+                Sort.by(validSortBy).descending() :
                 Sort.by(validSortBy).ascending();
+    }
+
+    /**
+     * Validates and returns a safe sort field for Supplier entity
+     */
+    public static String validateSupplierSortField(String sortBy) {
+        if (sortBy == null || sortBy.trim().isEmpty()) {
+            return "id";
+        }
+
+        String cleanSortBy = sortBy.trim().toLowerCase();
+
+        for (String validField : VALID_SUPPLIER_SORT_FIELDS) {
+            if (validField.toLowerCase().equals(cleanSortBy)) {
+                return validField;
+            }
+        }
+
+        return "id";
+    }
+
+    /**
+     * Validates and returns a safe sort field for Return entity
+     */
+    public static String validateReturnSortField(String sortBy) {
+        if (sortBy == null || sortBy.trim().isEmpty()) {
+            return "id";
+        }
+
+        String cleanSortBy = sortBy.trim().toLowerCase();
+
+        for (String validField : VALID_RETURN_SORT_FIELDS) {
+            if (validField.toLowerCase().equals(cleanSortBy)) {
+                return validField;
+            }
+        }
+
+        return "id";
+    }
+
+    /**
+     * Validates and returns a safe sort field for Promotion entity
+     */
+    public static String validatePromotionSortField(String sortBy) {
+        if (sortBy == null || sortBy.trim().isEmpty()) {
+            return "id";
+        }
+
+        String cleanSortBy = sortBy.trim().toLowerCase();
+
+        for (String validField : VALID_PROMOTION_SORT_FIELDS) {
+            if (validField.toLowerCase().equals(cleanSortBy)) {
+                return validField;
+            }
+        }
+
+        return "id";
+    }
+
+    /**
+     * Validates and returns a safe sort field for Warehouse entity
+     */
+    public static String validateWarehouseSortField(String sortBy) {
+        if (sortBy == null || sortBy.trim().isEmpty()) {
+            return "id";
+        }
+
+        String cleanSortBy = sortBy.trim().toLowerCase();
+
+        for (String validField : VALID_WAREHOUSE_SORT_FIELDS) {
+            if (validField.toLowerCase().equals(cleanSortBy)) {
+                return validField;
+            }
+        }
+
+        return "id";
+    }
+
+    /**
+     * Validates and returns a safe sort field for StockMovement entity
+     */
+    public static String validateStockMovementSortField(String sortBy) {
+        if (sortBy == null || sortBy.trim().isEmpty()) {
+            return "id";
+        }
+
+        String cleanSortBy = sortBy.trim().toLowerCase();
+
+        for (String validField : VALID_STOCK_MOVEMENT_SORT_FIELDS) {
+            if (validField.toLowerCase().equals(cleanSortBy)) {
+                return validField;
+            }
+        }
+
+        return "id";
     }
 
     /**
@@ -161,5 +287,65 @@ public class SortingUtils {
      */
     public static PaginationParams validatePaginationParams(int page, int size) {
         return new PaginationParams(page, size);
+    }
+
+    /**
+     * Creates a safe Sort object for Supplier entity
+     */
+    public static Sort createSupplierSort(String sortBy, String sortDir) {
+        String validSortBy = validateSupplierSortField(sortBy);
+        String validSortDir = validateSortDirection(sortDir);
+
+        return validSortDir.equals("desc") ?
+                Sort.by(validSortBy).descending() :
+                Sort.by(validSortBy).ascending();
+    }
+
+    /**
+     * Creates a safe Sort object for Return entity
+     */
+    public static Sort createReturnSort(String sortBy, String sortDir) {
+        String validSortBy = validateReturnSortField(sortBy);
+        String validSortDir = validateSortDirection(sortDir);
+
+        return validSortDir.equals("desc") ?
+                Sort.by(validSortBy).descending() :
+                Sort.by(validSortBy).ascending();
+    }
+
+    /**
+     * Creates a safe Sort object for Promotion entity
+     */
+    public static Sort createPromotionSort(String sortBy, String sortDir) {
+        String validSortBy = validatePromotionSortField(sortBy);
+        String validSortDir = validateSortDirection(sortDir);
+
+        return validSortDir.equals("desc") ?
+                Sort.by(validSortBy).descending() :
+                Sort.by(validSortBy).ascending();
+    }
+
+    /**
+     * Creates a safe Sort object for Warehouse entity
+     */
+    public static Sort createWarehouseSort(String sortBy, String sortDir) {
+        String validSortBy = validateWarehouseSortField(sortBy);
+        String validSortDir = validateSortDirection(sortDir);
+
+        return validSortDir.equals("desc") ?
+                Sort.by(validSortBy).descending() :
+                Sort.by(validSortBy).ascending();
+    }
+
+    /**
+     * Creates a safe Sort object for StockMovement entity
+     */
+    public static Sort createStockMovementSort(String sortBy, String sortDir) {
+        String validSortBy = validateStockMovementSortField(sortBy);
+        String validSortDir = validateSortDirection(sortDir);
+
+        return validSortDir.equals("desc") ?
+                Sort.by(validSortBy).descending() :
+                Sort.by(validSortBy).ascending();
     }
 }

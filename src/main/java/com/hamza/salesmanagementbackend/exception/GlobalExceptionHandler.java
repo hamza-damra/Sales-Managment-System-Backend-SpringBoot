@@ -195,6 +195,16 @@ public class GlobalExceptionHandler {
                 return java.util.List.of("id", "name", "price", "stockQuantity", "category", "sku", "createdAt", "updatedAt");
             case "sale":
                 return java.util.List.of("id", "saleDate", "totalAmount", "status", "paymentMethod", "createdAt", "updatedAt");
+            case "supplier":
+                return java.util.List.of("id", "name", "email", "phone", "rating", "status", "createdAt", "updatedAt");
+            case "return":
+                return java.util.List.of("id", "returnDate", "reason", "status", "totalRefundAmount", "createdAt", "updatedAt");
+            case "promotion":
+                return java.util.List.of("id", "name", "type", "discountValue", "startDate", "endDate", "isActive", "createdAt", "updatedAt");
+            case "warehouse":
+                return java.util.List.of("id", "name", "code", "address", "city", "isActive", "createdAt", "updatedAt");
+            case "stockmovement":
+                return java.util.List.of("id", "movementType", "quantity", "date", "reference", "createdAt");
             default:
                 return java.util.List.of("id", "createdAt", "updatedAt");
         }
