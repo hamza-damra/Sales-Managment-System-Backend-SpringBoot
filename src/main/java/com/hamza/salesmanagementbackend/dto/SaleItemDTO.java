@@ -9,6 +9,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 
 @Data
 @NoArgsConstructor
@@ -79,7 +80,7 @@ public class SaleItemDTO {
             // Apply discount
             if (discountPercentage != null && discountPercentage.compareTo(BigDecimal.ZERO) > 0) {
                 this.discountAmount = subtotal.multiply(discountPercentage)
-                        .divide(BigDecimal.valueOf(100), 2, BigDecimal.ROUND_HALF_UP);
+                        .divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP);
             } else if (discountAmount == null) {
                 this.discountAmount = BigDecimal.ZERO;
             }
@@ -89,7 +90,7 @@ public class SaleItemDTO {
             // Calculate tax
             if (taxPercentage != null && taxPercentage.compareTo(BigDecimal.ZERO) > 0) {
                 this.taxAmount = afterDiscount.multiply(taxPercentage)
-                        .divide(BigDecimal.valueOf(100), 2, BigDecimal.ROUND_HALF_UP);
+                        .divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP);
             } else if (taxAmount == null) {
                 this.taxAmount = BigDecimal.ZERO;
             }
@@ -115,7 +116,7 @@ public class SaleItemDTO {
         if (costPrice == null || costPrice.equals(BigDecimal.ZERO) || getLineTotal().equals(BigDecimal.ZERO)) {
             return BigDecimal.ZERO;
         }
-        return getProfit().divide(getLineTotal(), 4, BigDecimal.ROUND_HALF_UP)
+        return getProfit().divide(getLineTotal(), 4, RoundingMode.HALF_UP)
                 .multiply(BigDecimal.valueOf(100));
     }
 
@@ -128,7 +129,7 @@ public class SaleItemDTO {
         if (unitPrice == null) return BigDecimal.ZERO;
 
         if (discountPercentage != null && discountPercentage.compareTo(BigDecimal.ZERO) > 0) {
-            BigDecimal discount = unitPrice.multiply(discountPercentage).divide(BigDecimal.valueOf(100), 2, BigDecimal.ROUND_HALF_UP);
+            BigDecimal discount = unitPrice.multiply(discountPercentage).divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP);
             return unitPrice.subtract(discount);
         }
         return unitPrice;

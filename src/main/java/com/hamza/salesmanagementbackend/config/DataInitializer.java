@@ -2,6 +2,7 @@ package com.hamza.salesmanagementbackend.config;
 
 import com.hamza.salesmanagementbackend.entity.*;
 import com.hamza.salesmanagementbackend.repository.*;
+import com.hamza.salesmanagementbackend.service.CategoryMigrationService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Component;
@@ -25,11 +26,23 @@ public class DataInitializer implements CommandLineRunner {
     @Autowired
     private SaleItemRepository saleItemRepository;
 
+    @Autowired
+    private CategoryRepository categoryRepository;
+
+    @Autowired
+    private CategoryMigrationService categoryMigrationService;
+
     @Override
     public void run(String... args) throws Exception {
         if (customerRepository.count() == 0) {
             initializeData();
         }
+
+        // Run category migration and setup
+        categoryMigrationService.createDefaultCategories();
+        categoryMigrationService.migrateStringCategoriesToEntities();
+        categoryMigrationService.assignUncategorizedProducts();
+        categoryMigrationService.validateCategoryMigration();
     }
 
     private void initializeData() {
@@ -42,17 +55,90 @@ public class DataInitializer implements CommandLineRunner {
 
         customerRepository.saveAll(Arrays.asList(customer1, customer2, customer3, customer4, customer5));
 
-        // Create sample products
-        Product product1 = new Product("Laptop", "High-performance laptop", new BigDecimal("999.99"), 50, "Electronics", "LAP001");
-        Product product2 = new Product("Mouse", "Wireless optical mouse", new BigDecimal("29.99"), 100, "Electronics", "MOU001");
-        Product product3 = new Product("Keyboard", "Mechanical keyboard", new BigDecimal("79.99"), 75, "Electronics", "KEY001");
-        Product product4 = new Product("Monitor", "24-inch LED monitor", new BigDecimal("199.99"), 30, "Electronics", "MON001");
-        Product product5 = new Product("Headphones", "Noise-cancelling headphones", new BigDecimal("149.99"), 40, "Electronics", "HEA001");
-        Product product6 = new Product("Smartphone", "Latest smartphone", new BigDecimal("699.99"), 25, "Electronics", "PHO001");
-        Product product7 = new Product("Tablet", "10-inch tablet", new BigDecimal("399.99"), 35, "Electronics", "TAB001");
-        Product product8 = new Product("Speaker", "Bluetooth speaker", new BigDecimal("89.99"), 60, "Electronics", "SPE001");
+        // Create sample products (categories will be assigned during migration)
+        Product product1 = Product.builder()
+                .name("Laptop")
+                .description("High-performance laptop")
+                .price(new BigDecimal("999.99"))
+                .stockQuantity(50)
+                .sku("LAP001")
+                .build();
+
+        Product product2 = Product.builder()
+                .name("Mouse")
+                .description("Wireless optical mouse")
+                .price(new BigDecimal("29.99"))
+                .stockQuantity(100)
+                .sku("MOU001")
+                .build();
+
+        Product product3 = Product.builder()
+                .name("Keyboard")
+                .description("Mechanical keyboard")
+                .price(new BigDecimal("79.99"))
+                .stockQuantity(75)
+                .sku("KEY001")
+                .build();
+
+        Product product4 = Product.builder()
+                .name("Monitor")
+                .description("24-inch LED monitor")
+                .price(new BigDecimal("199.99"))
+                .stockQuantity(30)
+                .sku("MON001")
+                .build();
+
+        Product product5 = Product.builder()
+                .name("Headphones")
+                .description("Noise-cancelling headphones")
+                .price(new BigDecimal("149.99"))
+                .stockQuantity(40)
+                .sku("HEA001")
+                .build();
+
+        Product product6 = Product.builder()
+                .name("Smartphone")
+                .description("Latest smartphone")
+                .price(new BigDecimal("699.99"))
+                .stockQuantity(25)
+                .sku("PHO001")
+                .build();
+
+        Product product7 = Product.builder()
+                .name("Tablet")
+                .description("10-inch tablet")
+                .price(new BigDecimal("399.99"))
+                .stockQuantity(35)
+                .sku("TAB001")
+                .build();
+
+        Product product8 = Product.builder()
+                .name("Speaker")
+                .description("Bluetooth speaker")
+                .price(new BigDecimal("89.99"))
+                .stockQuantity(60)
+                .sku("SPE001")
+                .build();
 
         productRepository.saveAll(Arrays.asList(product1, product2, product3, product4, product5, product6, product7, product8));
+
+        // Assign Electronics category to all products after creation
+        Category electronicsCategory = categoryRepository.findByNameIgnoreCase("Electronics")
+                .orElseGet(() -> {
+                    Category newCategory = Category.builder()
+                            .name("Electronics")
+                            .description("Electronic devices and accessories")
+                            .status(Category.CategoryStatus.ACTIVE)
+                            .displayOrder(1)
+                            .build();
+                    return categoryRepository.save(newCategory);
+                });
+
+        // Update all products to use the Electronics category
+        for (Product product : Arrays.asList(product1, product2, product3, product4, product5, product6, product7, product8)) {
+            product.setCategory(electronicsCategory);
+            productRepository.save(product);
+        }
 
         // Create sample sales
         createSampleSales();

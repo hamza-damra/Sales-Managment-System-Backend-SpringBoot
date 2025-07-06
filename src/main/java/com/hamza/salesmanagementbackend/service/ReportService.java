@@ -127,7 +127,7 @@ public class ReportService {
                             Map<String, Object> categoryAnalysis = products.stream()
                                     .filter(product -> product.getCategory() != null)
                                     .collect(Collectors.groupingBy(
-                                            product -> product.getCategory(),
+                                            product -> product.getCategory().getName(),
                                             Collectors.collectingAndThen(
                                                     Collectors.toList(),
                                                     categoryProducts -> Map.of(
@@ -155,7 +155,7 @@ public class ReportService {
                                             .map(p -> Map.of(
                                                     "name", p.getName(),
                                                     "currentStock", p.getStockQuantity(),
-                                                    "category", p.getCategory()
+                                                    "category", p.getCategory() != null ? p.getCategory().getName() : "Uncategorized"
                                             ))
                                             .collect(Collectors.toList())
                             );

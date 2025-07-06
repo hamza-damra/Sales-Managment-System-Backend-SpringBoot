@@ -39,7 +39,13 @@ public class ProductController {
 
         Page<ProductDTO> products;
         if (category != null && !category.trim().isEmpty()) {
-            products = productService.getProductsByCategory(category.trim(), pageable);
+            // Try to parse as category ID first, then fall back to category name
+            try {
+                Long categoryId = Long.parseLong(category.trim());
+                products = productService.getProductsByCategoryId(categoryId, pageable);
+            } catch (NumberFormatException e) {
+                products = productService.getProductsByCategoryName(category.trim(), pageable);
+            }
         } else {
             products = productService.getAllProducts(pageable);
         }

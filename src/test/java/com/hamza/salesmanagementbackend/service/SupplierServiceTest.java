@@ -232,27 +232,29 @@ class SupplierServiceTest {
     @Test
     void deleteSupplier_Success() {
         // Given
-        when(supplierRepository.existsById(1L)).thenReturn(true);
+        // Ensure supplier has no purchase orders (or empty list)
+        testSupplier.setPurchaseOrders(null);
+        when(supplierRepository.findById(1L)).thenReturn(Optional.of(testSupplier));
 
         // When
         supplierService.deleteSupplier(1L);
 
         // Then
-        verify(supplierRepository).existsById(1L);
-        verify(supplierRepository).deleteById(1L);
+        verify(supplierRepository).findById(1L);
+        verify(supplierRepository).delete(testSupplier);
     }
 
     @Test
     void deleteSupplier_NotFound_ThrowsException() {
         // Given
-        when(supplierRepository.existsById(1L)).thenReturn(false);
+        when(supplierRepository.findById(1L)).thenReturn(Optional.empty());
 
         // When & Then
         ResourceNotFoundException exception = assertThrows(ResourceNotFoundException.class,
                 () -> supplierService.deleteSupplier(1L));
         assertEquals("Supplier not found with id: 1", exception.getMessage());
-        verify(supplierRepository).existsById(1L);
-        verify(supplierRepository, never()).deleteById(1L);
+        verify(supplierRepository).findById(1L);
+        verify(supplierRepository, never()).delete(any(Supplier.class));
     }
 
     @Test

@@ -11,6 +11,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.Set;
@@ -35,7 +36,9 @@ public class ProductDTO {
     @Min(value = 0, message = "Stock quantity cannot be negative")
     private Integer stockQuantity;
 
-    private String category;
+    // Category information
+    private Long categoryId;
+    private String categoryName;
     private String sku;
 
     // Enhanced attributes matching the entity
@@ -78,14 +81,14 @@ public class ProductDTO {
     // Utility methods
     public BigDecimal getProfitMargin() {
         if (costPrice != null && costPrice.compareTo(BigDecimal.ZERO) > 0) {
-            return price.subtract(costPrice).divide(costPrice, 4, BigDecimal.ROUND_HALF_UP).multiply(BigDecimal.valueOf(100));
+            return price.subtract(costPrice).divide(costPrice, 4, RoundingMode.HALF_UP).multiply(BigDecimal.valueOf(100));
         }
         return BigDecimal.ZERO;
     }
 
     public BigDecimal getDiscountedPrice() {
         if (discountPercentage != null && discountPercentage.compareTo(BigDecimal.ZERO) > 0) {
-            BigDecimal discount = price.multiply(discountPercentage).divide(BigDecimal.valueOf(100), 2, BigDecimal.ROUND_HALF_UP);
+            BigDecimal discount = price.multiply(discountPercentage).divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP);
             return price.subtract(discount);
         }
         return price;

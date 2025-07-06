@@ -308,4 +308,87 @@ class SortingUtilsTest {
         assertTrue(SortingUtils.VALID_SORT_DIRECTIONS.contains("desc"));
         assertEquals(2, SortingUtils.VALID_SORT_DIRECTIONS.size());
     }
+
+    // Category sorting tests
+    @Test
+    void validateCategorySortField_ValidField_ReturnsField() {
+        assertEquals("id", SortingUtils.validateCategorySortField("id"));
+        assertEquals("name", SortingUtils.validateCategorySortField("name"));
+        assertEquals("displayOrder", SortingUtils.validateCategorySortField("displayOrder"));
+        assertEquals("status", SortingUtils.validateCategorySortField("status"));
+        assertEquals("createdAt", SortingUtils.validateCategorySortField("createdAt"));
+        assertEquals("updatedAt", SortingUtils.validateCategorySortField("updatedAt"));
+    }
+
+    @Test
+    void validateCategorySortField_InvalidField_ReturnsDisplayOrder() {
+        assertEquals("displayOrder", SortingUtils.validateCategorySortField("invalidField"));
+        assertEquals("displayOrder", SortingUtils.validateCategorySortField("123"));
+        assertEquals("displayOrder", SortingUtils.validateCategorySortField("randomString"));
+    }
+
+    @Test
+    void validateCategorySortField_NullOrEmpty_ReturnsDisplayOrder() {
+        assertEquals("displayOrder", SortingUtils.validateCategorySortField(null));
+        assertEquals("displayOrder", SortingUtils.validateCategorySortField(""));
+        assertEquals("displayOrder", SortingUtils.validateCategorySortField("   "));
+    }
+
+    @Test
+    void validateCategorySortField_CaseInsensitive_ReturnsCorrectField() {
+        assertEquals("name", SortingUtils.validateCategorySortField("NAME"));
+        assertEquals("displayOrder", SortingUtils.validateCategorySortField("DisplayOrder"));
+        assertEquals("status", SortingUtils.validateCategorySortField("STATUS"));
+    }
+
+    @Test
+    void createCategorySort_AscendingOrder() {
+        Sort sort = SortingUtils.createCategorySort("name", "asc");
+
+        assertNotNull(sort);
+        assertTrue(sort.isSorted());
+        assertEquals(Sort.Direction.ASC, sort.getOrderFor("name").getDirection());
+        assertEquals("name", sort.getOrderFor("name").getProperty());
+    }
+
+    @Test
+    void createCategorySort_DescendingOrder() {
+        Sort sort = SortingUtils.createCategorySort("displayOrder", "desc");
+
+        assertNotNull(sort);
+        assertTrue(sort.isSorted());
+        assertEquals(Sort.Direction.DESC, sort.getOrderFor("displayOrder").getDirection());
+        assertEquals("displayOrder", sort.getOrderFor("displayOrder").getProperty());
+    }
+
+    @Test
+    void createCategorySort_DefaultValues() {
+        Sort sort = SortingUtils.createCategorySort(null, null);
+
+        assertNotNull(sort);
+        assertTrue(sort.isSorted());
+        assertEquals(Sort.Direction.ASC, sort.getOrderFor("displayOrder").getDirection());
+        assertEquals("displayOrder", sort.getOrderFor("displayOrder").getProperty());
+    }
+
+    @Test
+    void createCategorySort_InvalidValues() {
+        Sort sort = SortingUtils.createCategorySort("invalidField", "invalidDirection");
+
+        assertNotNull(sort);
+        assertTrue(sort.isSorted());
+        assertEquals(Sort.Direction.ASC, sort.getOrderFor("displayOrder").getDirection());
+        assertEquals("displayOrder", sort.getOrderFor("displayOrder").getProperty());
+    }
+
+    @Test
+    void validCategorySortFields_ContainExpectedFields() {
+        assertTrue(SortingUtils.VALID_CATEGORY_SORT_FIELDS.contains("id"));
+        assertTrue(SortingUtils.VALID_CATEGORY_SORT_FIELDS.contains("name"));
+        assertTrue(SortingUtils.VALID_CATEGORY_SORT_FIELDS.contains("description"));
+        assertTrue(SortingUtils.VALID_CATEGORY_SORT_FIELDS.contains("displayOrder"));
+        assertTrue(SortingUtils.VALID_CATEGORY_SORT_FIELDS.contains("status"));
+        assertTrue(SortingUtils.VALID_CATEGORY_SORT_FIELDS.contains("createdAt"));
+        assertTrue(SortingUtils.VALID_CATEGORY_SORT_FIELDS.contains("updatedAt"));
+    }
 }

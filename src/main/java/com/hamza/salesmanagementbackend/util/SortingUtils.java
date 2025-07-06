@@ -64,6 +64,12 @@ public class SortingUtils {
             "date", "reference", "createdAt"
     );
 
+    // Valid sort fields for Category entity
+    public static final Set<String> VALID_CATEGORY_SORT_FIELDS = Set.of(
+            "id", "name", "description", "displayOrder", "status",
+            "createdAt", "updatedAt"
+    );
+
     // Valid sort directions
     public static final Set<String> VALID_SORT_DIRECTIONS = Set.of("asc", "desc");
 
@@ -270,6 +276,25 @@ public class SortingUtils {
     }
 
     /**
+     * Validates and returns a safe sort field for Category entity
+     */
+    public static String validateCategorySortField(String sortBy) {
+        if (sortBy == null || sortBy.trim().isEmpty()) {
+            return "displayOrder";
+        }
+
+        String cleanSortBy = sortBy.trim().toLowerCase();
+
+        for (String validField : VALID_CATEGORY_SORT_FIELDS) {
+            if (validField.toLowerCase().equals(cleanSortBy)) {
+                return validField;
+            }
+        }
+
+        return "displayOrder";
+    }
+
+    /**
      * Validates pagination parameters
      */
     public static class PaginationParams {
@@ -342,6 +367,18 @@ public class SortingUtils {
      */
     public static Sort createStockMovementSort(String sortBy, String sortDir) {
         String validSortBy = validateStockMovementSortField(sortBy);
+        String validSortDir = validateSortDirection(sortDir);
+
+        return validSortDir.equals("desc") ?
+                Sort.by(validSortBy).descending() :
+                Sort.by(validSortBy).ascending();
+    }
+
+    /**
+     * Creates a safe Sort object for Category entity
+     */
+    public static Sort createCategorySort(String sortBy, String sortDir) {
+        String validSortBy = validateCategorySortField(sortBy);
         String validSortDir = validateSortDirection(sortDir);
 
         return validSortDir.equals("desc") ?

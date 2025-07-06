@@ -17,9 +17,15 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
 
     Optional<Product> findBySku(String sku);
 
-    List<Product> findByCategory(String category);
+    List<Product> findByCategoryId(Long categoryId);
 
-    Page<Product> findByCategory(String category, Pageable pageable);
+    Page<Product> findByCategoryId(Long categoryId, Pageable pageable);
+
+    @Query("SELECT p FROM Product p WHERE p.category.name = :categoryName")
+    List<Product> findByCategoryName(@Param("categoryName") String categoryName);
+
+    @Query("SELECT p FROM Product p WHERE p.category.name = :categoryName")
+    Page<Product> findByCategoryName(@Param("categoryName") String categoryName, Pageable pageable);
 
     List<Product> findByNameContainingIgnoreCase(String name);
 
@@ -29,16 +35,16 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
     List<Product> findByPriceRange(@Param("minPrice") BigDecimal minPrice,
                                  @Param("maxPrice") BigDecimal maxPrice);
 
-    @Query("SELECT DISTINCT p.category FROM Product p WHERE p.category IS NOT NULL")
-    List<String> findDistinctCategories();
+    @Query("SELECT DISTINCT c.name FROM Product p JOIN p.category c WHERE c IS NOT NULL")
+    List<String> findDistinctCategoryNames();
 
     @Query("SELECT p FROM Product p WHERE p.stockQuantity = 0")
     List<Product> findOutOfStockProducts();
 
-    @Query("SELECT p FROM Product p WHERE " +
+    @Query("SELECT p FROM Product p LEFT JOIN p.category c WHERE " +
            "LOWER(p.name) LIKE LOWER(CONCAT('%', :searchTerm, '%')) OR " +
            "LOWER(p.description) LIKE LOWER(CONCAT('%', :searchTerm, '%')) OR " +
-           "LOWER(p.category) LIKE LOWER(CONCAT('%', :searchTerm, '%')) OR " +
+           "LOWER(c.name) LIKE LOWER(CONCAT('%', :searchTerm, '%')) OR " +
            "LOWER(p.sku) LIKE LOWER(CONCAT('%', :searchTerm, '%'))")
     Page<Product> searchProducts(@Param("searchTerm") String searchTerm, Pageable pageable);
 

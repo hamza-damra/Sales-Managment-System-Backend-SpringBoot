@@ -52,7 +52,11 @@ public class Product {
     @Builder.Default
     private Integer stockQuantity = 0;
 
-    private String category;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "category_id")
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
+    private Category category;
 
     @Column(unique = true)
     private String sku;
@@ -190,7 +194,7 @@ public class Product {
     }
 
     // Custom constructors for specific use cases
-    public Product(String name, String description, BigDecimal price, Integer stockQuantity, String category, String sku) {
+    public Product(String name, String description, BigDecimal price, Integer stockQuantity, Category category, String sku) {
         this.name = name;
         this.description = description;
         this.price = price;
@@ -214,7 +218,7 @@ public class Product {
     }
 
     public Product(String name, String description, BigDecimal price, BigDecimal costPrice,
-                  Integer stockQuantity, String category, String sku, String brand) {
+                  Integer stockQuantity, Category category, String sku, String brand) {
         this.name = name;
         this.description = description;
         this.price = price;

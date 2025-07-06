@@ -2,6 +2,7 @@ package com.hamza.salesmanagementbackend.service;
 
 import com.hamza.salesmanagementbackend.entity.Customer;
 import com.hamza.salesmanagementbackend.entity.Product;
+import com.hamza.salesmanagementbackend.entity.Category;
 import com.hamza.salesmanagementbackend.entity.Sale;
 import com.hamza.salesmanagementbackend.entity.SaleItem;
 import com.hamza.salesmanagementbackend.entity.SaleStatus;
@@ -46,6 +47,7 @@ class ReportServiceTest {
     private Customer testCustomer;
     private Product testProduct;
     private SaleItem testSaleItem;
+    private Category testCategory;
 
     @BeforeEach
     void setUp() {
@@ -59,13 +61,20 @@ class ReportServiceTest {
                 .email("john.doe@example.com")
                 .build();
 
+        testCategory = Category.builder()
+                .id(1L)
+                .name("Electronics")
+                .description("Electronic devices and accessories")
+                .status(Category.CategoryStatus.ACTIVE)
+                .build();
+
         testProduct = Product.builder()
                 .id(1L)
                 .name("Test Product")
                 .sku("TEST-001")
                 .price(BigDecimal.valueOf(99.99))
                 .stockQuantity(100)
-                .category("Electronics")
+                .category(testCategory)
                 .build();
 
         testSaleItem = SaleItem.builder()

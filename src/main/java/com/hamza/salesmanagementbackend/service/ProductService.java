@@ -2,10 +2,12 @@ package com.hamza.salesmanagementbackend.service;
 
 import com.hamza.salesmanagementbackend.dto.ProductDTO;
 import com.hamza.salesmanagementbackend.entity.Product;
+import com.hamza.salesmanagementbackend.entity.Category;
 import com.hamza.salesmanagementbackend.exception.BusinessLogicException;
 import com.hamza.salesmanagementbackend.exception.InsufficientStockException;
 import com.hamza.salesmanagementbackend.exception.ResourceNotFoundException;
 import com.hamza.salesmanagementbackend.repository.ProductRepository;
+import com.hamza.salesmanagementbackend.repository.CategoryRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -25,11 +27,13 @@ import java.util.stream.Collectors;
 public class ProductService {
 
     private final ProductRepository productRepository;
+    private final CategoryRepository categoryRepository;
     private static final Integer LOW_STOCK_THRESHOLD = 10;
 
     @Autowired
-    public ProductService(ProductRepository productRepository) {
+    public ProductService(ProductRepository productRepository, CategoryRepository categoryRepository) {
         this.productRepository = productRepository;
+        this.categoryRepository = categoryRepository;
     }
 
     /**
@@ -119,11 +123,11 @@ public class ProductService {
     }
 
     /**
-     * Gets products by category using streams
+     * Gets products by category ID using streams
      */
     @Transactional(readOnly = true)
-    public List<ProductDTO> getProductsByCategory(String category) {
-        return productRepository.findByCategory(category)
+    public List<ProductDTO> getProductsByCategoryId(Long categoryId) {
+        return productRepository.findByCategoryId(categoryId)
                 .stream()
                 .map(this::mapToDTO)
                 .sorted((p1, p2) -> p1.getName().compareToIgnoreCase(p2.getName()))
@@ -131,11 +135,32 @@ public class ProductService {
     }
 
     /**
-     * Gets products by category with pagination
+     * Gets products by category ID with pagination
      */
     @Transactional(readOnly = true)
-    public Page<ProductDTO> getProductsByCategory(String category, Pageable pageable) {
-        return productRepository.findByCategory(category, pageable)
+    public Page<ProductDTO> getProductsByCategoryId(Long categoryId, Pageable pageable) {
+        return productRepository.findByCategoryId(categoryId, pageable)
+                .map(this::mapToDTO);
+    }
+
+    /**
+     * Gets products by category name using streams
+     */
+    @Transactional(readOnly = true)
+    public List<ProductDTO> getProductsByCategoryName(String categoryName) {
+        return productRepository.findByCategoryName(categoryName)
+                .stream()
+                .map(this::mapToDTO)
+                .sorted((p1, p2) -> p1.getName().compareToIgnoreCase(p2.getName()))
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * Gets products by category name with pagination
+     */
+    @Transactional(readOnly = true)
+    public Page<ProductDTO> getProductsByCategoryName(String categoryName, Pageable pageable) {
+        return productRepository.findByCategoryName(categoryName, pageable)
                 .map(this::mapToDTO);
     }
 
@@ -176,11 +201,11 @@ public class ProductService {
     }
 
     /**
-     * Gets all distinct categories using streams
+     * Gets all distinct category names using streams
      */
     @Transactional(readOnly = true)
-    public List<String> getAllCategories() {
-        return productRepository.findDistinctCategories()
+    public List<String> getAllCategoryNames() {
+        return productRepository.findDistinctCategoryNames()
                 .stream()
                 .filter(category -> category != null && !category.trim().isEmpty())
                 .sorted(String::compareToIgnoreCase)
@@ -188,15 +213,15 @@ public class ProductService {
     }
 
     /**
-     * Gets products grouped by category using streams
+     * Gets products grouped by category name using streams
      */
     @Transactional(readOnly = true)
-    public Map<String, List<ProductDTO>> getProductsGroupedByCategory() {
+    public Map<String, List<ProductDTO>> getProductsGroupedByCategoryName() {
         return productRepository.findAll()
                 .stream()
-                .filter(product -> product.getCategory() != null && !product.getCategory().trim().isEmpty())
+                .filter(product -> product.getCategory() != null && product.getCategory().getName() != null)
                 .collect(Collectors.groupingBy(
-                        Product::getCategory,
+                        product -> product.getCategory().getName(),
                         Collectors.mapping(this::mapToDTO, Collectors.toList())
                 ));
     }
@@ -322,7 +347,18 @@ public class ProductService {
         Optional.ofNullable(productDTO.getPrice()).ifPresent(existingProduct::setPrice);
         Optional.ofNullable(productDTO.getCostPrice()).ifPresent(existingProduct::setCostPrice);
         Optional.ofNullable(productDTO.getStockQuantity()).ifPresent(existingProduct::setStockQuantity);
-        Optional.ofNullable(productDTO.getCategory()).ifPresent(existingProduct::setCategory);
+
+        // Handle category update
+        if (productDTO.getCategoryId() != null) {
+            Category category = categoryRepository.findById(productDTO.getCategoryId())
+                    .orElseThrow(() -> new ResourceNotFoundException("Category not found with id: " + productDTO.getCategoryId()));
+            existingProduct.setCategory(category);
+        } else if (productDTO.getCategoryName() != null && !productDTO.getCategoryName().trim().isEmpty()) {
+            Category category = categoryRepository.findByNameIgnoreCase(productDTO.getCategoryName().trim())
+                    .orElseThrow(() -> new ResourceNotFoundException("Category not found with name: " + productDTO.getCategoryName()));
+            existingProduct.setCategory(category);
+        }
+
         Optional.ofNullable(productDTO.getSku()).ifPresent(existingProduct::setSku);
         Optional.ofNullable(productDTO.getBrand()).ifPresent(existingProduct::setBrand);
         Optional.ofNullable(productDTO.getModelNumber()).ifPresent(existingProduct::setModelNumber);
@@ -361,7 +397,13 @@ public class ProductService {
         dto.setPrice(product.getPrice());
         dto.setCostPrice(product.getCostPrice());
         dto.setStockQuantity(product.getStockQuantity());
-        dto.setCategory(product.getCategory());
+
+        // Map category information
+        if (product.getCategory() != null) {
+            dto.setCategoryId(product.getCategory().getId());
+            dto.setCategoryName(product.getCategory().getName());
+        }
+
         dto.setSku(product.getSku());
         dto.setBrand(product.getBrand());
         dto.setModelNumber(product.getModelNumber());
@@ -410,7 +452,18 @@ public class ProductService {
         product.setPrice(productDTO.getPrice());
         product.setCostPrice(productDTO.getCostPrice() != null ? productDTO.getCostPrice() : BigDecimal.ZERO);
         product.setStockQuantity(productDTO.getStockQuantity() != null ? productDTO.getStockQuantity() : 0);
-        product.setCategory(productDTO.getCategory());
+
+        // Map category information
+        if (productDTO.getCategoryId() != null) {
+            Category category = categoryRepository.findById(productDTO.getCategoryId())
+                    .orElseThrow(() -> new ResourceNotFoundException("Category not found with id: " + productDTO.getCategoryId()));
+            product.setCategory(category);
+        } else if (productDTO.getCategoryName() != null && !productDTO.getCategoryName().trim().isEmpty()) {
+            Category category = categoryRepository.findByNameIgnoreCase(productDTO.getCategoryName().trim())
+                    .orElseThrow(() -> new ResourceNotFoundException("Category not found with name: " + productDTO.getCategoryName()));
+            product.setCategory(category);
+        }
+
         product.setSku(productDTO.getSku());
         product.setBrand(productDTO.getBrand());
         product.setModelNumber(productDTO.getModelNumber());

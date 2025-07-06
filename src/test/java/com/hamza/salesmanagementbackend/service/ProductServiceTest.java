@@ -2,10 +2,12 @@ package com.hamza.salesmanagementbackend.service;
 
 import com.hamza.salesmanagementbackend.dto.ProductDTO;
 import com.hamza.salesmanagementbackend.entity.Product;
+import com.hamza.salesmanagementbackend.entity.Category;
 import com.hamza.salesmanagementbackend.exception.BusinessLogicException;
 import com.hamza.salesmanagementbackend.exception.InsufficientStockException;
 import com.hamza.salesmanagementbackend.exception.ResourceNotFoundException;
 import com.hamza.salesmanagementbackend.repository.ProductRepository;
+import com.hamza.salesmanagementbackend.repository.CategoryRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -33,14 +35,25 @@ class ProductServiceTest {
     @Mock
     private ProductRepository productRepository;
 
+    @Mock
+    private CategoryRepository categoryRepository;
+
     @InjectMocks
     private ProductService productService;
 
     private Product testProduct;
     private ProductDTO testProductDTO;
+    private Category testCategory;
 
     @BeforeEach
     void setUp() {
+        testCategory = Category.builder()
+                .id(1L)
+                .name("Electronics")
+                .description("Electronic devices and accessories")
+                .status(Category.CategoryStatus.ACTIVE)
+                .build();
+
         testProduct = Product.builder()
                 .id(1L)
                 .name("Test Product")
@@ -50,7 +63,7 @@ class ProductServiceTest {
                 .costPrice(BigDecimal.valueOf(50.00))
                 .stockQuantity(100)
                 .minStockLevel(10)
-                .category("Electronics")
+                .category(testCategory)
                 .brand("TestBrand")
                 .productStatus(Product.ProductStatus.ACTIVE)
                 .createdAt(LocalDateTime.now())
@@ -65,10 +78,10 @@ class ProductServiceTest {
                 .costPrice(BigDecimal.valueOf(50.00))
                 .stockQuantity(100)
                 .minStockLevel(10)
-                .category("Electronics")
+                .categoryId(1L)
+                .categoryName("Electronics")
                 .brand("TestBrand")
                 .productStatus(Product.ProductStatus.ACTIVE)
-                .createdAt(LocalDateTime.now())
                 .build();
     }
 
@@ -76,6 +89,7 @@ class ProductServiceTest {
     void createProduct_Success() {
         // Given
         when(productRepository.findBySku(testProductDTO.getSku())).thenReturn(Optional.empty());
+        when(categoryRepository.findById(1L)).thenReturn(Optional.of(testCategory));
         when(productRepository.save(any(Product.class))).thenReturn(testProduct);
 
         // When
@@ -85,7 +99,10 @@ class ProductServiceTest {
         assertNotNull(result);
         assertEquals(testProductDTO.getSku(), result.getSku());
         assertEquals(testProductDTO.getName(), result.getName());
+        assertEquals(1L, result.getCategoryId());
+        assertEquals("Electronics", result.getCategoryName());
         verify(productRepository).findBySku(testProductDTO.getSku());
+        verify(categoryRepository).findById(1L);
         verify(productRepository).save(any(Product.class));
     }
 
@@ -305,19 +322,20 @@ class ProductServiceTest {
     }
 
     @Test
-    void getProductsByCategory_Success() {
+    void getProductsByCategoryName_Success() {
         // Given
-        String category = "Electronics";
+        String categoryName = "Electronics";
         List<Product> products = Arrays.asList(testProduct);
-        when(productRepository.findByCategory(category)).thenReturn(products);
+        when(productRepository.findByCategoryName(categoryName)).thenReturn(products);
 
         // When
-        List<ProductDTO> result = productService.getProductsByCategory(category);
+        List<ProductDTO> result = productService.getProductsByCategoryName(categoryName);
 
         // Then
         assertNotNull(result);
         assertEquals(1, result.size());
-        assertEquals(testProduct.getCategory(), result.get(0).getCategory());
-        verify(productRepository).findByCategory(category);
+        assertEquals(testProduct.getCategory().getName(), result.get(0).getCategoryName());
+        assertEquals(testProduct.getCategory().getId(), result.get(0).getCategoryId());
+        verify(productRepository).findByCategoryName(categoryName);
     }
 }

@@ -12,6 +12,7 @@ import lombok.NoArgsConstructor;
 import lombok.ToString;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 
 @Entity
 @Table(name = "sale_items")
@@ -144,7 +145,7 @@ public class SaleItem {
         // Apply discount
         if (discountPercentage != null && discountPercentage.compareTo(BigDecimal.ZERO) > 0) {
             this.discountAmount = subtotal.multiply(discountPercentage)
-                    .divide(BigDecimal.valueOf(100), 2, BigDecimal.ROUND_HALF_UP);
+                    .divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP);
         }
 
         BigDecimal afterDiscount = subtotal.subtract(discountAmount);
@@ -152,7 +153,7 @@ public class SaleItem {
         // Calculate tax
         if (taxPercentage != null && taxPercentage.compareTo(BigDecimal.ZERO) > 0) {
             this.taxAmount = afterDiscount.multiply(taxPercentage)
-                    .divide(BigDecimal.valueOf(100), 2, BigDecimal.ROUND_HALF_UP);
+                    .divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP);
         }
 
         // Calculate total
@@ -175,7 +176,7 @@ public class SaleItem {
         if (costPrice == null || costPrice.equals(BigDecimal.ZERO)) {
             return BigDecimal.ZERO;
         }
-        return getProfit().divide(getLineTotal(), 4, BigDecimal.ROUND_HALF_UP)
+        return getProfit().divide(getLineTotal(), 4, RoundingMode.HALF_UP)
                 .multiply(BigDecimal.valueOf(100));
     }
 
