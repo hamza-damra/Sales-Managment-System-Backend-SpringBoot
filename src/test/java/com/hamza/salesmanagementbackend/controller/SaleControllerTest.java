@@ -3,13 +3,24 @@ package com.hamza.salesmanagementbackend.controller;
 import com.hamza.salesmanagementbackend.dto.SaleDTO;
 import com.hamza.salesmanagementbackend.dto.SaleItemDTO;
 import com.hamza.salesmanagementbackend.entity.Sale;
+import com.hamza.salesmanagementbackend.entity.SaleStatus;
+import com.hamza.salesmanagementbackend.exception.ResourceNotFoundException;
 import com.hamza.salesmanagementbackend.service.SaleService;
+import com.hamza.salesmanagementbackend.service.ProductService;
+import com.hamza.salesmanagementbackend.repository.SaleRepository;
+import com.hamza.salesmanagementbackend.repository.CustomerRepository;
+import com.hamza.salesmanagementbackend.repository.ProductRepository;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
+
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 
@@ -23,7 +34,10 @@ import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-@WebMvcTest(SaleController.class)
+@WebMvcTest(controllers = SaleController.class, excludeAutoConfiguration = {
+    org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfiguration.class,
+    org.springframework.boot.autoconfigure.security.servlet.SecurityFilterAutoConfiguration.class
+})
 class SaleControllerTest {
 
     @Autowired
@@ -31,6 +45,18 @@ class SaleControllerTest {
 
     @MockBean
     private SaleService saleService;
+
+    @MockBean
+    private ProductService productService;
+
+    @MockBean
+    private SaleRepository saleRepository;
+
+    @MockBean
+    private CustomerRepository customerRepository;
+
+    @MockBean
+    private ProductRepository productRepository;
 
     @Autowired
     private ObjectMapper objectMapper;
@@ -81,15 +107,16 @@ class SaleControllerTest {
     void getAllSales_Success() throws Exception {
         // Given
         List<SaleDTO> sales = Arrays.asList(testSaleDTO);
-        when(saleService.getAllSales()).thenReturn(sales);
+        Page<SaleDTO> salesPage = new PageImpl<>(sales, PageRequest.of(0, 10), 1);
+        when(saleService.getAllSales(any(Pageable.class))).thenReturn(salesPage);
 
         // When & Then
         mockMvc.perform(get("/api/sales"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$").isArray())
-                .andExpect(jsonPath("$[0].totalAmount").value(199.98));
+                .andExpect(jsonPath("$.content").isArray())
+                .andExpect(jsonPath("$.content[0].totalAmount").value(199.98));
 
-        verify(saleService).getAllSales();
+        verify(saleService).getAllSales(any(Pageable.class));
     }
 
     @Test
@@ -137,14 +164,52 @@ class SaleControllerTest {
     void getSalesByCustomer_Success() throws Exception {
         // Given
         List<SaleDTO> sales = Arrays.asList(testSaleDTO);
-        when(saleService.getSalesByCustomer(1L)).thenReturn(sales);
+        Page<SaleDTO> salesPage = new PageImpl<>(sales, PageRequest.of(0, 10), 1);
+        when(saleService.getSalesByCustomer(eq(1L), any(Pageable.class))).thenReturn(salesPage);
 
         // When & Then
         mockMvc.perform(get("/api/sales/customer/1"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$").isArray())
-                .andExpect(jsonPath("$[0].totalAmount").value(199.98));
+                .andExpect(jsonPath("$.content").isArray())
+                .andExpect(jsonPath("$.content[0].totalAmount").value(199.98));
 
-        verify(saleService).getSalesByCustomer(1L);
+        verify(saleService).getSalesByCustomer(eq(1L), any(Pageable.class));
+    }
+
+    @Test
+    void completeSale_Success() throws Exception {
+        // Given
+        SaleDTO completedSale = SaleDTO.builder()
+                .id(1L)
+                .status(SaleStatus.COMPLETED)
+                .paymentStatus(Sale.PaymentStatus.PAID)
+                .paymentDate(LocalDateTime.now())
+                .build();
+        when(saleService.completeSale(1L)).thenReturn(completedSale);
+
+        // When & Then
+        mockMvc.perform(post("/api/sales/1/complete"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value("COMPLETED"))
+                .andExpect(jsonPath("$.paymentStatus").value("PAID"));
+
+        verify(saleService).completeSale(1L);
+    }
+
+    @Test
+    void cancelSale_Success() throws Exception {
+        // Given
+        SaleDTO cancelledSale = SaleDTO.builder()
+                .id(1L)
+                .status(SaleStatus.CANCELLED)
+                .build();
+        when(saleService.cancelSale(1L)).thenReturn(cancelledSale);
+
+        // When & Then
+        mockMvc.perform(post("/api/sales/1/cancel"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value("CANCELLED"));
+
+        verify(saleService).cancelSale(1L);
     }
 }

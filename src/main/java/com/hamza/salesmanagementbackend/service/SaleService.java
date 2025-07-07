@@ -8,6 +8,7 @@ import com.hamza.salesmanagementbackend.entity.Sale;
 import com.hamza.salesmanagementbackend.entity.SaleItem;
 import com.hamza.salesmanagementbackend.entity.SaleStatus;
 import com.hamza.salesmanagementbackend.exception.BusinessLogicException;
+import com.hamza.salesmanagementbackend.exception.InsufficientStockException;
 import com.hamza.salesmanagementbackend.exception.ResourceNotFoundException;
 import com.hamza.salesmanagementbackend.repository.CustomerRepository;
 import com.hamza.salesmanagementbackend.repository.ProductRepository;
@@ -355,9 +356,8 @@ public class SaleService {
                 .orElseThrow(() -> new ResourceNotFoundException("Product not found with id: " + itemDTO.getProductId()));
 
         if (product.getStockQuantity() < itemDTO.getQuantity()) {
-            throw new BusinessLogicException(
-                    String.format("Insufficient stock for product %s. Available: %d, Requested: %d",
-                            product.getName(), product.getStockQuantity(), itemDTO.getQuantity())
+            throw new InsufficientStockException(
+                    product.getName(), product.getStockQuantity(), itemDTO.getQuantity()
             );
         }
 

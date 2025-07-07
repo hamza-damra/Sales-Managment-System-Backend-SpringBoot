@@ -3,7 +3,9 @@ package com.hamza.salesmanagementbackend.dto;
 import com.hamza.salesmanagementbackend.entity.Sale;
 import com.hamza.salesmanagementbackend.entity.SaleStatus;
 import jakarta.validation.constraints.DecimalMin;
+import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -33,6 +35,9 @@ public class SaleDTO {
     private BigDecimal totalAmount;
 
     private SaleStatus status;
+
+    @NotEmpty(message = "Sale must contain at least one item")
+    @Valid
     private List<SaleItemDTO> items;
 
     // Enhanced attributes matching the entity

@@ -17,6 +17,8 @@ import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.UUID;
+import java.util.concurrent.atomic.AtomicLong;
 
 @Entity
 @Table(name = "sales")
@@ -27,6 +29,9 @@ import java.util.List;
 @ToString
 @EqualsAndHashCode
 public class Sale {
+
+    // Static counter for ensuring unique sale numbers
+    private static final AtomicLong saleCounter = new AtomicLong(0);
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -246,7 +251,11 @@ public class Sale {
 
     // Business logic methods
     private String generateSaleNumber() {
-        return "SALE-" + System.currentTimeMillis();
+        // Combine timestamp with counter and random component for uniqueness
+        long timestamp = System.currentTimeMillis();
+        long counter = saleCounter.incrementAndGet();
+        String randomPart = UUID.randomUUID().toString().substring(0, 4).toUpperCase();
+        return String.format("SALE-%d-%d-%s", timestamp, counter, randomPart);
     }
 
     public void calculateTotals() {

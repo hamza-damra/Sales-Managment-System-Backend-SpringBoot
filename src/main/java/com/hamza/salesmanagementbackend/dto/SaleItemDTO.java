@@ -79,37 +79,48 @@ public class SaleItemDTO {
 
             // Apply discount
             if (discountPercentage != null && discountPercentage.compareTo(BigDecimal.ZERO) > 0) {
+                // Calculate discount from percentage
                 this.discountAmount = subtotal.multiply(discountPercentage)
                         .divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP);
             } else if (discountAmount == null) {
-                this.discountAmount = BigDecimal.ZERO;
+                // No discount amount set, default to zero
+                this.discountAmount = BigDecimal.ZERO.setScale(2);
+            } else if (discountAmount.scale() != 2) {
+                // Ensure existing discount amount has proper scale
+                this.discountAmount = discountAmount.setScale(2, RoundingMode.HALF_UP);
             }
 
             BigDecimal afterDiscount = subtotal.subtract(discountAmount != null ? discountAmount : BigDecimal.ZERO);
 
             // Calculate tax
             if (taxPercentage != null && taxPercentage.compareTo(BigDecimal.ZERO) > 0) {
+                // Calculate tax from percentage
                 this.taxAmount = afterDiscount.multiply(taxPercentage)
                         .divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP);
             } else if (taxAmount == null) {
-                this.taxAmount = BigDecimal.ZERO;
+                // No tax amount set, default to zero
+                this.taxAmount = BigDecimal.ZERO.setScale(2);
+            } else if (taxAmount.scale() != 2) {
+                // Ensure existing tax amount has proper scale
+                this.taxAmount = taxAmount.setScale(2, RoundingMode.HALF_UP);
             }
 
-            // Calculate total
-            this.totalPrice = afterDiscount.add(taxAmount != null ? taxAmount : BigDecimal.ZERO);
+            // Calculate total - ensure 2 decimal places for monetary values
+            this.totalPrice = afterDiscount.add(taxAmount != null ? taxAmount : BigDecimal.ZERO)
+                    .setScale(2, RoundingMode.HALF_UP);
         }
     }
 
     public BigDecimal getLineTotal() {
-        return totalPrice != null ? totalPrice : BigDecimal.ZERO;
+        return totalPrice != null ? totalPrice : BigDecimal.ZERO.setScale(2);
     }
 
     public BigDecimal getProfit() {
         if (costPrice == null || costPrice.equals(BigDecimal.ZERO)) {
-            return BigDecimal.ZERO;
+            return BigDecimal.ZERO.setScale(2);
         }
         BigDecimal totalCost = costPrice.multiply(BigDecimal.valueOf(quantity != null ? quantity : 0));
-        return getLineTotal().subtract(totalCost);
+        return getLineTotal().subtract(totalCost).setScale(2, RoundingMode.HALF_UP);
     }
 
     public BigDecimal getProfitMargin() {

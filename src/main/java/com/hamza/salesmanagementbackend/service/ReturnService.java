@@ -49,11 +49,25 @@ public class ReturnService {
     public ReturnDTO createReturn(ReturnDTO returnDTO) {
         // Validate original sale exists
         Sale originalSale = saleRepository.findById(returnDTO.getOriginalSaleId())
-                .orElseThrow(() -> new ResourceNotFoundException("Original sale not found with id: " + returnDTO.getOriginalSaleId()));
+                .orElseThrow(() -> {
+                    // Get available sale IDs for better error message
+                    String availableSales = saleRepository.findAll().stream()
+                            .map(s -> s.getId() + " (Customer: " + s.getCustomer().getId() + ", Status: " + s.getStatus() + ")")
+                            .collect(java.util.stream.Collectors.joining(", "));
+                    return new ResourceNotFoundException("Original sale not found with id: " + returnDTO.getOriginalSaleId() +
+                            ". Available sales: " + availableSales);
+                });
 
         // Validate customer exists
         Customer customer = customerRepository.findById(returnDTO.getCustomerId())
-                .orElseThrow(() -> new ResourceNotFoundException("Customer not found with id: " + returnDTO.getCustomerId()));
+                .orElseThrow(() -> {
+                    // Get available customer IDs for better error message
+                    String availableCustomers = customerRepository.findAll().stream()
+                            .map(c -> c.getId() + " (" + c.getName() + ")")
+                            .collect(java.util.stream.Collectors.joining(", "));
+                    return new ResourceNotFoundException("Customer not found with id: " + returnDTO.getCustomerId() +
+                            ". Available customers: " + availableCustomers);
+                });
 
         // Validate return is within policy period
         if (!isWithinReturnPeriod(originalSale.getSaleDate())) {
@@ -254,11 +268,25 @@ public class ReturnService {
     private ReturnItem createReturnItem(Return returnEntity, ReturnItemDTO itemDTO) {
         // Validate original sale item
         SaleItem originalSaleItem = saleItemRepository.findById(itemDTO.getOriginalSaleItemId())
-                .orElseThrow(() -> new ResourceNotFoundException("Original sale item not found with id: " + itemDTO.getOriginalSaleItemId()));
+                .orElseThrow(() -> {
+                    // Get available sale item IDs for better error message
+                    String availableSaleItems = saleItemRepository.findAll().stream()
+                            .map(si -> si.getId() + " (Sale: " + si.getSale().getId() + ", Product: " + si.getProduct().getId() + ")")
+                            .collect(java.util.stream.Collectors.joining(", "));
+                    return new ResourceNotFoundException("Original sale item not found with id: " + itemDTO.getOriginalSaleItemId() +
+                            ". Available sale items: " + availableSaleItems);
+                });
 
         // Validate product
         Product product = productRepository.findById(itemDTO.getProductId())
-                .orElseThrow(() -> new ResourceNotFoundException("Product not found with id: " + itemDTO.getProductId()));
+                .orElseThrow(() -> {
+                    // Get available product IDs for better error message
+                    String availableProducts = productRepository.findAll().stream()
+                            .map(p -> p.getId() + " (" + p.getName() + ")")
+                            .collect(java.util.stream.Collectors.joining(", "));
+                    return new ResourceNotFoundException("Product not found with id: " + itemDTO.getProductId() +
+                            ". Available products: " + availableProducts);
+                });
 
         ReturnItem returnItem = ReturnItem.builder()
                 .returnEntity(returnEntity)

@@ -325,4 +325,132 @@ class SaleServiceTest {
         assertEquals(1, result.size());
         verify(saleRepository).findBySaleDateBetween(startDate, endDate);
     }
+
+    @Test
+    void completeSale_Success() {
+        // Given
+        testSale.setStatus(SaleStatus.PENDING);
+        when(saleRepository.findById(1L)).thenReturn(Optional.of(testSale));
+        when(saleRepository.save(any(Sale.class))).thenReturn(testSale);
+
+        // When
+        SaleDTO result = saleService.completeSale(1L);
+
+        // Then
+        assertNotNull(result);
+        assertEquals(SaleStatus.COMPLETED, testSale.getStatus());
+        verify(saleRepository).findById(1L);
+        verify(saleRepository).save(testSale);
+    }
+
+    @Test
+    void completeSale_AlreadyCompleted_ThrowsException() {
+        // Given
+        testSale.setStatus(SaleStatus.COMPLETED);
+        when(saleRepository.findById(1L)).thenReturn(Optional.of(testSale));
+
+        // When & Then
+        BusinessLogicException exception = assertThrows(BusinessLogicException.class,
+                () -> saleService.completeSale(1L));
+        assertEquals("Sale is already completed", exception.getMessage());
+        verify(saleRepository).findById(1L);
+        verify(saleRepository, never()).save(any(Sale.class));
+    }
+
+    @Test
+    void completeSale_CancelledSale_ThrowsException() {
+        // Given
+        testSale.setStatus(SaleStatus.CANCELLED);
+        when(saleRepository.findById(1L)).thenReturn(Optional.of(testSale));
+
+        // When & Then
+        BusinessLogicException exception = assertThrows(BusinessLogicException.class,
+                () -> saleService.completeSale(1L));
+        assertEquals("Cannot complete cancelled sale", exception.getMessage());
+        verify(saleRepository).findById(1L);
+        verify(saleRepository, never()).save(any(Sale.class));
+    }
+
+    @Test
+    void cancelSale_Success() {
+        // Given
+        testSale.setStatus(SaleStatus.PENDING);
+        when(saleRepository.findById(1L)).thenReturn(Optional.of(testSale));
+        when(saleRepository.save(any(Sale.class))).thenReturn(testSale);
+
+        // When
+        SaleDTO result = saleService.cancelSale(1L);
+
+        // Then
+        assertNotNull(result);
+        assertEquals(SaleStatus.CANCELLED, testSale.getStatus());
+        verify(saleRepository).findById(1L);
+        verify(saleRepository).save(testSale);
+    }
+
+    @Test
+    void cancelSale_NotFound_ThrowsException() {
+        // Given
+        when(saleRepository.findById(1L)).thenReturn(Optional.empty());
+
+        // When & Then
+        ResourceNotFoundException exception = assertThrows(ResourceNotFoundException.class,
+                () -> saleService.cancelSale(1L));
+        assertEquals("Sale not found with id: 1", exception.getMessage());
+        verify(saleRepository).findById(1L);
+        verify(saleRepository, never()).save(any(Sale.class));
+    }
+
+    @Test
+    void getSalesByStatus_Success() {
+        // Given
+        Pageable pageable = PageRequest.of(0, 10);
+        List<Sale> sales = Arrays.asList(testSale);
+        Page<Sale> salePage = new PageImpl<>(sales, pageable, 1);
+        when(saleRepository.findByStatus(SaleStatus.PENDING, pageable)).thenReturn(salePage);
+
+        // When
+        Page<SaleDTO> result = saleService.getSalesByStatus(SaleStatus.PENDING, pageable);
+
+        // Then
+        assertNotNull(result);
+        assertEquals(1, result.getTotalElements());
+        verify(saleRepository).findByStatus(SaleStatus.PENDING, pageable);
+    }
+
+    @Test
+    void getSalesByCustomerWithPagination_Success() {
+        // Given
+        Pageable pageable = PageRequest.of(0, 10);
+        List<Sale> sales = Arrays.asList(testSale);
+        Page<Sale> salePage = new PageImpl<>(sales, pageable, 1);
+        when(saleRepository.findByCustomerIdOrderBySaleDateDesc(1L, pageable)).thenReturn(salePage);
+
+        // When
+        Page<SaleDTO> result = saleService.getSalesByCustomer(1L, pageable);
+
+        // Then
+        assertNotNull(result);
+        assertEquals(1, result.getTotalElements());
+        verify(saleRepository).findByCustomerIdOrderBySaleDateDesc(1L, pageable);
+    }
+
+    @Test
+    void getSalesByDateRangeWithPagination_Success() {
+        // Given
+        LocalDateTime startDate = LocalDateTime.now().minusDays(7);
+        LocalDateTime endDate = LocalDateTime.now();
+        Pageable pageable = PageRequest.of(0, 10);
+        List<Sale> sales = Arrays.asList(testSale);
+        Page<Sale> salePage = new PageImpl<>(sales, pageable, 1);
+        when(saleRepository.findBySaleDateBetween(startDate, endDate, pageable)).thenReturn(salePage);
+
+        // When
+        Page<SaleDTO> result = saleService.getSalesByDateRange(startDate, endDate, pageable);
+
+        // Then
+        assertNotNull(result);
+        assertEquals(1, result.getTotalElements());
+        verify(saleRepository).findBySaleDateBetween(startDate, endDate, pageable);
+    }
 }

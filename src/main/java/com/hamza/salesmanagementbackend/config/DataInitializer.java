@@ -297,5 +297,21 @@ public class DataInitializer implements CommandLineRunner {
         System.out.println("- " + productRepository.count() + " products");
         System.out.println("- " + saleRepository.count() + " sales");
         System.out.println("- " + saleItemRepository.count() + " sale items");
+
+        // Print actual IDs for testing purposes
+        System.out.println("\n=== TESTING REFERENCE DATA ===");
+        System.out.println("Customer IDs: " + customerRepository.findAll().stream()
+                .map(c -> c.getId() + " (" + c.getName() + ")")
+                .collect(java.util.stream.Collectors.joining(", ")));
+        System.out.println("Product IDs: " + productRepository.findAll().stream()
+                .map(p -> p.getId() + " (" + p.getName() + ")")
+                .collect(java.util.stream.Collectors.joining(", ")));
+        System.out.println("Sale IDs: " + saleRepository.findAll().stream()
+                .map(s -> s.getId() + " (Customer: " + s.getCustomer().getId() + ", Status: " + s.getStatus() + ")")
+                .collect(java.util.stream.Collectors.joining(", ")));
+        System.out.println("Sale Item IDs: " + saleItemRepository.findAll().stream()
+                .map(si -> si.getId() + " (Sale: " + si.getSale().getId() + ", Product: " + si.getProduct().getId() + ")")
+                .collect(java.util.stream.Collectors.joining(", ")));
+        System.out.println("===============================\n");
     }
 }

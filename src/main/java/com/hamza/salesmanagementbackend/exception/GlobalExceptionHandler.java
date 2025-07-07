@@ -8,6 +8,8 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
+import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.web.HttpMediaTypeNotSupportedException;
 
 import java.time.LocalDateTime;
 import java.util.HashMap;
@@ -150,6 +152,52 @@ public class GlobalExceptionHandler {
         errorResponse.setDetails(details);
 
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
+    }
+
+    @ExceptionHandler(HttpMessageNotReadableException.class)
+    public ResponseEntity<ErrorResponse> handleHttpMessageNotReadableException(HttpMessageNotReadableException ex) {
+        String message = "Invalid JSON format in request body";
+        if (ex.getMessage() != null && ex.getMessage().contains("JSON parse error")) {
+            message = "The request body contains malformed JSON. Please check the syntax and try again.";
+        }
+
+        ErrorResponse errorResponse = ErrorResponse.builder()
+                .status(HttpStatus.BAD_REQUEST.value())
+                .error("Malformed JSON")
+                .message(message)
+                .errorCode("MALFORMED_JSON")
+                .timestamp(LocalDateTime.now())
+                .suggestions("Please ensure the request body is valid JSON format. Check for missing quotes, brackets, or commas.")
+                .build();
+
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
+    }
+
+    @ExceptionHandler(HttpMediaTypeNotSupportedException.class)
+    public ResponseEntity<ErrorResponse> handleHttpMediaTypeNotSupportedException(HttpMediaTypeNotSupportedException ex) {
+        String supportedTypes = ex.getSupportedMediaTypes().stream()
+                .map(mediaType -> mediaType.toString())
+                .reduce((a, b) -> a + ", " + b)
+                .orElse("application/json");
+
+        String message = String.format("Content-Type '%s' is not supported. Supported types: %s",
+                ex.getContentType(), supportedTypes);
+
+        ErrorResponse errorResponse = ErrorResponse.builder()
+                .status(HttpStatus.UNSUPPORTED_MEDIA_TYPE.value())
+                .error("Unsupported Media Type")
+                .message(message)
+                .errorCode("UNSUPPORTED_MEDIA_TYPE")
+                .timestamp(LocalDateTime.now())
+                .suggestions("Please set the Content-Type header to 'application/json' and ensure the request body is valid JSON.")
+                .build();
+
+        Map<String, Object> details = new HashMap<>();
+        details.put("providedContentType", ex.getContentType() != null ? ex.getContentType().toString() : "unknown");
+        details.put("supportedContentTypes", ex.getSupportedMediaTypes());
+        errorResponse.setDetails(details);
+
+        return ResponseEntity.status(HttpStatus.UNSUPPORTED_MEDIA_TYPE).body(errorResponse);
     }
 
     @ExceptionHandler(IllegalArgumentException.class)
