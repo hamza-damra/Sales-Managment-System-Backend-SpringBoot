@@ -34,7 +34,16 @@ Content-Type: application/json
 {
   "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
   "refreshToken": "550e8400-e29b-41d4-a716-446655440000",
-  "tokenType": "Bearer"
+  "tokenType": "Bearer",
+  "user": {
+    "id": 1,
+    "username": "your_username",
+    "email": "user@example.com",
+    "firstName": "John",
+    "lastName": "Doe",
+    "role": "USER",
+    "createdAt": "2025-07-03T10:00:00"
+  }
 }
 ```
 

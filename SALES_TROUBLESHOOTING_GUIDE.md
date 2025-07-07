@@ -123,8 +123,17 @@ curl -X POST http://localhost:8081/api/auth/login \
 ```json
 {
   "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+  "refreshToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
   "tokenType": "Bearer",
-  "expiresIn": 86400
+  "user": {
+    "id": 1,
+    "username": "admin",
+    "email": "admin@example.com",
+    "firstName": "Admin",
+    "lastName": "User",
+    "role": "ADMIN",
+    "createdAt": "2025-07-03T10:00:00"
+  }
 }
 ```
 

@@ -58,7 +58,7 @@ public class AuthServiceImpl implements AuthService {
             String refreshToken = refreshTokenService.createRefreshToken(user.getId()).getToken();
 
             log.debug("Tokens generated successfully for user: {}", user.getUsername());
-            return new JwtAuthenticationResponse(accessToken, refreshToken);
+            return new JwtAuthenticationResponse(accessToken, refreshToken, user);
 
         } catch (BadCredentialsException e) {
             log.error("Invalid credentials for user: {}", signInRequest.getUsername());
