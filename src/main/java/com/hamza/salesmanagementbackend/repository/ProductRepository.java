@@ -52,4 +52,10 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
     Long countLowStockProducts(@Param("threshold") Integer threshold);
 
     boolean existsBySku(String sku);
+
+    @Query("SELECT COUNT(si) FROM SaleItem si WHERE si.product.id = :productId")
+    Long countSaleItemsByProductId(@Param("productId") Long productId);
+
+    @Query("SELECT COUNT(ri) FROM ReturnItem ri WHERE ri.product.id = :productId")
+    Long countReturnItemsByProductId(@Param("productId") Long productId);
 }

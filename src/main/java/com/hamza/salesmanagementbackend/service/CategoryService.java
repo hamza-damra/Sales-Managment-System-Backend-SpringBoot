@@ -3,6 +3,7 @@ package com.hamza.salesmanagementbackend.service;
 import com.hamza.salesmanagementbackend.dto.CategoryDTO;
 import com.hamza.salesmanagementbackend.entity.Category;
 import com.hamza.salesmanagementbackend.exception.BusinessLogicException;
+import com.hamza.salesmanagementbackend.exception.DataIntegrityException;
 import com.hamza.salesmanagementbackend.exception.ResourceNotFoundException;
 import com.hamza.salesmanagementbackend.repository.CategoryRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -100,7 +101,7 @@ public class CategoryService {
         // Check if category has products
         Long productCount = categoryRepository.countProductsByCategoryId(id);
         if (productCount > 0) {
-            throw new BusinessLogicException("Cannot delete category with " + productCount + " associated products");
+            throw DataIntegrityException.categoryHasProducts(id, productCount.intValue());
         }
 
         categoryRepository.deleteById(id);

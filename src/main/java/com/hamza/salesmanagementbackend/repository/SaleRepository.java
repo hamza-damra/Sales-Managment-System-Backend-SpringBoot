@@ -50,4 +50,10 @@ public interface SaleRepository extends JpaRepository<Sale, Long> {
     @Query("SELECT AVG(s.totalAmount) FROM Sale s WHERE s.status = 'COMPLETED' AND s.saleDate BETWEEN :startDate AND :endDate")
     BigDecimal calculateAverageSaleAmount(@Param("startDate") LocalDateTime startDate,
                                         @Param("endDate") LocalDateTime endDate);
+
+    @Query("SELECT COUNT(r) FROM Return r WHERE r.originalSale.id = :saleId")
+    Long countReturnsBySaleId(@Param("saleId") Long saleId);
+
+    @Query("SELECT COUNT(s) FROM Sale s WHERE s.customer.id = :customerId")
+    Long countSalesByCustomerId(@Param("customerId") Long customerId);
 }

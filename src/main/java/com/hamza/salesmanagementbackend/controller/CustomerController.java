@@ -70,12 +70,13 @@ public class CustomerController {
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteCustomer(@PathVariable Long id) {
+    public ResponseEntity<Void> deleteCustomer(@PathVariable Long id,
+                                              @RequestParam(defaultValue = "false") boolean force) {
         if (id <= 0) {
             return ResponseEntity.badRequest().build();
         }
 
-        customerService.deleteCustomer(id);
+        customerService.deleteCustomer(id, force);
         return ResponseEntity.noContent().build();
     }
 

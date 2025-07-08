@@ -8,6 +8,7 @@ import com.hamza.salesmanagementbackend.entity.Sale;
 import com.hamza.salesmanagementbackend.entity.SaleItem;
 import com.hamza.salesmanagementbackend.entity.SaleStatus;
 import com.hamza.salesmanagementbackend.exception.BusinessLogicException;
+import com.hamza.salesmanagementbackend.exception.DataIntegrityException;
 import com.hamza.salesmanagementbackend.exception.InsufficientStockException;
 import com.hamza.salesmanagementbackend.exception.ResourceNotFoundException;
 import com.hamza.salesmanagementbackend.repository.CustomerRepository;
@@ -672,8 +673,14 @@ public class SaleService {
             throw new BusinessLogicException("Cannot delete completed sales");
         }
 
+        // Check for associated returns
+        Long returnCount = saleRepository.countReturnsBySaleId(id);
+        if (returnCount > 0) {
+            throw DataIntegrityException.saleHasReturns(id, returnCount.intValue());
+        }
+
         // Restore inventory if sale was pending
-        if (sale.getStatus() == SaleStatus.PENDING) {
+        if (sale.getStatus() == SaleStatus.PENDING && sale.getItems() != null) {
             sale.getItems().forEach(item -> {
                 Product product = item.getProduct();
                 product.setStockQuantity(product.getStockQuantity() + item.getQuantity());

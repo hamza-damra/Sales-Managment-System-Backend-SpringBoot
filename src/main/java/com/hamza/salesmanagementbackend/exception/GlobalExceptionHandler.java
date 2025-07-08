@@ -1,5 +1,6 @@
 package com.hamza.salesmanagementbackend.exception;
 
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.mapping.PropertyReferenceException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -74,6 +75,73 @@ public class GlobalExceptionHandler {
             details.put("shortfall", ex.getRequestedQuantity() - ex.getAvailableStock());
             errorResponse.setDetails(details);
         }
+
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(errorResponse);
+    }
+
+    @ExceptionHandler(DataIntegrityException.class)
+    public ResponseEntity<ErrorResponse> handleDataIntegrityException(DataIntegrityException ex) {
+        ErrorResponse errorResponse = ErrorResponse.builder()
+                .status(HttpStatus.CONFLICT.value())
+                .error("Data Integrity Violation")
+                .message(ex.getUserMessage())
+                .errorCode(ex.getErrorCode())
+                .timestamp(LocalDateTime.now())
+                .suggestions(ex.getSuggestion())
+                .build();
+
+        Map<String, Object> details = new HashMap<>();
+        details.put("resourceType", ex.getResourceType());
+        details.put("resourceId", ex.getResourceId());
+        details.put("dependentResource", ex.getDependentResource());
+        errorResponse.setDetails(details);
+
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(errorResponse);
+    }
+
+    @ExceptionHandler(DataIntegrityViolationException.class)
+    public ResponseEntity<ErrorResponse> handleDataIntegrityViolationException(DataIntegrityViolationException ex) {
+        String userFriendlyMessage = "Cannot perform this operation due to existing data dependencies.";
+        String suggestion = "Please remove or reassign dependent records before attempting this operation.";
+        String errorCode = "DATABASE_CONSTRAINT_VIOLATION";
+
+        // Try to extract meaningful information from the exception message
+        String originalMessage = ex.getMessage();
+        if (originalMessage != null) {
+            if (originalMessage.contains("foreign key constraint")) {
+                if (originalMessage.contains("returns") && originalMessage.contains("original_sale_id")) {
+                    userFriendlyMessage = "Cannot delete sale because it has associated returns.";
+                    suggestion = "Please process or cancel all associated returns before deleting this sale.";
+                    errorCode = "SALE_HAS_RETURNS";
+                } else if (originalMessage.contains("sales") && originalMessage.contains("customer_id")) {
+                    userFriendlyMessage = "Cannot delete customer because they have associated sales.";
+                    suggestion = "Please complete, cancel, or reassign all customer sales before deleting this customer.";
+                    errorCode = "CUSTOMER_HAS_SALES";
+                } else if (originalMessage.contains("sale_items") && originalMessage.contains("product_id")) {
+                    userFriendlyMessage = "Cannot delete product because it appears in sales records.";
+                    suggestion = "This product has been sold and cannot be deleted. Consider marking it as inactive instead.";
+                    errorCode = "PRODUCT_HAS_SALES";
+                } else if (originalMessage.contains("products") && originalMessage.contains("category_id")) {
+                    userFriendlyMessage = "Cannot delete category because it contains products.";
+                    suggestion = "Please move all products to another category or delete them before removing this category.";
+                    errorCode = "CATEGORY_HAS_PRODUCTS";
+                }
+            }
+        }
+
+        ErrorResponse errorResponse = ErrorResponse.builder()
+                .status(HttpStatus.CONFLICT.value())
+                .error("Data Integrity Violation")
+                .message(userFriendlyMessage)
+                .errorCode(errorCode)
+                .timestamp(LocalDateTime.now())
+                .suggestions(suggestion)
+                .build();
+
+        Map<String, Object> details = new HashMap<>();
+        details.put("operation", "DELETE");
+        details.put("constraint", "FOREIGN_KEY");
+        errorResponse.setDetails(details);
 
         return ResponseEntity.status(HttpStatus.CONFLICT).body(errorResponse);
     }

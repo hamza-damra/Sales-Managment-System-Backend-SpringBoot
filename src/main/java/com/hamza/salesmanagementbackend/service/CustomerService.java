@@ -3,6 +3,7 @@ package com.hamza.salesmanagementbackend.service;
 import com.hamza.salesmanagementbackend.dto.CustomerDTO;
 import com.hamza.salesmanagementbackend.entity.Customer;
 import com.hamza.salesmanagementbackend.exception.BusinessLogicException;
+import com.hamza.salesmanagementbackend.exception.DataIntegrityException;
 import com.hamza.salesmanagementbackend.exception.ResourceNotFoundException;
 import com.hamza.salesmanagementbackend.repository.CustomerRepository;
 import lombok.RequiredArgsConstructor;
@@ -88,9 +89,39 @@ public class CustomerService {
      * Deletes a customer by ID
      */
     public void deleteCustomer(Long id) {
+        deleteCustomer(id, false);
+    }
+
+    /**
+     * Deletes a customer by ID with optional force deletion
+     * @param id Customer ID to delete
+     * @param forceDelete If true, allows cascade deletion of related records
+     */
+    public void deleteCustomer(Long id, boolean forceDelete) {
         if (!customerRepository.existsById(id)) {
             throw new ResourceNotFoundException("Customer not found with id: " + id);
         }
+
+        if (!forceDelete) {
+            // Check for associated sales
+            Long salesCount = customerRepository.countSalesByCustomerId(id);
+            if (salesCount > 0) {
+                throw DataIntegrityException.customerHasSales(id, salesCount.intValue());
+            }
+
+            // Check for associated returns
+            Long returnCount = customerRepository.countReturnsByCustomerId(id);
+            if (returnCount > 0) {
+                throw DataIntegrityException.customerHasReturns(id, returnCount.intValue());
+            }
+        } else {
+            // Log cascade deletion for audit purposes
+            Long salesCount = customerRepository.countSalesByCustomerId(id);
+            Long returnCount = customerRepository.countReturnsByCustomerId(id);
+            log.warn("Force deleting customer {} with {} sales and {} returns - cascade deletion will occur",
+                    id, salesCount, returnCount);
+        }
+
         customerRepository.deleteById(id);
     }
 

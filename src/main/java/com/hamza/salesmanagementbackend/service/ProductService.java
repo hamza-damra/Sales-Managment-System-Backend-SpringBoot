@@ -4,6 +4,7 @@ import com.hamza.salesmanagementbackend.dto.ProductDTO;
 import com.hamza.salesmanagementbackend.entity.Product;
 import com.hamza.salesmanagementbackend.entity.Category;
 import com.hamza.salesmanagementbackend.exception.BusinessLogicException;
+import com.hamza.salesmanagementbackend.exception.DataIntegrityException;
 import com.hamza.salesmanagementbackend.exception.InsufficientStockException;
 import com.hamza.salesmanagementbackend.exception.ResourceNotFoundException;
 import com.hamza.salesmanagementbackend.repository.ProductRepository;
@@ -98,6 +99,19 @@ public class ProductService {
         if (!productRepository.existsById(id)) {
             throw new ResourceNotFoundException("Product not found with id: " + id);
         }
+
+        // Check for associated sale items
+        Long saleItemCount = productRepository.countSaleItemsByProductId(id);
+        if (saleItemCount > 0) {
+            throw DataIntegrityException.productHasSaleItems(id, saleItemCount.intValue());
+        }
+
+        // Check for associated return items
+        Long returnItemCount = productRepository.countReturnItemsByProductId(id);
+        if (returnItemCount > 0) {
+            throw DataIntegrityException.productHasReturnItems(id, returnItemCount.intValue());
+        }
+
         productRepository.deleteById(id);
     }
 

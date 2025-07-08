@@ -3,6 +3,7 @@ package com.hamza.salesmanagementbackend.service;
 import com.hamza.salesmanagementbackend.dto.SupplierDTO;
 import com.hamza.salesmanagementbackend.entity.Supplier;
 import com.hamza.salesmanagementbackend.exception.BusinessLogicException;
+import com.hamza.salesmanagementbackend.exception.DataIntegrityException;
 import com.hamza.salesmanagementbackend.exception.ResourceNotFoundException;
 import com.hamza.salesmanagementbackend.repository.SupplierRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -97,7 +98,13 @@ public class SupplierService {
                               po.getStatus().name().equals("ORDERED")));
             
             if (hasActivePurchaseOrders) {
-                throw new BusinessLogicException("Cannot delete supplier with active purchase orders");
+                int activeOrderCount = (int) supplier.getPurchaseOrders().stream()
+                        .filter(po -> po.getStatus() != null &&
+                                     (po.getStatus().name().equals("PENDING") ||
+                                      po.getStatus().name().equals("APPROVED") ||
+                                      po.getStatus().name().equals("ORDERED")))
+                        .count();
+                throw DataIntegrityException.supplierHasPurchaseOrders(id, activeOrderCount);
             }
         }
 

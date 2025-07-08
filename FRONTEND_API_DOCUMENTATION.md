@@ -725,8 +725,9 @@ interface ErrorResponse {
 #### 409 Conflict
 - Resource conflicts (e.g., duplicate email, SKU)
 - Insufficient stock
+- Data integrity violations (foreign key constraints)
 
-**Example Response:**
+**Insufficient Stock Example:**
 ```json
 {
   "status": 409,
@@ -740,6 +741,59 @@ interface ErrorResponse {
     "productName": "Laptop Pro",
     "requestedQuantity": 50,
     "availableStock": 25
+  }
+}
+```
+
+**Data Integrity Violation Examples:**
+
+*Sale with Associated Returns:*
+```json
+{
+  "status": 409,
+  "error": "Data Integrity Violation",
+  "message": "Cannot delete sale because it has 3 associated returns",
+  "errorCode": "SALE_HAS_RETURNS",
+  "timestamp": "2025-07-03T15:30:00",
+  "suggestions": "Please process or cancel all associated returns before deleting this sale.",
+  "details": {
+    "resourceType": "Sale",
+    "resourceId": 123,
+    "dependentResource": "Returns"
+  }
+}
+```
+
+*Customer with Associated Sales:*
+```json
+{
+  "status": 409,
+  "error": "Data Integrity Violation",
+  "message": "Cannot delete customer because they have 5 associated sales",
+  "errorCode": "CUSTOMER_HAS_SALES",
+  "timestamp": "2025-07-03T15:30:00",
+  "suggestions": "Please complete, cancel, or reassign all customer sales before deleting this customer.",
+  "details": {
+    "resourceType": "Customer",
+    "resourceId": 456,
+    "dependentResource": "Sales"
+  }
+}
+```
+
+*Product with Associated Sale Items:*
+```json
+{
+  "status": 409,
+  "error": "Data Integrity Violation",
+  "message": "Cannot delete product because it appears in 10 sale records",
+  "errorCode": "PRODUCT_HAS_SALE_ITEMS",
+  "timestamp": "2025-07-03T15:30:00",
+  "suggestions": "This product has been sold and cannot be deleted. Consider marking it as inactive instead.",
+  "details": {
+    "resourceType": "Product",
+    "resourceId": 789,
+    "dependentResource": "Sale Items"
   }
 }
 ```
@@ -758,6 +812,14 @@ interface ErrorResponse {
 | `INSUFFICIENT_STOCK` | Not enough stock for operation | 409 |
 | `INVALID_TOKEN` | JWT token invalid/expired | 401 |
 | `BUSINESS_RULE_VIOLATION` | Business logic constraint violated | 400 |
+| `SALE_HAS_RETURNS` | Sale cannot be deleted due to associated returns | 409 |
+| `CUSTOMER_HAS_SALES` | Customer cannot be deleted due to associated sales | 409 |
+| `CUSTOMER_HAS_RETURNS` | Customer cannot be deleted due to associated returns | 409 |
+| `PRODUCT_HAS_SALE_ITEMS` | Product cannot be deleted due to sale history | 409 |
+| `PRODUCT_HAS_RETURN_ITEMS` | Product cannot be deleted due to return history | 409 |
+| `CATEGORY_HAS_PRODUCTS` | Category cannot be deleted due to associated products | 409 |
+| `SUPPLIER_HAS_PURCHASE_ORDERS` | Supplier cannot be deleted due to active orders | 409 |
+| `DATABASE_CONSTRAINT_VIOLATION` | Generic database constraint violation | 409 |
 | `INTERNAL_SERVER_ERROR` | Unexpected server error | 500 |
 
 ## Best Practices

@@ -38,4 +38,10 @@ public interface CustomerRepository extends JpaRepository<Customer, Long> {
     Page<Customer> searchCustomers(@Param("searchTerm") String searchTerm, Pageable pageable);
 
     boolean existsByEmail(String email);
+
+    @Query("SELECT COUNT(s) FROM Sale s WHERE s.customer.id = :customerId")
+    Long countSalesByCustomerId(@Param("customerId") Long customerId);
+
+    @Query("SELECT COUNT(r) FROM Return r WHERE r.customer.id = :customerId")
+    Long countReturnsByCustomerId(@Param("customerId") Long customerId);
 }

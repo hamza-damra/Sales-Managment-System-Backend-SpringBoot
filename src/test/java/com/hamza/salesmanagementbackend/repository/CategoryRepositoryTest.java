@@ -10,6 +10,7 @@ import org.springframework.boot.test.autoconfigure.orm.jpa.TestEntityManager;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.test.annotation.DirtiesContext;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -18,6 +19,7 @@ import java.util.Optional;
 import static org.junit.jupiter.api.Assertions.*;
 
 @DataJpaTest
+@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
 class CategoryRepositoryTest {
 
     @Autowired
@@ -63,12 +65,12 @@ class CategoryRepositoryTest {
                 .status(Category.CategoryStatus.INACTIVE)
                 .build();
 
-        // Persist categories
+        // Persist categories first
         electronicsCategory = entityManager.persistAndFlush(electronicsCategory);
         booksCategory = entityManager.persistAndFlush(booksCategory);
         inactiveCategory = entityManager.persistAndFlush(inactiveCategory);
 
-        // Create test products
+        // Create test products with proper category relationships
         Product laptop = Product.builder()
                 .name("Laptop")
                 .description("High-performance laptop")
@@ -76,6 +78,7 @@ class CategoryRepositoryTest {
                 .stockQuantity(50)
                 .sku("LAP001")
                 .category(electronicsCategory)
+                .productStatus(Product.ProductStatus.ACTIVE)
                 .build();
 
         Product mouse = Product.builder()
@@ -85,6 +88,7 @@ class CategoryRepositoryTest {
                 .stockQuantity(100)
                 .sku("MOU001")
                 .category(electronicsCategory)
+                .productStatus(Product.ProductStatus.ACTIVE)
                 .build();
 
         Product book = Product.builder()
@@ -94,6 +98,7 @@ class CategoryRepositoryTest {
                 .stockQuantity(25)
                 .sku("BOOK001")
                 .category(booksCategory)
+                .productStatus(Product.ProductStatus.ACTIVE)
                 .build();
 
         // Persist products
@@ -101,6 +106,7 @@ class CategoryRepositoryTest {
         entityManager.persistAndFlush(mouse);
         entityManager.persistAndFlush(book);
 
+        // Clear the persistence context to ensure fresh data retrieval
         entityManager.clear();
     }
 
@@ -294,8 +300,12 @@ class CategoryRepositoryTest {
         List<Category> emptyCategories = categoryRepository.findEmptyCategories();
 
         // Then
-        assertEquals(1, emptyCategories.size());
-        assertEquals("Inactive Category", emptyCategories.get(0).getName());
+        assertFalse(emptyCategories.isEmpty());
+        assertTrue(emptyCategories.stream().anyMatch(c -> c.getName().equals("Inactive Category")));
+
+        // Verify that categories with products are not in the empty list
+        assertFalse(emptyCategories.stream().anyMatch(c -> c.getName().equals("Electronics")));
+        assertFalse(emptyCategories.stream().anyMatch(c -> c.getName().equals("Books")));
     }
 
     @Test
@@ -335,6 +345,15 @@ class CategoryRepositoryTest {
     }
 
     @Test
+    void findByNameIgnoreCase_NotFound() {
+        // When
+        Optional<Category> result = categoryRepository.findByNameIgnoreCase("NONEXISTENT");
+
+        // Then
+        assertFalse(result.isPresent());
+    }
+
+    @Test
     void categoryEntity_BusinessLogicMethods() {
         // Given
         Category activeCategory = categoryRepository.findByName("Electronics").orElseThrow();
@@ -343,10 +362,19 @@ class CategoryRepositoryTest {
         // When & Then
         assertTrue(activeCategory.isActive());
         assertFalse(inactiveCategory.isActive());
-        
+
         // Note: getProductCount() returns 0 because it checks the products list size,
         // but in this test the products list is not loaded due to lazy loading
+        // This is expected behavior for lazy loading
         assertEquals(0, activeCategory.getProductCount());
+        assertEquals(0, inactiveCategory.getProductCount());
+
+        // Test using the repository method instead for actual product count
+        Long electronicsProductCount = categoryRepository.countProductsByCategoryId(activeCategory.getId());
+        Long inactiveProductCount = categoryRepository.countProductsByCategoryId(inactiveCategory.getId());
+
+        assertEquals(2L, electronicsProductCount);
+        assertEquals(0L, inactiveProductCount);
     }
 
     @Test
@@ -364,5 +392,43 @@ class CategoryRepositoryTest {
         assertEquals("https://example.com/electronics.jpg", category.getImageUrl());
         assertEquals("electronics-icon", category.getIcon());
         assertEquals("#007bff", category.getColorCode());
+    }
+
+    @Test
+    void countProductsByCategoryId_NonExistentCategory() {
+        // When
+        Long count = categoryRepository.countProductsByCategoryId(999L);
+
+        // Then
+        assertEquals(0L, count);
+    }
+
+    @Test
+    void searchCategories_EmptySearchTerm() {
+        // Given
+        Pageable pageable = PageRequest.of(0, 10);
+
+        // When
+        Page<Category> result = categoryRepository.searchCategories("", pageable);
+
+        // Then
+        // Empty search should return all categories
+        assertEquals(3, result.getContent().size());
+    }
+
+    @Test
+    void findByStatus_WithPagination_SecondPage() {
+        // Given
+        Pageable pageable = PageRequest.of(1, 1); // Second page, 1 item per page
+
+        // When
+        Page<Category> result = categoryRepository.findByStatus(Category.CategoryStatus.ACTIVE, pageable);
+
+        // Then
+        assertEquals(1, result.getContent().size());
+        assertEquals(2, result.getTotalElements());
+        assertEquals(2, result.getTotalPages());
+        assertTrue(result.hasNext() == false); // This is the last page
+        assertTrue(result.hasPrevious());
     }
 }
