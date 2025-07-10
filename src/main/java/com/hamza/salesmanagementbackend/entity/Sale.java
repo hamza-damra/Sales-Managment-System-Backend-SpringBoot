@@ -16,6 +16,7 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicLong;
@@ -90,7 +91,8 @@ public class Sale {
 
     @Enumerated(EnumType.STRING)
     @Column(name = "payment_method")
-    private PaymentMethod paymentMethod;
+    @Builder.Default
+    private PaymentMethod paymentMethod = PaymentMethod.CASH;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "payment_status")
@@ -187,6 +189,23 @@ public class Sale {
     @Builder.Default
     private BigDecimal costOfGoodsSold = BigDecimal.ZERO;
 
+    // Promotion-related fields
+    @Column(name = "promotion_id")
+    private Long promotionId;
+
+    @Column(name = "coupon_code")
+    private String couponCode;
+
+    @Column(name = "original_total", precision = 10, scale = 2)
+    private BigDecimal originalTotal;
+
+    @Column(name = "final_total", precision = 10, scale = 2)
+    private BigDecimal finalTotal;
+
+    @Column(name = "promotion_discount_amount", precision = 10, scale = 2)
+    @Builder.Default
+    private BigDecimal promotionDiscountAmount = BigDecimal.ZERO;
+
     @CreationTimestamp
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;
@@ -204,6 +223,11 @@ public class Sale {
     @ToString.Exclude
     @EqualsAndHashCode.Exclude
     private List<Return> returns;
+
+    @OneToMany(mappedBy = "sale", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
+    private List<AppliedPromotion> appliedPromotions;
 
     // Enums
     public enum PaymentMethod {
@@ -235,6 +259,7 @@ public class Sale {
         this.taxAmount = BigDecimal.ZERO;
         this.taxPercentage = BigDecimal.ZERO;
         this.shippingCost = BigDecimal.ZERO;
+        this.paymentMethod = PaymentMethod.CASH;
         this.paymentStatus = PaymentStatus.PENDING;
         this.saleType = SaleType.RETAIL;
         this.currency = "USD";
@@ -244,6 +269,8 @@ public class Sale {
         this.loyaltyPointsEarned = 0;
         this.loyaltyPointsUsed = 0;
         this.isReturn = false;
+        this.promotionDiscountAmount = BigDecimal.ZERO;
+        this.appliedPromotions = new ArrayList<>();
         this.profitMargin = BigDecimal.ZERO;
         this.costOfGoodsSold = BigDecimal.ZERO;
     }
@@ -265,14 +292,65 @@ public class Sale {
 
     public void calculateTotals() {
         if (items != null && !items.isEmpty()) {
+            // Calculate subtotal from item subtotals (unit price * quantity before item-level discounts)
             this.subtotal = items.stream()
-                    .map(item -> item.getUnitPrice().multiply(BigDecimal.valueOf(item.getQuantity())))
+                    .map(item -> {
+                        BigDecimal itemSubtotal = item.getSubtotal();
+                        return itemSubtotal != null ? itemSubtotal :
+                               item.getUnitPrice().multiply(BigDecimal.valueOf(item.getQuantity()));
+                    })
                     .reduce(BigDecimal.ZERO, BigDecimal::add);
 
-            this.totalAmount = subtotal
-                    .subtract(discountAmount)
-                    .add(taxAmount)
-                    .add(shippingCost);
+            // Calculate total from item totals (includes item-level discounts and taxes)
+            BigDecimal itemsTotal = items.stream()
+                    .map(item -> item.getTotalPrice() != null ? item.getTotalPrice() : BigDecimal.ZERO)
+                    .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+            // Apply sale-level adjustments
+            this.totalAmount = itemsTotal
+                    .subtract(discountAmount != null ? discountAmount : BigDecimal.ZERO)
+                    .subtract(promotionDiscountAmount != null ? promotionDiscountAmount : BigDecimal.ZERO)
+                    .add(taxAmount != null ? taxAmount : BigDecimal.ZERO)
+                    .add(shippingCost != null ? shippingCost : BigDecimal.ZERO);
+
+            // Ensure proper scale for monetary values
+            this.totalAmount = this.totalAmount.setScale(2, RoundingMode.HALF_UP);
+            this.subtotal = this.subtotal.setScale(2, RoundingMode.HALF_UP);
+
+            // Calculate cost of goods sold and profit margin
+            calculateCostAndProfitMetrics();
+        } else {
+            // No items, set totals to zero
+            this.subtotal = BigDecimal.ZERO.setScale(2);
+            this.totalAmount = BigDecimal.ZERO.setScale(2);
+            this.costOfGoodsSold = BigDecimal.ZERO.setScale(2);
+            this.profitMargin = BigDecimal.ZERO.setScale(2);
+        }
+    }
+
+    /**
+     * Calculate cost of goods sold and profit margin based on sale items
+     */
+    private void calculateCostAndProfitMetrics() {
+        if (items != null && !items.isEmpty()) {
+            // Calculate total cost of goods sold
+            this.costOfGoodsSold = items.stream()
+                    .map(item -> {
+                        BigDecimal itemCost = item.getCostPrice() != null ? item.getCostPrice() : BigDecimal.ZERO;
+                        return itemCost.multiply(BigDecimal.valueOf(item.getQuantity()));
+                    })
+                    .reduce(BigDecimal.ZERO, BigDecimal::add)
+                    .setScale(2, RoundingMode.HALF_UP);
+
+            // Calculate profit margin percentage
+            if (totalAmount != null && totalAmount.compareTo(BigDecimal.ZERO) > 0) {
+                BigDecimal profit = totalAmount.subtract(costOfGoodsSold);
+                this.profitMargin = profit.divide(totalAmount, 4, RoundingMode.HALF_UP)
+                        .multiply(BigDecimal.valueOf(100))
+                        .setScale(2, RoundingMode.HALF_UP);
+            } else {
+                this.profitMargin = BigDecimal.ZERO.setScale(2);
+            }
         }
     }
 
