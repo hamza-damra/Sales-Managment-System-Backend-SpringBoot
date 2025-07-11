@@ -53,9 +53,22 @@ public interface PurchaseOrderRepository extends JpaRepository<PurchaseOrder, Lo
     @Query("SELECT po FROM PurchaseOrder po WHERE po.expectedDeliveryDate < :currentDate AND po.status IN ('ORDERED', 'PARTIALLY_RECEIVED')")
     List<PurchaseOrder> findOverduePurchaseOrders(@Param("currentDate") LocalDateTime currentDate);
 
-    @Query("SELECT po FROM PurchaseOrder po WHERE po.expectedDeliveryDate BETWEEN :startDate AND :endDate AND po.status IN ('ORDERED', 'PARTIALLY_RECEIVED')")
+    @Query("SELECT po FROM PurchaseOrder po WHERE po.expectedDeliveryDate BETWEEN :startDate AND :endDate AND po.status IN ('SENT')")
     List<PurchaseOrder> findPurchaseOrdersDueInPeriod(@Param("startDate") LocalDateTime startDate,
                                                      @Param("endDate") LocalDateTime endDate);
+
+    @Query("SELECT COUNT(po) FROM PurchaseOrder po WHERE po.orderNumber LIKE :prefix%")
+    long countByOrderNumberStartingWith(@Param("prefix") String prefix);
+
+    @Query("SELECT po FROM PurchaseOrder po WHERE po.status = :status AND po.supplier.id = :supplierId")
+    Page<PurchaseOrder> findByStatusAndSupplierId(@Param("status") PurchaseOrder.PurchaseOrderStatus status,
+                                                 @Param("supplierId") Long supplierId, Pageable pageable);
+
+    @Query("SELECT po FROM PurchaseOrder po LEFT JOIN FETCH po.supplier s LEFT JOIN FETCH po.items poi LEFT JOIN FETCH poi.product " +
+           "WHERE LOWER(po.orderNumber) LIKE LOWER(CONCAT('%', :query, '%')) " +
+           "OR LOWER(s.name) LIKE LOWER(CONCAT('%', :query, '%')) " +
+           "OR LOWER(po.notes) LIKE LOWER(CONCAT('%', :query, '%'))")
+    Page<PurchaseOrder> searchPurchaseOrders(@Param("query") String query, Pageable pageable);
 
     @Query("SELECT COUNT(po) FROM PurchaseOrder po WHERE po.status = :status")
     Long countByStatus(@Param("status") PurchaseOrder.PurchaseOrderStatus status);

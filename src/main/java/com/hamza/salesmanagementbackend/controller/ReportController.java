@@ -1,5 +1,6 @@
 package com.hamza.salesmanagementbackend.controller;
 
+import com.hamza.salesmanagementbackend.config.ApplicationConstants;
 import com.hamza.salesmanagementbackend.dto.report.*;
 import com.hamza.salesmanagementbackend.service.ReportService;
 import com.hamza.salesmanagementbackend.service.ReportExportService;
@@ -35,7 +36,7 @@ import java.util.concurrent.CompletableFuture;
  * including caching, export functionality, and real-time KPIs.
  */
 @RestController
-@RequestMapping("/api/v1/reports")
+@RequestMapping(ApplicationConstants.API_V1_REPORTS)
 @CrossOrigin(origins = "*")
 @RequiredArgsConstructor
 @Validated
@@ -92,6 +93,45 @@ public class ReportController {
         SalesReportDTO report = reportService.generateComprehensiveSalesReport(request);
         long executionTime = System.currentTimeMillis() - startTime;
 
+        // Calculate days included in the report
+        int daysIncluded = (int) java.time.temporal.ChronoUnit.DAYS.between(
+            request.getStartDate().toLocalDate(),
+            request.getEndDate().toLocalDate()
+        ) + 1;
+
+        // Create applied filters map
+        Map<String, Object> appliedFilters = new HashMap<>();
+        if (request.getCustomerIds() != null && !request.getCustomerIds().isEmpty()) {
+            appliedFilters.put("customerIds", request.getCustomerIds());
+        }
+        if (request.getProductIds() != null && !request.getProductIds().isEmpty()) {
+            appliedFilters.put("productIds", request.getProductIds());
+        }
+        if (request.getCategoryIds() != null && !request.getCategoryIds().isEmpty()) {
+            appliedFilters.put("categoryIds", request.getCategoryIds());
+        }
+        if (request.getRegions() != null && !request.getRegions().isEmpty()) {
+            appliedFilters.put("regions", request.getRegions());
+        }
+        if (request.getPaymentMethods() != null && !request.getPaymentMethods().isEmpty()) {
+            appliedFilters.put("paymentMethods", request.getPaymentMethods());
+        }
+        if (request.getStatuses() != null && !request.getStatuses().isEmpty()) {
+            appliedFilters.put("statuses", request.getStatuses());
+        }
+        if (request.getAmountRange() != null) {
+            appliedFilters.put("amountRange", request.getAmountRange());
+        }
+        if (request.getDiscountRange() != null) {
+            appliedFilters.put("discountRange", request.getDiscountRange());
+        }
+        if (request.getIncludeReturns() != null) {
+            appliedFilters.put("includeReturns", request.getIncludeReturns());
+        }
+        if (request.getIncludePromotions() != null) {
+            appliedFilters.put("includePromotions", request.getIncludePromotions());
+        }
+
         ReportMetadata metadata = ReportMetadata.builder()
                 .reportType("SALES_COMPREHENSIVE")
                 .reportName("Comprehensive Sales Analytics")
@@ -100,9 +140,14 @@ public class ReportController {
                         .startDate(request.getStartDate())
                         .endDate(request.getEndDate())
                         .description("Custom date range")
+                        .daysIncluded(daysIncluded)
                         .build())
+                .appliedFilters(appliedFilters.isEmpty() ? null : appliedFilters)
+                .totalRecords(report.getSummary() != null ? report.getSummary().getTotalSales() : 0L)
                 .executionTimeMs(executionTime)
                 .version("1.0")
+                .fromCache(false)
+                .cacheExpiry(null)
                 .build();
 
         return ResponseEntity.ok(StandardReportResponse.success(report, metadata));
@@ -607,7 +652,7 @@ public class ReportController {
      * @param days Number of days to analyze (1-365)
      * @return Default dashboard with general business metrics
      */
-    @GetMapping("/dashboard")
+    @GetMapping(ApplicationConstants.DASHBOARD_ENDPOINT)
     @PreAuthorize("hasRole('ADMIN') or hasRole('MANAGER') or hasRole('USER')")
     public ResponseEntity<StandardReportResponse<Map<String, Object>>> getDefaultDashboard(
             @RequestParam(defaultValue = "30") @Min(1) @Max(365) int days) {

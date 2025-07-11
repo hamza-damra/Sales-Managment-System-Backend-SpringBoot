@@ -125,6 +125,20 @@ public class Customer {
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
+    // Soft delete fields
+    @Column(name = "is_deleted")
+    @Builder.Default
+    private Boolean isDeleted = false;
+
+    @Column(name = "deleted_at")
+    private LocalDateTime deletedAt;
+
+    @Column(name = "deleted_by")
+    private String deletedBy;
+
+    @Column(name = "deletion_reason")
+    private String deletionReason;
+
     @OneToMany(mappedBy = "customer", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     @ToString.Exclude // Keep field-level annotation
     @EqualsAndHashCode.Exclude // Keep field-level annotation
@@ -203,5 +217,30 @@ public class Customer {
     public void updateTotalPurchases(BigDecimal amount) {
         this.totalPurchases = this.totalPurchases.add(amount);
         this.lastPurchaseDate = LocalDateTime.now();
+    }
+
+    // Soft delete methods
+    public void softDelete(String deletedBy, String reason) {
+        this.isDeleted = true;
+        this.deletedAt = LocalDateTime.now();
+        this.deletedBy = deletedBy;
+        this.deletionReason = reason;
+        this.customerStatus = CustomerStatus.INACTIVE;
+    }
+
+    public void restore() {
+        this.isDeleted = false;
+        this.deletedAt = null;
+        this.deletedBy = null;
+        this.deletionReason = null;
+        this.customerStatus = CustomerStatus.ACTIVE;
+    }
+
+    public boolean isDeleted() {
+        return Boolean.TRUE.equals(this.isDeleted);
+    }
+
+    public boolean canBeDeleted() {
+        return this.customerStatus != CustomerStatus.BLACKLISTED;
     }
 }

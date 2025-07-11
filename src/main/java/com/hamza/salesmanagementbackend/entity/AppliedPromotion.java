@@ -111,4 +111,13 @@ public class AppliedPromotion {
             return String.format("%s ($%.2f off)", promotionName, discountAmount);
         }
     }
+
+    public String getTypeDisplay() {
+        return switch (promotionType) {
+            case PERCENTAGE -> "Percentage Discount";
+            case FIXED_AMOUNT -> "Fixed Amount Discount";
+            case BUY_X_GET_Y -> "Buy X Get Y";
+            case FREE_SHIPPING -> "Free Shipping";
+        };
+    }
 }

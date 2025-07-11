@@ -1,5 +1,6 @@
 package com.hamza.salesmanagementbackend.controller;
 
+import com.hamza.salesmanagementbackend.config.ApplicationConstants;
 import com.hamza.salesmanagementbackend.dto.ReturnDTO;
 import com.hamza.salesmanagementbackend.entity.Return;
 import com.hamza.salesmanagementbackend.exception.ResourceNotFoundException;
@@ -18,7 +19,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.Map;
 
 @RestController
-@RequestMapping("/api/returns")
+@RequestMapping(ApplicationConstants.API_RETURNS)
 @CrossOrigin(origins = "*")
 public class ReturnController {
 

@@ -61,6 +61,12 @@ public class Category {
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "inventory_id")
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
+    private Inventory inventory;
+
     @OneToMany(mappedBy = "category", cascade = {CascadeType.PERSIST, CascadeType.MERGE}, fetch = FetchType.LAZY)
     @ToString.Exclude
     @EqualsAndHashCode.Exclude
@@ -75,6 +81,15 @@ public class Category {
     public Category(String name, String description) {
         this.name = name;
         this.description = description;
+        this.status = CategoryStatus.ACTIVE;
+        this.displayOrder = 0;
+    }
+
+    // Custom constructor with inventory
+    public Category(String name, String description, Inventory inventory) {
+        this.name = name;
+        this.description = description;
+        this.inventory = inventory;
         this.status = CategoryStatus.ACTIVE;
         this.displayOrder = 0;
     }

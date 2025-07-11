@@ -36,6 +36,11 @@ public class CategoryDTO {
 
     private LocalDateTime updatedAt;
 
+    // Inventory relationship
+    private Long inventoryId;
+
+    private String inventoryName;
+
     // Additional fields for API responses
     private Integer productCount;
 
@@ -43,6 +48,15 @@ public class CategoryDTO {
     public CategoryDTO(String name, String description) {
         this.name = name;
         this.description = description;
+        this.status = Category.CategoryStatus.ACTIVE;
+        this.displayOrder = 0;
+    }
+
+    // Constructor with inventory
+    public CategoryDTO(String name, String description, Long inventoryId) {
+        this.name = name;
+        this.description = description;
+        this.inventoryId = inventoryId;
         this.status = Category.CategoryStatus.ACTIVE;
         this.displayOrder = 0;
     }

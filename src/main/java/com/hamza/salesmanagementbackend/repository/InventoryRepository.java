@@ -64,7 +64,7 @@ public interface InventoryRepository extends JpaRepository<Inventory, Long> {
     @Query("SELECT COUNT(i) FROM Inventory i WHERE i.status = :status")
     Long countByStatus(@Param("status") Inventory.InventoryStatus status);
 
-    @Query("SELECT AVG(i.capacityUtilization) FROM Inventory i WHERE i.capacity IS NOT NULL AND i.status = 'ACTIVE'")
+    @Query("SELECT AVG(CAST(i.currentStockCount AS DOUBLE) / i.capacity * 100) FROM Inventory i WHERE i.capacity IS NOT NULL AND i.capacity > 0 AND i.status = 'ACTIVE'")
     Double getAverageCapacityUtilization();
 
     boolean existsByName(String name);

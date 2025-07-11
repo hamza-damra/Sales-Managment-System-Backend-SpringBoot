@@ -1,5 +1,6 @@
 package com.hamza.salesmanagementbackend.controller;
 
+import com.hamza.salesmanagementbackend.config.ApplicationConstants;
 import com.hamza.salesmanagementbackend.dto.report.ReportRequestDTO;
 import com.hamza.salesmanagementbackend.service.ReportService;
 import com.hamza.salesmanagementbackend.service.ReportExportService;
@@ -234,7 +235,7 @@ class ReportControllerNullHandlingTest {
         // When & Then - This exact scenario was causing the original NPE
         // GET /api/v1/reports/inventory/status?includeInactive=false
         // warehouseIds parameter is null (not provided)
-        mockMvc.perform(get("/api/v1/reports/inventory/status")
+        mockMvc.perform(get(ApplicationConstants.API_V1_REPORTS + "/inventory/status")
                         .param("includeInactive", "false"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))

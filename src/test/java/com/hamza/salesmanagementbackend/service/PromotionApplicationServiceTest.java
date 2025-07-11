@@ -280,4 +280,262 @@ class PromotionApplicationServiceTest {
         // Then
         assertFalse(result);
     }
+
+    @Test
+    void testCalculatePromotionDiscount_WithMaximumLimit() {
+        // Given
+        testPromotion.setMaximumDiscountAmount(BigDecimal.valueOf(15.00));
+
+        // When
+        BigDecimal discount = promotionApplicationService.calculatePromotionDiscount(
+                testPromotion, testSaleItems, BigDecimal.valueOf(200.00));
+
+        // Then
+        assertEquals(BigDecimal.valueOf(15.00), discount);
+    }
+
+    @Test
+    void testCalculatePromotionDiscount_InactivePromotion() {
+        // Given
+        testPromotion.setIsActive(false);
+
+        // When
+        BigDecimal discount = promotionApplicationService.calculatePromotionDiscount(
+                testPromotion, testSaleItems, BigDecimal.valueOf(200.00));
+
+        // Then
+        assertEquals(BigDecimal.ZERO, discount);
+    }
+
+    @Test
+    void testCalculatePromotionDiscount_ExpiredPromotion() {
+        // Given
+        testPromotion.setEndDate(LocalDateTime.now().minusDays(1));
+
+        // When
+        BigDecimal discount = promotionApplicationService.calculatePromotionDiscount(
+                testPromotion, testSaleItems, BigDecimal.valueOf(200.00));
+
+        // Then
+        assertEquals(BigDecimal.ZERO, discount);
+    }
+
+    @Test
+    void testCalculatePromotionDiscount_FreeShippingPromotion() {
+        // Given
+        testPromotion.setType(Promotion.PromotionType.FREE_SHIPPING);
+
+        // When
+        BigDecimal discount = promotionApplicationService.calculatePromotionDiscount(
+                testPromotion, testSaleItems, BigDecimal.valueOf(200.00));
+
+        // Then
+        assertEquals(BigDecimal.ZERO, discount);
+    }
+
+    @Test
+    void testCalculatePromotionDiscount_BuyXGetYPromotion() {
+        // Given
+        testPromotion.setType(Promotion.PromotionType.BUY_X_GET_Y);
+
+        // When
+        BigDecimal discount = promotionApplicationService.calculatePromotionDiscount(
+                testPromotion, testSaleItems, BigDecimal.valueOf(200.00));
+
+        // Then
+        assertEquals(BigDecimal.ZERO, discount); // Not implemented yet
+    }
+
+    @Test
+    void testApplyPromotionToSale_ZeroDiscount() {
+        // Given
+        testPromotion.setMinimumOrderAmount(BigDecimal.valueOf(300.00)); // Higher than order amount
+
+        // When & Then
+        assertThrows(BusinessLogicException.class, () ->
+                promotionApplicationService.applyPromotionToSale(testSale, testPromotion, false));
+    }
+
+    @Test
+    void testUpdateSaleTotalsWithPromotions_WithTaxAndShipping() {
+        // Given
+        AppliedPromotion appliedPromotion = new AppliedPromotion(
+                testSale, testPromotion, BigDecimal.valueOf(20.00), BigDecimal.valueOf(200.00), false);
+        testSale.getAppliedPromotions().add(appliedPromotion);
+        testSale.setTaxAmount(BigDecimal.valueOf(18.00)); // 10% tax on discounted amount
+        testSale.setShippingCost(BigDecimal.valueOf(10.00));
+
+        // When
+        promotionApplicationService.updateSaleTotalsWithPromotions(testSale);
+
+        // Then
+        assertEquals(BigDecimal.valueOf(200.00), testSale.getOriginalTotal());
+        assertEquals(BigDecimal.valueOf(20.00), testSale.getPromotionDiscountAmount());
+        assertEquals(BigDecimal.valueOf(208.00), testSale.getFinalTotal()); // 180 + 18 + 10
+    }
+
+    @Test
+    void testValidatePromotionForSale_VIPCustomerEligibility() {
+        // Given
+        testCustomer.setCustomerType(Customer.CustomerType.VIP);
+        testPromotion.setCustomerEligibility(Promotion.CustomerEligibility.VIP_ONLY);
+
+        // When
+        boolean result = promotionApplicationService.validatePromotionForSale(
+                testPromotion, testCustomer, testSaleItems, BigDecimal.valueOf(200.00));
+
+        // Then
+        assertTrue(result);
+    }
+
+    @Test
+    void testValidatePromotionForSale_NewCustomerEligibility() {
+        // Given
+        testCustomer.setTotalPurchases(BigDecimal.ZERO);
+        testPromotion.setCustomerEligibility(Promotion.CustomerEligibility.NEW_CUSTOMERS);
+
+        // When
+        boolean result = promotionApplicationService.validatePromotionForSale(
+                testPromotion, testCustomer, testSaleItems, BigDecimal.valueOf(200.00));
+
+        // Then
+        assertTrue(result);
+    }
+
+    @Test
+    void testValidatePromotionForSale_ReturningCustomerEligibility() {
+        // Given
+        testCustomer.setTotalPurchases(BigDecimal.valueOf(100.00));
+        testPromotion.setCustomerEligibility(Promotion.CustomerEligibility.RETURNING_CUSTOMERS);
+
+        // When
+        boolean result = promotionApplicationService.validatePromotionForSale(
+                testPromotion, testCustomer, testSaleItems, BigDecimal.valueOf(200.00));
+
+        // Then
+        assertTrue(result);
+    }
+
+    @Test
+    void testValidatePromotionForSale_SpecificProductApplicability() {
+        // Given
+        testPromotion.setApplicableProducts(Arrays.asList(1L));
+        testPromotion.setApplicableCategories(null);
+
+        // When
+        boolean result = promotionApplicationService.validatePromotionForSale(
+                testPromotion, testCustomer, testSaleItems, BigDecimal.valueOf(200.00));
+
+        // Then
+        assertTrue(result);
+    }
+
+    @Test
+    void testValidatePromotionForSale_NoProductRestrictions() {
+        // Given
+        testPromotion.setApplicableProducts(null);
+        testPromotion.setApplicableCategories(null);
+
+        // When
+        boolean result = promotionApplicationService.validatePromotionForSale(
+                testPromotion, testCustomer, testSaleItems, BigDecimal.valueOf(200.00));
+
+        // Then
+        assertTrue(result);
+    }
+
+    @Test
+    void testFindEligiblePromotions_WithNullMinimumOrderAmount() {
+        // Given - Create a promotion with null minimum order amount
+        Promotion promotionWithNullMinimum = Promotion.builder()
+                .id(2L)
+                .name("Test Promotion with Null Minimum")
+                .type(Promotion.PromotionType.PERCENTAGE)
+                .discountValue(BigDecimal.valueOf(10.00))
+                .minimumOrderAmount(null) // Explicitly set to null
+                .startDate(LocalDateTime.now().minusDays(1))
+                .endDate(LocalDateTime.now().plusDays(30))
+                .isActive(true)
+                .customerEligibility(Promotion.CustomerEligibility.ALL)
+                .autoApply(false)
+                .stackable(false)
+                .usageCount(0)
+                .build();
+
+        List<Promotion> availablePromotions = Arrays.asList(promotionWithNullMinimum);
+        when(promotionRepository.findAvailablePromotions(any(LocalDateTime.class)))
+                .thenReturn(availablePromotions);
+
+        // When - Should not throw NullPointerException
+        List<Promotion> result = promotionApplicationService.findEligiblePromotions(
+                testCustomer, testSaleItems, BigDecimal.valueOf(50.00));
+
+        // Then
+        assertNotNull(result);
+        assertEquals(1, result.size()); // Should be eligible since null minimum means no minimum
+        assertEquals(promotionWithNullMinimum.getId(), result.get(0).getId());
+        verify(promotionRepository).findAvailablePromotions(any(LocalDateTime.class));
+    }
+
+    @Test
+    void testCalculatePromotionDiscount_WithNullMinimumOrderAmount() {
+        // Given - Create a promotion with null minimum order amount
+        Promotion promotionWithNullMinimum = Promotion.builder()
+                .id(2L)
+                .name("Test Promotion with Null Minimum")
+                .type(Promotion.PromotionType.FIXED_AMOUNT)
+                .discountValue(BigDecimal.valueOf(15.00))
+                .minimumOrderAmount(null) // Explicitly set to null
+                .startDate(LocalDateTime.now().minusDays(1))
+                .endDate(LocalDateTime.now().plusDays(30))
+                .isActive(true)
+                .customerEligibility(Promotion.CustomerEligibility.ALL)
+                .autoApply(false)
+                .stackable(false)
+                .usageCount(0)
+                .build();
+
+        // When - Should not throw NullPointerException
+        BigDecimal discount = promotionApplicationService.calculatePromotionDiscount(
+                promotionWithNullMinimum, testSaleItems, BigDecimal.valueOf(50.00));
+
+        // Then
+        assertEquals(BigDecimal.valueOf(15.00), discount); // Should apply discount since no minimum
+    }
+
+    @Test
+    void testRemovePromotionFromSale_NoPromotionsApplied() {
+        // Given
+        testSale.setAppliedPromotions(null);
+
+        // When & Then
+        assertThrows(BusinessLogicException.class, () ->
+                promotionApplicationService.removePromotionFromSale(testSale, 1L));
+    }
+
+    @Test
+    void testValidateCouponCode_InactivePromotion() {
+        // Given
+        testPromotion.setIsActive(false);
+        when(promotionRepository.findByCouponCode("TEST10"))
+                .thenReturn(Optional.of(testPromotion));
+
+        // When & Then
+        assertThrows(BusinessLogicException.class, () ->
+                promotionApplicationService.validateCouponCode(
+                        "TEST10", testCustomer, testSaleItems, BigDecimal.valueOf(200.00)));
+    }
+
+    @Test
+    void testValidateCouponCode_NotApplicableToOrder() {
+        // Given
+        testPromotion.setMinimumOrderAmount(BigDecimal.valueOf(300.00));
+        when(promotionRepository.findByCouponCode("TEST10"))
+                .thenReturn(Optional.of(testPromotion));
+
+        // When & Then
+        assertThrows(BusinessLogicException.class, () ->
+                promotionApplicationService.validateCouponCode(
+                        "TEST10", testCustomer, testSaleItems, BigDecimal.valueOf(200.00)));
+    }
 }

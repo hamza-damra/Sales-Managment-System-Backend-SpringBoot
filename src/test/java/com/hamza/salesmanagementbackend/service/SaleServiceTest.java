@@ -227,7 +227,7 @@ class SaleServiceTest {
         @DisplayName("Should get sale by ID successfully")
         void testGetSaleById_Success() {
             // Given
-            when(saleRepository.findById(1L)).thenReturn(Optional.of(testSale));
+            when(saleRepository.findByIdWithItems(1L)).thenReturn(Optional.of(testSale));
 
             // When
             SaleDTO result = saleService.getSaleById(1L);
@@ -236,18 +236,18 @@ class SaleServiceTest {
             assertNotNull(result);
             assertEquals(1L, result.getId());
             assertEquals(1L, result.getCustomerId());
-            verify(saleRepository).findById(1L);
+            verify(saleRepository).findByIdWithItems(1L);
         }
 
         @Test
         @DisplayName("Should throw exception when sale not found by ID")
         void testGetSaleById_NotFound() {
             // Given
-            when(saleRepository.findById(999L)).thenReturn(Optional.empty());
+            when(saleRepository.findByIdWithItems(999L)).thenReturn(Optional.empty());
 
             // When & Then
             assertThrows(ResourceNotFoundException.class, () -> saleService.getSaleById(999L));
-            verify(saleRepository).findById(999L);
+            verify(saleRepository).findByIdWithItems(999L);
         }
 
         @Test
@@ -273,8 +273,6 @@ class SaleServiceTest {
         void testUpdateSale_Success() {
             // Given
             when(saleRepository.findById(1L)).thenReturn(Optional.of(testSale));
-            when(customerRepository.findById(1L)).thenReturn(Optional.of(testCustomer));
-            when(productRepository.findById(1L)).thenReturn(Optional.of(testProduct));
             when(saleRepository.save(any(Sale.class))).thenReturn(testSale);
 
             // When
@@ -292,13 +290,15 @@ class SaleServiceTest {
         void testDeleteSale_Success() {
             // Given
             when(saleRepository.findById(1L)).thenReturn(Optional.of(testSale));
+            when(saleRepository.countReturnsBySaleId(1L)).thenReturn(0L);
 
             // When
             assertDoesNotThrow(() -> saleService.deleteSale(1L));
 
             // Then
             verify(saleRepository).findById(1L);
-            verify(saleRepository).delete(testSale);
+            verify(saleRepository).countReturnsBySaleId(1L);
+            verify(saleRepository).save(testSale);
         }
 
         @Test
@@ -334,7 +334,7 @@ class SaleServiceTest {
         @DisplayName("Should cancel sale successfully")
         void testCancelSale_Success() {
             // Given
-            when(saleRepository.findById(1L)).thenReturn(Optional.of(testSale));
+            when(saleRepository.findByIdWithItems(1L)).thenReturn(Optional.of(testSale));
             when(saleRepository.save(any(Sale.class))).thenReturn(testSale);
 
             // When
@@ -342,7 +342,7 @@ class SaleServiceTest {
 
             // Then
             assertNotNull(result);
-            verify(saleRepository).findById(1L);
+            verify(saleRepository).findByIdWithItems(1L);
             verify(saleRepository).save(any(Sale.class));
         }
     }

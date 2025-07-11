@@ -3,7 +3,7 @@
 # Test script for Product Performance Report API
 # This script tests the fixed product performance report endpoint
 
-BASE_URL="http://localhost:8081"
+BASE_URL="http://abusaker.zapto.org:8081"
 API_ENDPOINT="/api/v1/reports/products/performance"
 
 # Test parameters

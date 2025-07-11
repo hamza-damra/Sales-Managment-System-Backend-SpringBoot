@@ -1,5 +1,6 @@
 package com.hamza.salesmanagementbackend.controller;
 
+import com.hamza.salesmanagementbackend.config.ApplicationConstants;
 import com.hamza.salesmanagementbackend.dto.InventoryDTO;
 import com.hamza.salesmanagementbackend.entity.Inventory;
 import com.hamza.salesmanagementbackend.exception.ResourceNotFoundException;
@@ -19,7 +20,7 @@ import java.util.List;
 import java.util.Map;
 
 @RestController
-@RequestMapping("/api/inventories")
+@RequestMapping(ApplicationConstants.API_INVENTORIES)
 @CrossOrigin(origins = "*")
 public class InventoryController {
 
@@ -36,7 +37,7 @@ public class InventoryController {
 
         // Validate pagination and sorting parameters
         SortingUtils.PaginationParams paginationParams = SortingUtils.validatePaginationParams(page, size);
-        Sort sort = SortingUtils.createSort(sortBy, sortDir);
+        Sort sort = SortingUtils.createInventorySort(sortBy, sortDir);
         Pageable pageable = PageRequest.of(paginationParams.page, paginationParams.size, sort);
 
         Page<InventoryDTO> inventories = inventoryService.getAllInventories(pageable);
@@ -68,7 +69,7 @@ public class InventoryController {
         }
 
         SortingUtils.PaginationParams paginationParams = SortingUtils.validatePaginationParams(page, size);
-        Sort sort = SortingUtils.createSort(sortBy, sortDir);
+        Sort sort = SortingUtils.createInventorySort(sortBy, sortDir);
         Pageable pageable = PageRequest.of(paginationParams.page, paginationParams.size, sort);
 
         Page<InventoryDTO> inventories = inventoryService.searchInventories(query.trim(), pageable);

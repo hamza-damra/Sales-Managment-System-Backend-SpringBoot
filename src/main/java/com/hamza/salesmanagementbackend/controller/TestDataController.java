@@ -1,5 +1,6 @@
 package com.hamza.salesmanagementbackend.controller;
 
+import com.hamza.salesmanagementbackend.config.ApplicationConstants;
 import com.hamza.salesmanagementbackend.dto.ReturnDTO;
 import com.hamza.salesmanagementbackend.service.TestDataService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -11,7 +12,7 @@ import org.springframework.web.bind.annotation.*;
  * This controller helps developers understand what data is available for testing
  */
 @RestController
-@RequestMapping("/api/test-data")
+@RequestMapping(ApplicationConstants.API_TEST_DATA)
 @CrossOrigin(origins = "*")
 public class TestDataController {
 
@@ -21,7 +22,7 @@ public class TestDataController {
     /**
      * Get all available test data for returns testing
      */
-    @GetMapping("/info")
+    @GetMapping(ApplicationConstants.INFO_ENDPOINT)
     public ResponseEntity<TestDataService.TestDataInfo> getTestDataInfo() {
         TestDataService.TestDataInfo info = testDataService.getTestDataInfo();
         return ResponseEntity.ok(info);

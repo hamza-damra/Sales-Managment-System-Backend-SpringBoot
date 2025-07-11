@@ -1,5 +1,6 @@
 package com.hamza.salesmanagementbackend.controller;
 
+import com.hamza.salesmanagementbackend.config.ApplicationConstants;
 import com.hamza.salesmanagementbackend.dto.SupplierDTO;
 import com.hamza.salesmanagementbackend.entity.Supplier;
 import com.hamza.salesmanagementbackend.exception.ResourceNotFoundException;
@@ -20,7 +21,7 @@ import java.util.List;
 import java.util.Map;
 
 @RestController
-@RequestMapping("/api/suppliers")
+@RequestMapping(ApplicationConstants.API_SUPPLIERS)
 @CrossOrigin(origins = "*")
 public class SupplierController {
 
@@ -173,15 +174,7 @@ public class SupplierController {
 
     @GetMapping("/analytics")
     public ResponseEntity<Map<String, Object>> getSupplierAnalytics() {
-        // This would typically call a service method that aggregates supplier data
-        // For now, returning a placeholder response
-        Map<String, Object> analytics = Map.of(
-            "message", "Supplier analytics endpoint - implementation pending",
-            "totalSuppliers", 0,
-            "activeSuppliers", 0,
-            "averageRating", 0.0,
-            "totalValue", BigDecimal.ZERO
-        );
+        Map<String, Object> analytics = supplierService.getSupplierAnalytics();
         return ResponseEntity.ok(analytics);
     }
 }

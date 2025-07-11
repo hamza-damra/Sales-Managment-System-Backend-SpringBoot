@@ -5,6 +5,7 @@ import com.hamza.salesmanagementbackend.repository.*;
 import com.hamza.salesmanagementbackend.service.CategoryMigrationService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.CommandLineRunner;
+import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 
 import java.math.BigDecimal;
@@ -12,6 +13,7 @@ import java.time.LocalDateTime;
 import java.util.Arrays;
 
 @Component
+@Order(2) // Run after UserDataInitializer
 public class DataInitializer implements CommandLineRunner {
 
     @Autowired

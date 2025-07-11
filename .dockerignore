@@ -1,0 +1,83 @@
+# Docker ignore file for Sales Management Backend
+
+# Target directory (Maven build output)
+target/
+!target/sales-management-backend-*.jar
+
+# IDE files
+.idea/
+.vscode/
+*.iml
+*.ipr
+*.iws
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Git
+.git/
+.gitignore
+
+# Documentation and markdown files
+*.md
+docs/
+README*
+
+# Test files and scripts
+test-*.sh
+test_*.ps1
+*Test.java
+*TestRunner.java
+
+# Logs
+logs/
+*.log
+
+# Temporary files
+*.tmp
+*.temp
+*.swp
+*.swo
+
+# Node modules (if any)
+node_modules/
+
+# Environment files
+.env
+.env.local
+.env.*.local
+
+# Docker files (avoid recursive copying)
+Dockerfile*
+docker-compose*.yml
+.dockerignore
+
+# Maven wrapper (we copy it explicitly)
+# .mvn/
+# mvnw
+# mvnw.cmd
+
+# Spring Boot specific
+spring.log
+application-*.properties
+!application-docker.properties
+
+# Backup files
+*.bak
+*.backup
+
+# Coverage reports
+coverage/
+*.coverage
+
+# Build artifacts
+build/
+dist/
+
+# Database files
+*.db
+*.sqlite
+
+# Compiled class files (will be in target anyway)
+*.class

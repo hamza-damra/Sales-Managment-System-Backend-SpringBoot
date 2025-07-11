@@ -18,7 +18,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  */
 @DataJpaTest
 @ActiveProfiles("test")
-class InventoryRepositoryCapacityTest {
+public class InventoryRepositoryCapacityTest {
 
     @Autowired
     private TestEntityManager entityManager;

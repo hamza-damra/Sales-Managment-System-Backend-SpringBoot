@@ -111,12 +111,12 @@ class AppliedPromotionTest {
         void testConstructor_ZeroOriginalAmount() {
             // When
             AppliedPromotion appliedPromotion = new AppliedPromotion(
-                    testSale, testPromotion, BigDecimal.valueOf(0.00), BigDecimal.ZERO, false);
+                    testSale, testPromotion, BigDecimal.valueOf(0.00), BigDecimal.valueOf(0.00), false);
 
             // Then
             assertNotNull(appliedPromotion);
-            assertEquals(BigDecimal.ZERO, appliedPromotion.getOriginalAmount());
-            assertEquals(BigDecimal.ZERO, appliedPromotion.getFinalAmount());
+            assertEquals(BigDecimal.valueOf(0.00), appliedPromotion.getOriginalAmount());
+            assertEquals(BigDecimal.valueOf(0.00), appliedPromotion.getFinalAmount());
         }
     }
 

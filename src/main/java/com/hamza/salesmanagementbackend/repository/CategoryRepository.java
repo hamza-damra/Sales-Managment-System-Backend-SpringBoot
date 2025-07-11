@@ -41,6 +41,13 @@ public interface CategoryRepository extends JpaRepository<Category, Long> {
     @Query("SELECT c FROM Category c WHERE c.id NOT IN (SELECT DISTINCT p.category.id FROM Product p WHERE p.category IS NOT NULL)")
     List<Category> findEmptyCategories();
 
+    List<Category> findByInventoryId(Long inventoryId);
+
+    List<Category> findByInventoryIsNull();
+
+    @Query("SELECT c FROM Category c WHERE c.inventory.id = :inventoryId AND c.status = :status")
+    List<Category> findByInventoryIdAndStatus(@Param("inventoryId") Long inventoryId, @Param("status") Category.CategoryStatus status);
+
     boolean existsByName(String name);
 
     boolean existsByNameIgnoreCase(String name);

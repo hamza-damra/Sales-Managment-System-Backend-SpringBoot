@@ -2,10 +2,12 @@ package com.hamza.salesmanagementbackend.service;
 
 import com.hamza.salesmanagementbackend.dto.CategoryDTO;
 import com.hamza.salesmanagementbackend.entity.Category;
+import com.hamza.salesmanagementbackend.entity.Inventory;
 import com.hamza.salesmanagementbackend.exception.BusinessLogicException;
 import com.hamza.salesmanagementbackend.exception.DataIntegrityException;
 import com.hamza.salesmanagementbackend.exception.ResourceNotFoundException;
 import com.hamza.salesmanagementbackend.repository.CategoryRepository;
+import com.hamza.salesmanagementbackend.repository.InventoryRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -20,10 +22,12 @@ import java.util.stream.Collectors;
 public class CategoryService {
 
     private final CategoryRepository categoryRepository;
+    private final InventoryRepository inventoryRepository;
 
     @Autowired
-    public CategoryService(CategoryRepository categoryRepository) {
+    public CategoryService(CategoryRepository categoryRepository, InventoryRepository inventoryRepository) {
         this.categoryRepository = categoryRepository;
+        this.inventoryRepository = inventoryRepository;
     }
 
     /**
@@ -139,6 +143,32 @@ public class CategoryService {
     }
 
     /**
+     * Gets categories by inventory ID
+     */
+    @Transactional(readOnly = true)
+    public List<CategoryDTO> getCategoriesByInventoryId(Long inventoryId) {
+        // Verify inventory exists
+        inventoryRepository.findById(inventoryId)
+                .orElseThrow(() -> new ResourceNotFoundException("Inventory not found with id: " + inventoryId));
+
+        return categoryRepository.findByInventoryId(inventoryId)
+                .stream()
+                .map(this::mapToDTO)
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * Gets categories without inventory assignment
+     */
+    @Transactional(readOnly = true)
+    public List<CategoryDTO> getCategoriesWithoutInventory() {
+        return categoryRepository.findByInventoryIsNull()
+                .stream()
+                .map(this::mapToDTO)
+                .collect(Collectors.toList());
+    }
+
+    /**
      * Updates category status
      */
     public CategoryDTO updateCategoryStatus(Long id, Category.CategoryStatus status) {
@@ -182,7 +212,16 @@ public class CategoryService {
         existingCategory.setImageUrl(categoryDTO.getImageUrl());
         existingCategory.setIcon(categoryDTO.getIcon());
         existingCategory.setColorCode(categoryDTO.getColorCode());
-        
+
+        // Update inventory relationship
+        if (categoryDTO.getInventoryId() != null) {
+            Inventory inventory = inventoryRepository.findById(categoryDTO.getInventoryId())
+                    .orElseThrow(() -> new ResourceNotFoundException("Inventory not found with id: " + categoryDTO.getInventoryId()));
+            existingCategory.setInventory(inventory);
+        } else {
+            existingCategory.setInventory(null);
+        }
+
         if (categoryDTO.getStatus() != null) {
             existingCategory.setStatus(categoryDTO.getStatus());
         }
@@ -200,20 +239,30 @@ public class CategoryService {
                 .colorCode(category.getColorCode())
                 .createdAt(category.getCreatedAt())
                 .updatedAt(category.getUpdatedAt())
+                .inventoryId(category.getInventory() != null ? category.getInventory().getId() : null)
+                .inventoryName(category.getInventory() != null ? category.getInventory().getName() : null)
                 .productCount(category.getProductCount())
                 .build();
         return dto;
     }
 
     private Category mapToEntity(CategoryDTO categoryDTO) {
-        return Category.builder()
+        Category.CategoryBuilder builder = Category.builder()
                 .name(categoryDTO.getName() != null ? categoryDTO.getName().trim() : null)
                 .description(categoryDTO.getDescription())
                 .displayOrder(categoryDTO.getDisplayOrder() != null ? categoryDTO.getDisplayOrder() : 0)
                 .status(categoryDTO.getStatus() != null ? categoryDTO.getStatus() : Category.CategoryStatus.ACTIVE)
                 .imageUrl(categoryDTO.getImageUrl())
                 .icon(categoryDTO.getIcon())
-                .colorCode(categoryDTO.getColorCode())
-                .build();
+                .colorCode(categoryDTO.getColorCode());
+
+        // Set inventory relationship if provided
+        if (categoryDTO.getInventoryId() != null) {
+            Inventory inventory = inventoryRepository.findById(categoryDTO.getInventoryId())
+                    .orElseThrow(() -> new ResourceNotFoundException("Inventory not found with id: " + categoryDTO.getInventoryId()));
+            builder.inventory(inventory);
+        }
+
+        return builder.build();
     }
 }

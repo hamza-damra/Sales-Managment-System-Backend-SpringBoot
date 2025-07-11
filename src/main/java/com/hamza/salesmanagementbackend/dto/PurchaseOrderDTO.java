@@ -45,9 +45,17 @@ public class PurchaseOrderDTO {
 
     private PurchaseOrder.PurchaseOrderStatus status;
 
+    private PurchaseOrder.OrderPriority priority;
+
     private String paymentTerms;
 
-    private String deliveryAddress;
+    private String deliveryTerms;
+
+    private String shippingAddress;
+
+    private BigDecimal shippingCost;
+
+    private Double taxRate;
 
     private String notes;
 
@@ -57,11 +65,18 @@ public class PurchaseOrderDTO {
 
     private LocalDateTime approvedDate;
 
+    private LocalDateTime sentDate;
+
     private LocalDateTime createdAt;
 
     private LocalDateTime updatedAt;
 
     private List<PurchaseOrderItemDTO> items;
+
+    // Computed fields for frontend
+    private Integer itemsCount;
+    private Boolean isFullyReceived;
+    private Double receivingProgress;
 
     // Computed fields for frontend
     private String statusDisplay;

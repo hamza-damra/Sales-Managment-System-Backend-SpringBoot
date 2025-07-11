@@ -1,9 +1,13 @@
 package com.hamza.salesmanagementbackend.service;
 
+import com.hamza.salesmanagementbackend.dto.AppliedPromotionDTO;
+import com.hamza.salesmanagementbackend.dto.PromotionDTO;
 import com.hamza.salesmanagementbackend.dto.SaleDTO;
 import com.hamza.salesmanagementbackend.dto.SaleItemDTO;
+import com.hamza.salesmanagementbackend.entity.AppliedPromotion;
 import com.hamza.salesmanagementbackend.entity.Customer;
 import com.hamza.salesmanagementbackend.entity.Product;
+import com.hamza.salesmanagementbackend.entity.Promotion;
 import com.hamza.salesmanagementbackend.entity.Sale;
 import com.hamza.salesmanagementbackend.entity.SaleItem;
 import com.hamza.salesmanagementbackend.entity.SaleStatus;
@@ -14,6 +18,7 @@ import com.hamza.salesmanagementbackend.exception.ResourceNotFoundException;
 import com.hamza.salesmanagementbackend.repository.CustomerRepository;
 import com.hamza.salesmanagementbackend.repository.ProductRepository;
 import com.hamza.salesmanagementbackend.repository.SaleRepository;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -30,22 +35,29 @@ import java.util.stream.Collectors;
 
 @Service
 @Transactional
+@Slf4j
 public class SaleService {
 
     private final SaleRepository saleRepository;
     private final CustomerRepository customerRepository;
     private final ProductRepository productRepository;
     private final ProductService productService;
+    private final PromotionApplicationService promotionApplicationService;
+    private final PromotionService promotionService;
 
     @Autowired
     public SaleService(SaleRepository saleRepository,
                       CustomerRepository customerRepository,
                       ProductRepository productRepository,
-                      ProductService productService) {
+                      ProductService productService,
+                      PromotionApplicationService promotionApplicationService,
+                      PromotionService promotionService) {
         this.saleRepository = saleRepository;
         this.customerRepository = customerRepository;
         this.productRepository = productRepository;
         this.productService = productService;
+        this.promotionApplicationService = promotionApplicationService;
+        this.promotionService = promotionService;
     }
 
     /**
@@ -66,12 +78,11 @@ public class SaleService {
 
         sale.setItems(saleItems);
 
-        // Calculate total amount using streams
-        BigDecimal totalAmount = saleItems.stream()
-                .map(item -> item.getUnitPrice().multiply(BigDecimal.valueOf(item.getQuantity())))
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
+        // Calculate totals properly (this sets both subtotal and totalAmount)
+        sale.calculateTotals();
 
-        sale.setTotalAmount(totalAmount);
+        // Apply auto-applicable promotions
+        applyAutoPromotions(sale);
 
         // Reduce stock for each product
         saleItems.forEach(item ->
@@ -437,6 +448,59 @@ public class SaleService {
         dto.setItems(itemDTOs);
         dto.setCreatedAt(sale.getCreatedAt());
         dto.setUpdatedAt(sale.getUpdatedAt());
+
+        // Map promotion-related fields
+        dto.setPromotionId(sale.getPromotionId());
+        dto.setCouponCode(sale.getCouponCode());
+        dto.setOriginalTotal(sale.getOriginalTotal());
+        dto.setFinalTotal(sale.getFinalTotal());
+        dto.setPromotionDiscountAmount(sale.getPromotionDiscountAmount());
+
+        // Map applied promotions
+        if (sale.getAppliedPromotions() != null && !sale.getAppliedPromotions().isEmpty()) {
+            List<AppliedPromotionDTO> appliedPromotionDTOs = sale.getAppliedPromotions().stream()
+                    .map(this::mapAppliedPromotionToDTO)
+                    .collect(Collectors.toList());
+            dto.setAppliedPromotions(appliedPromotionDTOs);
+
+            // Calculate computed fields
+            dto.setTotalSavings(sale.getAppliedPromotions().stream()
+                    .map(AppliedPromotion::getDiscountAmount)
+                    .reduce(BigDecimal.ZERO, BigDecimal::add));
+            dto.setHasPromotions(true);
+            dto.setPromotionCount(appliedPromotionDTOs.size());
+        } else {
+            dto.setAppliedPromotions(List.of());
+            dto.setTotalSavings(BigDecimal.ZERO);
+            dto.setHasPromotions(false);
+            dto.setPromotionCount(0);
+        }
+
+        return dto;
+    }
+
+    private AppliedPromotionDTO mapAppliedPromotionToDTO(AppliedPromotion appliedPromotion) {
+        AppliedPromotionDTO dto = new AppliedPromotionDTO();
+        dto.setId(appliedPromotion.getId());
+        dto.setSaleId(appliedPromotion.getSale().getId());
+        dto.setPromotionId(appliedPromotion.getPromotion().getId());
+        dto.setPromotionName(appliedPromotion.getPromotionName());
+        dto.setPromotionType(appliedPromotion.getPromotionType());
+        dto.setCouponCode(appliedPromotion.getCouponCode());
+        dto.setDiscountAmount(appliedPromotion.getDiscountAmount());
+        dto.setDiscountPercentage(appliedPromotion.getDiscountPercentage());
+        dto.setOriginalAmount(appliedPromotion.getOriginalAmount());
+        dto.setFinalAmount(appliedPromotion.getFinalAmount());
+        dto.setIsAutoApplied(appliedPromotion.getIsAutoApplied());
+        dto.setAppliedAt(appliedPromotion.getAppliedAt());
+
+        // Set computed fields
+        dto.setDisplayText(appliedPromotion.getDisplayText());
+        dto.setTypeDisplay(appliedPromotion.getTypeDisplay());
+        dto.setSavingsAmount(appliedPromotion.getSavingsAmount());
+        dto.setIsPercentageDiscount(appliedPromotion.isPercentageDiscount());
+        dto.setIsFixedAmountDiscount(appliedPromotion.isFixedAmountDiscount());
+
         return dto;
     }
 
@@ -562,7 +626,7 @@ public class SaleService {
     public List<SaleDTO> getSalesByPaymentMethod(Sale.PaymentMethod paymentMethod) {
         return saleRepository.findAll()
                 .stream()
-                .filter(sale -> sale.getPaymentMethod() == paymentMethod)
+                .filter(sale -> sale.getPaymentMethod() != null && sale.getPaymentMethod() == paymentMethod)
                 .map(this::mapToDTO)
                 .sorted((s1, s2) -> s2.getSaleDate().compareTo(s1.getSaleDate()))
                 .collect(Collectors.toList());
@@ -712,5 +776,125 @@ public class SaleService {
 
         Sale savedSale = saleRepository.save(sale);
         return mapToDTO(savedSale);
+    }
+
+    /**
+     * Creates a sale with promotion application
+     */
+    public SaleDTO createSaleWithPromotion(SaleDTO saleDTO, String couponCode) {
+        validateSaleData(saleDTO);
+
+        Customer customer = customerRepository.findById(saleDTO.getCustomerId())
+                .orElseThrow(() -> new ResourceNotFoundException("Customer not found with id: " + saleDTO.getCustomerId()));
+
+        Sale sale = new Sale(customer);
+
+        // Process sale items
+        List<SaleItem> saleItems = saleDTO.getItems().stream()
+                .map(itemDTO -> createSaleItem(sale, itemDTO))
+                .collect(Collectors.toList());
+
+        sale.setItems(saleItems);
+
+        // Calculate initial totals
+        sale.calculateTotals();
+
+        // Apply promotion if coupon code provided
+        if (couponCode != null && !couponCode.trim().isEmpty()) {
+            applyPromotionToSale(sale, couponCode, false);
+        } else {
+            // Apply auto-applicable promotions
+            applyAutoPromotions(sale);
+        }
+
+        // Reduce stock for each product
+        saleItems.forEach(item ->
+                productService.reduceStock(item.getProduct().getId(), item.getQuantity()));
+
+        Sale savedSale = saleRepository.save(sale);
+        return mapToDTO(savedSale);
+    }
+
+    /**
+     * Applies a promotion to an existing sale
+     */
+    public SaleDTO applyPromotionToExistingSale(Long saleId, String couponCode) {
+        Sale sale = saleRepository.findById(saleId)
+                .orElseThrow(() -> new ResourceNotFoundException("Sale not found with id: " + saleId));
+
+        if (sale.getStatus() != SaleStatus.PENDING) {
+            throw new BusinessLogicException("Can only apply promotions to pending sales");
+        }
+
+        applyPromotionToSale(sale, couponCode, false);
+
+        Sale savedSale = saleRepository.save(sale);
+        return mapToDTO(savedSale);
+    }
+
+    /**
+     * Removes a promotion from an existing sale
+     */
+    public SaleDTO removePromotionFromSale(Long saleId, Long promotionId) {
+        Sale sale = saleRepository.findById(saleId)
+                .orElseThrow(() -> new ResourceNotFoundException("Sale not found with id: " + saleId));
+
+        if (sale.getStatus() != SaleStatus.PENDING) {
+            throw new BusinessLogicException("Can only remove promotions from pending sales");
+        }
+
+        promotionApplicationService.removePromotionFromSale(sale, promotionId);
+
+        Sale savedSale = saleRepository.save(sale);
+        return mapToDTO(savedSale);
+    }
+
+    /**
+     * Gets eligible promotions for a sale
+     */
+    @Transactional(readOnly = true)
+    public List<PromotionDTO> getEligiblePromotionsForSale(Long saleId) {
+        Sale sale = saleRepository.findById(saleId)
+                .orElseThrow(() -> new ResourceNotFoundException("Sale not found with id: " + saleId));
+
+        BigDecimal orderAmount = sale.getSubtotal() != null ? sale.getSubtotal() : sale.getTotalAmount();
+
+        return promotionApplicationService.findEligiblePromotions(
+                sale.getCustomer(), sale.getItems(), orderAmount)
+                .stream()
+                .map(promotion -> promotionService.mapToDTO(promotion))
+                .collect(Collectors.toList());
+    }
+
+    // Private helper methods for promotion integration
+
+    private void applyPromotionToSale(Sale sale, String couponCode, boolean isAutoApplied) {
+        BigDecimal orderAmount = sale.getSubtotal() != null ? sale.getSubtotal() : sale.getTotalAmount();
+
+        Promotion promotion = promotionApplicationService.validateCouponCode(
+                couponCode, sale.getCustomer(), sale.getItems(), orderAmount);
+
+        promotionApplicationService.applyPromotionToSale(sale, promotion, isAutoApplied);
+    }
+
+    private void applyAutoPromotions(Sale sale) {
+        BigDecimal orderAmount = sale.getSubtotal() != null ? sale.getSubtotal() : sale.getTotalAmount();
+
+        log.debug("Applying auto promotions for sale with order amount: {}", orderAmount);
+
+        List<Promotion> autoPromotions = promotionApplicationService.findAutoApplicablePromotions(
+                sale.getCustomer(), sale.getItems(), orderAmount);
+
+        log.debug("Found {} auto-applicable promotions", autoPromotions.size());
+
+        for (Promotion promotion : autoPromotions) {
+            try {
+                log.debug("Attempting to apply auto-promotion: {} (ID: {})", promotion.getName(), promotion.getId());
+                promotionApplicationService.applyPromotionToSale(sale, promotion, true);
+                log.info("Auto-applied promotion {} to sale", promotion.getId());
+            } catch (Exception e) {
+                log.warn("Failed to auto-apply promotion {} to sale: {}", promotion.getId(), e.getMessage());
+            }
+        }
     }
 }

@@ -44,9 +44,22 @@ public class PromotionApplicationService {
      */
     @Transactional(readOnly = true)
     public List<Promotion> findAutoApplicablePromotions(Customer customer, List<SaleItem> saleItems, BigDecimal orderAmount) {
-        return findEligiblePromotions(customer, saleItems, orderAmount).stream()
-                .filter(promotion -> Boolean.TRUE.equals(promotion.getAutoApply()))
+        log.debug("Finding auto-applicable promotions for customer {} with order amount {}",
+                customer.getId(), orderAmount);
+
+        List<Promotion> eligiblePromotions = findEligiblePromotions(customer, saleItems, orderAmount);
+        log.debug("Found {} eligible promotions", eligiblePromotions.size());
+
+        List<Promotion> autoPromotions = eligiblePromotions.stream()
+                .filter(promotion -> {
+                    boolean isAutoApply = Boolean.TRUE.equals(promotion.getAutoApply());
+                    log.debug("Promotion {} (ID: {}) autoApply: {}", promotion.getName(), promotion.getId(), isAutoApply);
+                    return isAutoApply;
+                })
                 .collect(Collectors.toList());
+
+        log.debug("Found {} auto-applicable promotions", autoPromotions.size());
+        return autoPromotions;
     }
 
     /**
@@ -89,8 +102,9 @@ public class PromotionApplicationService {
             return BigDecimal.ZERO;
         }
 
-        // Check minimum order amount
-        if (orderAmount.compareTo(promotion.getMinimumOrderAmount()) < 0) {
+        // Check minimum order amount (handle null case)
+        BigDecimal minimumOrderAmount = promotion.getMinimumOrderAmount();
+        if (minimumOrderAmount != null && orderAmount.compareTo(minimumOrderAmount) < 0) {
             return BigDecimal.ZERO;
         }
 
@@ -110,9 +124,9 @@ public class PromotionApplicationService {
         };
 
         // Apply maximum discount limit if set
-        if (promotion.getMaximumDiscountAmount() != null && 
-            discount.compareTo(promotion.getMaximumDiscountAmount()) > 0) {
-            discount = promotion.getMaximumDiscountAmount();
+        BigDecimal maximumDiscountAmount = promotion.getMaximumDiscountAmount();
+        if (maximumDiscountAmount != null && discount.compareTo(maximumDiscountAmount) > 0) {
+            discount = maximumDiscountAmount;
         }
 
         // Ensure discount doesn't exceed applicable amount
@@ -239,8 +253,9 @@ public class PromotionApplicationService {
             return false;
         }
 
-        // Check minimum order amount
-        if (orderAmount.compareTo(promotion.getMinimumOrderAmount()) < 0) {
+        // Check minimum order amount (handle null case)
+        BigDecimal minimumOrderAmount = promotion.getMinimumOrderAmount();
+        if (minimumOrderAmount != null && orderAmount.compareTo(minimumOrderAmount) < 0) {
             return false;
         }
 

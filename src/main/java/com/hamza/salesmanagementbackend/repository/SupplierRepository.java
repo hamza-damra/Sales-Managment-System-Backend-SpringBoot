@@ -70,4 +70,16 @@ public interface SupplierRepository extends JpaRepository<Supplier, Long> {
     boolean existsByTaxNumber(String taxNumber);
 
     Optional<Supplier> findByTaxNumber(String taxNumber);
+
+    @Query("SELECT AVG(s.rating) FROM Supplier s WHERE s.status = 'ACTIVE'")
+    Double findAverageRating();
+
+    @Query("SELECT SUM(s.totalAmount) FROM Supplier s WHERE s.status = 'ACTIVE'")
+    BigDecimal findTotalValue();
+
+    @Query("SELECT COUNT(s) FROM Supplier s WHERE s.rating >= :minRating AND s.status = 'ACTIVE'")
+    long countByRatingGreaterThanEqual(@Param("minRating") Double minRating);
+
+    @Query("SELECT COUNT(s) FROM Supplier s WHERE s.createdAt >= :date")
+    long countByCreatedAtGreaterThanEqual(@Param("date") LocalDateTime date);
 }

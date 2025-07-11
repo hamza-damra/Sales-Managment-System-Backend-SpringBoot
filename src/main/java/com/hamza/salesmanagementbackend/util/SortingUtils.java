@@ -70,6 +70,21 @@ public class SortingUtils {
             "createdAt", "updatedAt"
     );
 
+    // Valid sort fields for Inventory entity
+    public static final Set<String> VALID_INVENTORY_SORT_FIELDS = Set.of(
+            "id", "name", "description", "location", "address", "managerName",
+            "capacity", "currentStockCount", "status", "warehouseCode",
+            "isMainWarehouse", "createdAt", "updatedAt"
+    );
+
+    // Valid sort fields for PurchaseOrder entity
+    public static final Set<String> VALID_PURCHASE_ORDER_SORT_FIELDS = Set.of(
+            "id", "orderNumber", "orderDate", "expectedDeliveryDate", "actualDeliveryDate",
+            "status", "priority", "totalAmount", "subtotal", "taxAmount", "discountAmount",
+            "shippingCost", "createdBy", "approvedBy", "approvedDate", "sentDate",
+            "createdAt", "updatedAt"
+    );
+
     // Valid sort directions
     public static final Set<String> VALID_SORT_DIRECTIONS = Set.of("asc", "desc");
 
@@ -379,6 +394,68 @@ public class SortingUtils {
      */
     public static Sort createCategorySort(String sortBy, String sortDir) {
         String validSortBy = validateCategorySortField(sortBy);
+        String validSortDir = validateSortDirection(sortDir);
+
+        return validSortDir.equals("desc") ?
+                Sort.by(validSortBy).descending() :
+                Sort.by(validSortBy).ascending();
+    }
+
+    /**
+     * Validates and returns a safe sort field for Inventory entity
+     */
+    public static String validateInventorySortField(String sortBy) {
+        if (sortBy == null || sortBy.trim().isEmpty()) {
+            return "name";
+        }
+
+        String cleanSortBy = sortBy.trim().toLowerCase();
+
+        for (String validField : VALID_INVENTORY_SORT_FIELDS) {
+            if (validField.toLowerCase().equals(cleanSortBy)) {
+                return validField;
+            }
+        }
+
+        return "name";
+    }
+
+    /**
+     * Creates a safe Sort object for Inventory entity
+     */
+    public static Sort createInventorySort(String sortBy, String sortDir) {
+        String validSortBy = validateInventorySortField(sortBy);
+        String validSortDir = validateSortDirection(sortDir);
+
+        return validSortDir.equals("desc") ?
+                Sort.by(validSortBy).descending() :
+                Sort.by(validSortBy).ascending();
+    }
+
+    /**
+     * Validates and returns a safe sort field for PurchaseOrder entity
+     */
+    public static String validatePurchaseOrderSortField(String sortBy) {
+        if (sortBy == null || sortBy.trim().isEmpty()) {
+            return "orderDate";
+        }
+
+        String cleanSortBy = sortBy.trim().toLowerCase();
+
+        for (String validField : VALID_PURCHASE_ORDER_SORT_FIELDS) {
+            if (validField.toLowerCase().equals(cleanSortBy)) {
+                return validField;
+            }
+        }
+
+        return "orderDate";
+    }
+
+    /**
+     * Creates a safe Sort object for PurchaseOrder entity
+     */
+    public static Sort createPurchaseOrderSort(String sortBy, String sortDir) {
+        String validSortBy = validatePurchaseOrderSortField(sortBy);
         String validSortDir = validateSortDirection(sortDir);
 
         return validSortDir.equals("desc") ?

@@ -1,5 +1,6 @@
 package com.hamza.salesmanagementbackend.controller;
 
+import com.hamza.salesmanagementbackend.config.ApplicationConstants;
 import com.hamza.salesmanagementbackend.dto.PromotionDTO;
 import com.hamza.salesmanagementbackend.exception.ResourceNotFoundException;
 import com.hamza.salesmanagementbackend.service.PromotionService;
@@ -20,7 +21,7 @@ import java.util.List;
 import java.util.Map;
 
 @RestController
-@RequestMapping("/api/promotions")
+@RequestMapping(ApplicationConstants.API_PROMOTIONS)
 @CrossOrigin(origins = "*")
 public class PromotionController {
 
@@ -142,7 +143,7 @@ public class PromotionController {
         }
     }
 
-    @PostMapping("/{id}/deactivate")
+    @PostMapping("/{id}" + ApplicationConstants.DEACTIVATE_ENDPOINT)
     public ResponseEntity<PromotionDTO> deactivatePromotion(@PathVariable Long id) {
         if (id <= 0) {
             return ResponseEntity.badRequest().build();
@@ -156,7 +157,7 @@ public class PromotionController {
         }
     }
 
-    @GetMapping("/product/{productId}")
+    @GetMapping(ApplicationConstants.PRODUCT_ENDPOINT + "/{productId}")
     public ResponseEntity<List<PromotionDTO>> getPromotionsForProduct(@PathVariable Long productId) {
         if (productId <= 0) {
             return ResponseEntity.badRequest().build();
@@ -189,6 +190,20 @@ public class PromotionController {
             "averageDiscountValue", 0.0
         );
         return ResponseEntity.ok(analytics);
+    }
+
+    @GetMapping("/coupon/{couponCode}")
+    public ResponseEntity<PromotionDTO> getCouponByCode(@PathVariable String couponCode) {
+        if (couponCode == null || couponCode.trim().isEmpty()) {
+            return ResponseEntity.badRequest().build();
+        }
+
+        try {
+            PromotionDTO promotion = promotionService.validateCouponCode(couponCode.trim());
+            return ResponseEntity.ok(promotion);
+        } catch (ResourceNotFoundException e) {
+            return ResponseEntity.notFound().build();
+        }
     }
 
     @PostMapping("/validate-coupon")

@@ -308,7 +308,7 @@ public class PromotionService {
                 .build();
     }
 
-    private PromotionDTO mapToDTO(Promotion promotion) {
+    public PromotionDTO mapToDTO(Promotion promotion) {
         PromotionDTO dto = PromotionDTO.builder()
                 .id(promotion.getId())
                 .name(promotion.getName())

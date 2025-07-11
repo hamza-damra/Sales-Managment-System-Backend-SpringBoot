@@ -115,8 +115,7 @@ public class InventoryService {
         // Check if inventory has categories
         Long categoryCount = inventoryRepository.countCategoriesByInventoryId(id);
         if (categoryCount > 0) {
-            throw new DataIntegrityException("Cannot delete inventory with id " + id + 
-                " because it has " + categoryCount + " associated categories. Please move or delete the categories first.");
+            throw DataIntegrityException.inventoryHasCategories(id, categoryCount.intValue());
         }
 
         inventoryRepository.deleteById(id);

@@ -1,5 +1,6 @@
 package com.hamza.salesmanagementbackend.security;
 
+import com.hamza.salesmanagementbackend.config.ApplicationConstants;
 import com.hamza.salesmanagementbackend.config.CorsProperties;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
@@ -41,13 +42,13 @@ public class SecurityConfig {
             .csrf(csrf -> csrf.disable())
             .cors(cors -> cors.configurationSource(corsConfigurationSource()))
             .authorizeHttpRequests(auth -> auth
-                .requestMatchers(new AntPathRequestMatcher("/api/auth/**")).permitAll()
-                .requestMatchers(new AntPathRequestMatcher("/ws/**")).permitAll()
-                .requestMatchers(new AntPathRequestMatcher("/h2-console/**")).permitAll()
+                .requestMatchers(new AntPathRequestMatcher(ApplicationConstants.API_AUTH_WILDCARD)).permitAll()
+                .requestMatchers(new AntPathRequestMatcher(ApplicationConstants.WS_WILDCARD)).permitAll()
+                .requestMatchers(new AntPathRequestMatcher(ApplicationConstants.H2_CONSOLE_WILDCARD)).permitAll()
                 .requestMatchers(
-                    new AntPathRequestMatcher("/v3/api-docs/**"),
-                    new AntPathRequestMatcher("/swagger-ui/**"),
-                    new AntPathRequestMatcher("/swagger-ui.html")
+                    new AntPathRequestMatcher(ApplicationConstants.SWAGGER_API_DOCS_WILDCARD),
+                    new AntPathRequestMatcher(ApplicationConstants.SWAGGER_UI_WILDCARD),
+                    new AntPathRequestMatcher(ApplicationConstants.SWAGGER_UI_HTML)
                 ).permitAll()
                 .anyRequest().authenticated()
             )

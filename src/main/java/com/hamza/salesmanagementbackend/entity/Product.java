@@ -17,6 +17,7 @@ import org.hibernate.annotations.UpdateTimestamp;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import java.math.RoundingMode;
@@ -186,17 +187,20 @@ public class Product {
     @OneToMany(mappedBy = "product", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     @ToString.Exclude
     @EqualsAndHashCode.Exclude
-    private List<SaleItem> saleItems;
+    @Builder.Default
+    private List<SaleItem> saleItems = new ArrayList<>();
 
     @OneToMany(mappedBy = "product", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     @ToString.Exclude
     @EqualsAndHashCode.Exclude
-    private List<ReturnItem> returnItems;
+    @Builder.Default
+    private List<ReturnItem> returnItems = new ArrayList<>();
 
     @OneToMany(mappedBy = "product", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     @ToString.Exclude
     @EqualsAndHashCode.Exclude
-    private List<PurchaseOrderItem> purchaseOrderItems;
+    @Builder.Default
+    private List<PurchaseOrderItem> purchaseOrderItems = new ArrayList<>();
 
     // Enums
     public enum ProductStatus {
@@ -225,6 +229,10 @@ public class Product {
         this.discountPercentage = BigDecimal.ZERO;
         this.totalSold = 0;
         this.totalRevenue = BigDecimal.ZERO;
+        // Initialize collections
+        this.saleItems = new ArrayList<>();
+        this.returnItems = new ArrayList<>();
+        this.purchaseOrderItems = new ArrayList<>();
     }
 
     public Product(String name, String description, BigDecimal price, BigDecimal costPrice,
@@ -250,6 +258,10 @@ public class Product {
         this.discountPercentage = BigDecimal.ZERO;
         this.totalSold = 0;
         this.totalRevenue = BigDecimal.ZERO;
+        // Initialize collections
+        this.saleItems = new ArrayList<>();
+        this.returnItems = new ArrayList<>();
+        this.purchaseOrderItems = new ArrayList<>();
     }
 
     // Business logic methods

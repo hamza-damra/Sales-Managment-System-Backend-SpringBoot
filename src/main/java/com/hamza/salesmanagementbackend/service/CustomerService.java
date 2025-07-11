@@ -43,31 +43,67 @@ public class CustomerService {
     }
 
     /**
-     * Retrieves all customers and converts them to DTOs using streams
+     * Retrieves all active customers and converts them to DTOs using streams
      */
     @Transactional(readOnly = true)
     public List<CustomerDTO> getAllCustomers() {
-        return customerRepository.findAll()
+        return customerRepository.findAllActive()
                 .stream()
                 .map(this::mapToDTO)
                 .collect(Collectors.toList());
     }
 
     /**
-     * Retrieves all customers with pagination
+     * Retrieves all active customers with pagination
      */
     @Transactional(readOnly = true)
     public Page<CustomerDTO> getAllCustomers(Pageable pageable) {
-        return customerRepository.findAll(pageable)
+        log.debug("Fetching all active customers with pagination: page={}, size={}",
+                 pageable.getPageNumber(), pageable.getPageSize());
+        Page<CustomerDTO> result = customerRepository.findAllActive(pageable)
                 .map(this::mapToDTO);
+        log.debug("Found {} active customers out of {} total",
+                 result.getNumberOfElements(), result.getTotalElements());
+        return result;
     }
 
     /**
-     * Retrieves a customer by ID with proper error handling
+     * Debug method: Retrieves ALL customers regardless of deletion status
+     * This method should only be used for debugging purposes
+     */
+    @Transactional(readOnly = true)
+    public Page<CustomerDTO> getAllCustomersIncludingDeleted(Pageable pageable) {
+        log.debug("Fetching ALL customers (including deleted) with pagination: page={}, size={}",
+                 pageable.getPageNumber(), pageable.getPageSize());
+        Page<CustomerDTO> result = customerRepository.findAll(pageable)
+                .map(this::mapToDTO);
+        log.debug("Found {} customers total", result.getTotalElements());
+        return result;
+    }
+
+    /**
+     * Debug method: Fix customers with NULL isDeleted values
+     * This method should only be used for maintenance purposes
+     */
+    @Transactional
+    public int fixCustomersWithNullIsDeleted() {
+        Long count = customerRepository.countCustomersWithNullIsDeleted();
+        log.info("Found {} customers with NULL isDeleted values", count);
+
+        if (count > 0) {
+            int fixed = customerRepository.fixNullIsDeletedValues();
+            log.info("Fixed {} customers with NULL isDeleted values", fixed);
+            return fixed;
+        }
+        return 0;
+    }
+
+    /**
+     * Retrieves an active customer by ID with proper error handling
      */
     @Transactional(readOnly = true)
     public CustomerDTO getCustomerById(Long id) {
-        return customerRepository.findById(id)
+        return customerRepository.findByIdAndNotDeleted(id)
                 .map(this::mapToDTO)
                 .orElseThrow(() -> new ResourceNotFoundException("Customer not found with id: " + id));
     }
@@ -76,7 +112,7 @@ public class CustomerService {
      * Updates customer information with validation
      */
     public CustomerDTO updateCustomer(Long id, CustomerDTO customerDTO) {
-        Customer existingCustomer = customerRepository.findById(id)
+        Customer existingCustomer = customerRepository.findByIdAndNotDeleted(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Customer not found with id: " + id));
 
         validateEmailUniqueness(customerDTO.getEmail(), id);
@@ -86,10 +122,10 @@ public class CustomerService {
     }
 
     /**
-     * Deletes a customer by ID
+     * Deletes a customer by ID (defaults to soft delete)
      */
     public void deleteCustomer(Long id) {
-        deleteCustomer(id, false);
+        softDeleteCustomer(id, "SYSTEM", "Customer deletion requested");
     }
 
     /**
@@ -98,59 +134,107 @@ public class CustomerService {
      * @param forceDelete If true, allows cascade deletion of related records
      */
     public void deleteCustomer(Long id, boolean forceDelete) {
-        if (!customerRepository.existsById(id)) {
-            throw new ResourceNotFoundException("Customer not found with id: " + id);
+        if (forceDelete) {
+            hardDeleteCustomer(id);
+        } else {
+            softDeleteCustomer(id, "SYSTEM", "Customer deletion requested");
+        }
+    }
+
+    /**
+     * Soft deletes a customer (recommended approach)
+     * @param id Customer ID to soft delete
+     * @param deletedBy User who initiated the deletion
+     * @param reason Reason for deletion
+     */
+    public void softDeleteCustomer(Long id, String deletedBy, String reason) {
+        Customer customer = customerRepository.findByIdAndNotDeleted(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Customer not found with id: " + id));
+
+        if (!customer.canBeDeleted()) {
+            throw new BusinessLogicException("Customer cannot be deleted due to current status: " + customer.getCustomerStatus());
         }
 
-        if (!forceDelete) {
-            // Check for associated sales
-            Long salesCount = customerRepository.countSalesByCustomerId(id);
-            if (salesCount > 0) {
-                throw DataIntegrityException.customerHasSales(id, salesCount.intValue());
-            }
+        customer.softDelete(deletedBy, reason);
+        customerRepository.save(customer);
 
-            // Check for associated returns
-            Long returnCount = customerRepository.countReturnsByCustomerId(id);
-            if (returnCount > 0) {
-                throw DataIntegrityException.customerHasReturns(id, returnCount.intValue());
-            }
-        } else {
-            // Log cascade deletion for audit purposes
-            Long salesCount = customerRepository.countSalesByCustomerId(id);
-            Long returnCount = customerRepository.countReturnsByCustomerId(id);
-            log.warn("Force deleting customer {} with {} sales and {} returns - cascade deletion will occur",
+        log.info("Soft deleted customer {} by {} with reason: {}", id, deletedBy, reason);
+    }
+
+    /**
+     * Hard deletes a customer with cascade deletion of related records
+     * @param id Customer ID to hard delete
+     */
+    public void hardDeleteCustomer(Long id) {
+        Customer customer = customerRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Customer not found with id: " + id));
+
+        // Log cascade deletion for audit purposes
+        Long salesCount = customerRepository.countSalesByCustomerId(id);
+        Long returnCount = customerRepository.countReturnsByCustomerId(id);
+
+        if (salesCount > 0 || returnCount > 0) {
+            log.warn("Hard deleting customer {} with {} sales and {} returns - cascade deletion will occur",
                     id, salesCount, returnCount);
         }
 
         customerRepository.deleteById(id);
+        log.info("Hard deleted customer {} with {} sales and {} returns", id, salesCount, returnCount);
     }
 
     /**
-     * Searches customers by name using streams for filtering
+     * Restores a soft-deleted customer
+     * @param id Customer ID to restore
+     */
+    public CustomerDTO restoreCustomer(Long id) {
+        Customer customer = customerRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Customer not found with id: " + id));
+
+        if (!customer.isDeleted()) {
+            throw new BusinessLogicException("Customer is not deleted and cannot be restored");
+        }
+
+        customer.restore();
+        Customer savedCustomer = customerRepository.save(customer);
+        log.info("Restored customer {}", id);
+        return mapToDTO(savedCustomer);
+    }
+
+    /**
+     * Searches active customers by name using streams for filtering
      */
     @Transactional(readOnly = true)
     public List<CustomerDTO> searchCustomersByName(String name) {
-        return customerRepository.findByNameContainingIgnoreCase(name)
+        return customerRepository.findActiveByNameContainingIgnoreCase(name)
                 .stream()
                 .map(this::mapToDTO)
                 .collect(Collectors.toList());
     }
 
     /**
-     * Advanced search with pagination
+     * Advanced search with pagination (active customers only)
      */
     @Transactional(readOnly = true)
     public Page<CustomerDTO> searchCustomers(String searchTerm, Pageable pageable) {
-        return customerRepository.searchCustomers(searchTerm, pageable)
+        return customerRepository.searchActiveCustomers(searchTerm, pageable)
                 .map(this::mapToDTO);
     }
 
     /**
-     * Finds customer by email
+     * Finds active customer by email
      */
     @Transactional(readOnly = true)
     public Optional<CustomerDTO> findByEmail(String email) {
-        return customerRepository.findByEmail(email)
+        return customerRepository.findByEmailAndNotDeleted(email)
+                .map(this::mapToDTO);
+    }
+
+    /**
+     * Retrieves all deleted customers with pagination
+     */
+    @Transactional(readOnly = true)
+    public Page<CustomerDTO> getDeletedCustomers(Pageable pageable) {
+        return customerRepository.findAllDeleted(pageable)
                 .map(this::mapToDTO);
     }
 
@@ -188,7 +272,7 @@ public class CustomerService {
 
     private void validateEmailUniqueness(String email, Long excludeId) {
         if (email != null && !email.trim().isEmpty()) {
-            customerRepository.findByEmail(email)
+            customerRepository.findByEmailAndNotDeleted(email)
                     .filter(customer -> excludeId == null || !customer.getId().equals(excludeId))
                     .ifPresent(customer -> {
                         throw new BusinessLogicException("Email already exists: " + email);

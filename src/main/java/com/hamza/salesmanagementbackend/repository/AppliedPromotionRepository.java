@@ -15,17 +15,17 @@ public interface AppliedPromotionRepository extends JpaRepository<AppliedPromoti
     /**
      * Find all applied promotions for a specific sale
      */
-    List<AppliedPromotion> findBySaleId(Long saleId);
+    List<AppliedPromotion> findBySale_Id(Long saleId);
 
     /**
      * Find all applied promotions for a specific promotion
      */
-    List<AppliedPromotion> findByPromotionId(Long promotionId);
+    List<AppliedPromotion> findByPromotion_Id(Long promotionId);
 
     /**
      * Find applied promotions by sale and promotion
      */
-    List<AppliedPromotion> findBySaleIdAndPromotionId(Long saleId, Long promotionId);
+    List<AppliedPromotion> findBySale_IdAndPromotion_Id(Long saleId, Long promotionId);
 
     /**
      * Find applied promotions within a date range
@@ -42,7 +42,7 @@ public interface AppliedPromotionRepository extends JpaRepository<AppliedPromoti
     /**
      * Count applied promotions for a specific promotion
      */
-    long countByPromotionId(Long promotionId);
+    long countByPromotion_Id(Long promotionId);
 
     /**
      * Find applied promotions by coupon code
@@ -52,10 +52,10 @@ public interface AppliedPromotionRepository extends JpaRepository<AppliedPromoti
     /**
      * Get promotion usage statistics
      */
-    @Query("SELECT ap.promotionId, COUNT(ap), SUM(ap.discountAmount) " +
+    @Query("SELECT ap.promotion.id, COUNT(ap), SUM(ap.discountAmount) " +
            "FROM AppliedPromotion ap " +
            "WHERE ap.appliedAt BETWEEN :startDate AND :endDate " +
-           "GROUP BY ap.promotionId")
-    List<Object[]> getPromotionUsageStats(@Param("startDate") LocalDateTime startDate, 
+           "GROUP BY ap.promotion.id")
+    List<Object[]> getPromotionUsageStats(@Param("startDate") LocalDateTime startDate,
                                          @Param("endDate") LocalDateTime endDate);
 }

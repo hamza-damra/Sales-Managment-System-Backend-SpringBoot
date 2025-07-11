@@ -1,7 +1,10 @@
 package com.hamza.salesmanagementbackend.controller;
 
+import com.hamza.salesmanagementbackend.config.ApplicationConstants;
+import com.hamza.salesmanagementbackend.dto.PromotionDTO;
 import com.hamza.salesmanagementbackend.dto.SaleDTO;
 import com.hamza.salesmanagementbackend.entity.SaleStatus;
+import com.hamza.salesmanagementbackend.exception.BusinessLogicException;
 import com.hamza.salesmanagementbackend.exception.ResourceNotFoundException;
 import com.hamza.salesmanagementbackend.service.SaleService;
 import com.hamza.salesmanagementbackend.util.SortingUtils;
@@ -17,9 +20,11 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
+import java.util.List;
+import java.util.Map;
 
 @RestController
-@RequestMapping("/api/sales")
+@RequestMapping(ApplicationConstants.API_SALES)
 @CrossOrigin(origins = "*")
 public class SaleController {
 
@@ -85,8 +90,14 @@ public class SaleController {
     }
 
     @PostMapping
-    public ResponseEntity<SaleDTO> createSale(@Valid @RequestBody SaleDTO saleDTO) {
-        SaleDTO createdSale = saleService.createSale(saleDTO);
+    public ResponseEntity<SaleDTO> createSale(@Valid @RequestBody SaleDTO saleDTO,
+                                             @RequestParam(required = false) String couponCode) {
+        SaleDTO createdSale;
+        if (couponCode != null && !couponCode.trim().isEmpty()) {
+            createdSale = saleService.createSaleWithPromotion(saleDTO, couponCode);
+        } else {
+            createdSale = saleService.createSale(saleDTO);
+        }
         return ResponseEntity.status(HttpStatus.CREATED).body(createdSale);
     }
 
@@ -111,7 +122,7 @@ public class SaleController {
         return ResponseEntity.noContent().build();
     }
 
-    @PostMapping("/{id}/complete")
+    @PostMapping("/{id}" + ApplicationConstants.COMPLETE_ENDPOINT)
     public ResponseEntity<SaleDTO> completeSale(@PathVariable Long id) {
         if (id <= 0) {
             return ResponseEntity.badRequest().build();
@@ -121,7 +132,7 @@ public class SaleController {
         return ResponseEntity.ok(completedSale);
     }
 
-    @PostMapping("/{id}/cancel")
+    @PostMapping("/{id}" + ApplicationConstants.CANCEL_ENDPOINT)
     public ResponseEntity<SaleDTO> cancelSale(@PathVariable Long id) {
         if (id <= 0) {
             return ResponseEntity.badRequest().build();
@@ -129,5 +140,57 @@ public class SaleController {
 
         SaleDTO cancelledSale = saleService.cancelSale(id);
         return ResponseEntity.ok(cancelledSale);
+    }
+
+    @PostMapping("/{id}/apply-promotion")
+    public ResponseEntity<SaleDTO> applyPromotionToSale(@PathVariable Long id,
+                                                       @RequestParam String couponCode) {
+        if (id <= 0) {
+            return ResponseEntity.badRequest().build();
+        }
+
+        if (couponCode == null || couponCode.trim().isEmpty()) {
+            return ResponseEntity.badRequest().build();
+        }
+
+        try {
+            SaleDTO updatedSale = saleService.applyPromotionToExistingSale(id, couponCode);
+            return ResponseEntity.ok(updatedSale);
+        } catch (ResourceNotFoundException e) {
+            return ResponseEntity.notFound().build();
+        } catch (BusinessLogicException e) {
+            return ResponseEntity.badRequest().build();
+        }
+    }
+
+    @DeleteMapping("/{id}/remove-promotion")
+    public ResponseEntity<SaleDTO> removePromotionFromSale(@PathVariable Long id,
+                                                          @RequestParam Long promotionId) {
+        if (id <= 0 || promotionId <= 0) {
+            return ResponseEntity.badRequest().build();
+        }
+
+        try {
+            SaleDTO updatedSale = saleService.removePromotionFromSale(id, promotionId);
+            return ResponseEntity.ok(updatedSale);
+        } catch (ResourceNotFoundException e) {
+            return ResponseEntity.notFound().build();
+        } catch (BusinessLogicException e) {
+            return ResponseEntity.badRequest().build();
+        }
+    }
+
+    @GetMapping("/{id}/eligible-promotions")
+    public ResponseEntity<List<PromotionDTO>> getEligiblePromotionsForSale(@PathVariable Long id) {
+        if (id <= 0) {
+            return ResponseEntity.badRequest().build();
+        }
+
+        try {
+            List<PromotionDTO> eligiblePromotions = saleService.getEligiblePromotionsForSale(id);
+            return ResponseEntity.ok(eligiblePromotions);
+        } catch (ResourceNotFoundException e) {
+            return ResponseEntity.notFound().build();
+        }
     }
 }

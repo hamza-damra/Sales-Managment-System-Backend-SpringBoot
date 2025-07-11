@@ -279,4 +279,179 @@ class SaleControllerPromotionTest {
                         .content(objectMapper.writeValueAsString(invalidSaleDTO)))
                 .andExpect(status().isBadRequest());
     }
+
+    @Test
+    void testCreateSaleWithCoupon_BusinessLogicException() throws Exception {
+        // Given
+        SaleDTO requestDTO = SaleDTO.builder()
+                .customerId(1L)
+                .items(testSaleDTO.getItems())
+                .totalAmount(BigDecimal.valueOf(200.00))
+                .build();
+
+        when(saleService.createSaleWithPromotion(any(SaleDTO.class), eq("EXPIRED")))
+                .thenThrow(new BusinessLogicException("Promotion has expired"));
+
+        // When & Then
+        mockMvc.perform(post("/api/sales")
+                        .param("couponCode", "EXPIRED")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(requestDTO)))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void testCreateSaleWithCoupon_ResourceNotFoundException() throws Exception {
+        // Given
+        SaleDTO requestDTO = SaleDTO.builder()
+                .customerId(999L) // Non-existent customer
+                .items(testSaleDTO.getItems())
+                .totalAmount(BigDecimal.valueOf(200.00))
+                .build();
+
+        when(saleService.createSaleWithPromotion(any(SaleDTO.class), eq("TEST10")))
+                .thenThrow(new ResourceNotFoundException("Customer not found"));
+
+        // When & Then
+        mockMvc.perform(post("/api/sales")
+                        .param("couponCode", "TEST10")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(requestDTO)))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
+    void testApplyPromotionToSale_MissingCouponCode() throws Exception {
+        // When & Then
+        mockMvc.perform(post("/api/sales/1/apply-promotion"))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void testRemovePromotionFromSale_MissingPromotionId() throws Exception {
+        // When & Then
+        mockMvc.perform(delete("/api/sales/1/remove-promotion"))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void testRemovePromotionFromSale_BusinessLogicException() throws Exception {
+        // Given
+        when(saleService.removePromotionFromSale(1L, 1L))
+                .thenThrow(new BusinessLogicException("Sale is not in pending status"));
+
+        // When & Then
+        mockMvc.perform(delete("/api/sales/1/remove-promotion")
+                        .param("promotionId", "1"))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void testGetEligiblePromotionsForSale_EmptyList() throws Exception {
+        // Given
+        when(saleService.getEligiblePromotionsForSale(1L)).thenReturn(Arrays.asList());
+
+        // When & Then
+        mockMvc.perform(get("/api/sales/1/eligible-promotions"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$").isArray())
+                .andExpect(jsonPath("$").isEmpty());
+    }
+
+    @Test
+    void testGetEligiblePromotionsForSale_MultiplePromotions() throws Exception {
+        // Given
+        PromotionDTO promotion1 = PromotionDTO.builder()
+                .id(1L)
+                .name("Summer Sale")
+                .couponCode("SUMMER20")
+                .build();
+
+        PromotionDTO promotion2 = PromotionDTO.builder()
+                .id(2L)
+                .name("Flash Sale")
+                .couponCode("FLASH10")
+                .build();
+
+        List<PromotionDTO> eligiblePromotions = Arrays.asList(promotion1, promotion2);
+        when(saleService.getEligiblePromotionsForSale(1L)).thenReturn(eligiblePromotions);
+
+        // When & Then
+        mockMvc.perform(get("/api/sales/1/eligible-promotions"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$").isArray())
+                .andExpect(jsonPath("$.length()").value(2))
+                .andExpect(jsonPath("$[0].name").value("Summer Sale"))
+                .andExpect(jsonPath("$[0].couponCode").value("SUMMER20"))
+                .andExpect(jsonPath("$[1].name").value("Flash Sale"))
+                .andExpect(jsonPath("$[1].couponCode").value("FLASH10"));
+    }
+
+    @Test
+    void testApplyPromotionToSale_WithComplexPromotionData() throws Exception {
+        // Given
+        SaleDTO complexSaleDTO = SaleDTO.builder()
+                .id(1L)
+                .customerId(1L)
+                .customerName("Test Customer")
+                .items(testSaleDTO.getItems())
+                .totalAmount(BigDecimal.valueOf(200.00))
+                .originalTotal(BigDecimal.valueOf(200.00))
+                .finalTotal(BigDecimal.valueOf(170.00))
+                .promotionDiscountAmount(BigDecimal.valueOf(30.00))
+                .totalSavings(BigDecimal.valueOf(30.00))
+                .hasPromotions(true)
+                .promotionCount(2)
+                .build();
+
+        when(saleService.applyPromotionToExistingSale(1L, "COMBO20"))
+                .thenReturn(complexSaleDTO);
+
+        // When & Then
+        mockMvc.perform(post("/api/sales/1/apply-promotion")
+                        .param("couponCode", "COMBO20"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(1L))
+                .andExpect(jsonPath("$.originalTotal").value(200.00))
+                .andExpect(jsonPath("$.finalTotal").value(170.00))
+                .andExpect(jsonPath("$.promotionDiscountAmount").value(30.00))
+                .andExpect(jsonPath("$.totalSavings").value(30.00))
+                .andExpect(jsonPath("$.hasPromotions").value(true))
+                .andExpect(jsonPath("$.promotionCount").value(2));
+    }
+
+    @Test
+    void testCreateSaleWithAutoPromotions() throws Exception {
+        // Given
+        SaleDTO requestDTO = SaleDTO.builder()
+                .customerId(1L)
+                .items(testSaleDTO.getItems())
+                .totalAmount(BigDecimal.valueOf(200.00))
+                .build();
+
+        SaleDTO responseDTO = SaleDTO.builder()
+                .id(1L)
+                .customerId(1L)
+                .items(testSaleDTO.getItems())
+                .totalAmount(BigDecimal.valueOf(180.00))
+                .originalTotal(BigDecimal.valueOf(200.00))
+                .finalTotal(BigDecimal.valueOf(180.00))
+                .promotionDiscountAmount(BigDecimal.valueOf(20.00))
+                .hasPromotions(true)
+                .promotionCount(1)
+                .build();
+
+        when(saleService.createSale(any(SaleDTO.class))).thenReturn(responseDTO);
+
+        // When & Then
+        mockMvc.perform(post("/api/sales")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(requestDTO)))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.id").value(1L))
+                .andExpect(jsonPath("$.originalTotal").value(200.00))
+                .andExpect(jsonPath("$.finalTotal").value(180.00))
+                .andExpect(jsonPath("$.hasPromotions").value(true))
+                .andExpect(jsonPath("$.promotionCount").value(1));
+    }
 }

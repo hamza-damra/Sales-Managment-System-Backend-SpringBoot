@@ -15,6 +15,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
@@ -184,6 +185,40 @@ public class SupplierService {
     public Optional<SupplierDTO> findByEmail(String email) {
         return supplierRepository.findByEmail(email)
                 .map(this::mapToDTO);
+    }
+
+    /**
+     * Gets supplier analytics
+     */
+    @Transactional(readOnly = true)
+    public Map<String, Object> getSupplierAnalytics() {
+        long totalSuppliers = supplierRepository.count();
+        long activeSuppliers = supplierRepository.countByStatus(Supplier.SupplierStatus.ACTIVE);
+
+        Double averageRating = supplierRepository.findAverageRating();
+        if (averageRating == null) {
+            averageRating = 0.0;
+        }
+
+        BigDecimal totalValue = supplierRepository.findTotalValue();
+        if (totalValue == null) {
+            totalValue = BigDecimal.ZERO;
+        }
+
+        long topPerformingSuppliers = supplierRepository.countByRatingGreaterThanEqual(4.0);
+
+        // Get new suppliers this month
+        LocalDateTime startOfMonth = LocalDateTime.now().withDayOfMonth(1).withHour(0).withMinute(0).withSecond(0);
+        long newSuppliersThisMonth = supplierRepository.countByCreatedAtGreaterThanEqual(startOfMonth);
+
+        return Map.of(
+            "totalSuppliers", totalSuppliers,
+            "activeSuppliers", activeSuppliers,
+            "averageRating", Math.round(averageRating * 10.0) / 10.0,
+            "totalValue", totalValue,
+            "topPerformingSuppliers", topPerformingSuppliers,
+            "newSuppliersThisMonth", newSuppliersThisMonth
+        );
     }
 
     // Private helper methods

@@ -57,7 +57,7 @@ class AppliedPromotionRepositorySimpleTest {
                 .stockQuantity(50)
                 .category(category)
                 .sku("TEST-001")
-                .isActive(true)
+                .productStatus(Product.ProductStatus.ACTIVE)
                 .build();
         entityManager.persistAndFlush(product);
 

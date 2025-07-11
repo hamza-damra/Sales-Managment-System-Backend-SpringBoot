@@ -30,7 +30,7 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
-class InventoryServiceTest {
+public class InventoryServiceTest {
 
     @Mock
     private InventoryRepository inventoryRepository;
@@ -94,7 +94,7 @@ class InventoryServiceTest {
         // Given
         when(inventoryRepository.findByNameIgnoreCase(anyString())).thenReturn(Optional.empty());
         when(inventoryRepository.existsByWarehouseCode(anyString())).thenReturn(false);
-        when(inventoryRepository.existsMainWarehouse()).thenReturn(false);
+        // Removed existsMainWarehouse mock since testInventoryDTO.isMainWarehouse is false
         when(inventoryRepository.save(any(Inventory.class))).thenReturn(testInventory);
 
         // When
@@ -232,13 +232,14 @@ class InventoryServiceTest {
                 .capacity(200)
                 .currentStockCount(100)
                 .status(Inventory.InventoryStatus.ACTIVE)
+                .warehouseCode("UW001") // Add warehouse code so validation is triggered
                 .isMainWarehouse(false)
                 .build();
 
         when(inventoryRepository.findById(1L)).thenReturn(Optional.of(testInventory));
         when(inventoryRepository.findByNameIgnoreCase(anyString())).thenReturn(Optional.empty());
         when(inventoryRepository.existsByWarehouseCode(anyString())).thenReturn(false);
-        when(inventoryRepository.existsOtherMainWarehouse(anyLong())).thenReturn(false);
+        // Removed existsOtherMainWarehouse mock since isMainWarehouse is false
         when(inventoryRepository.save(any(Inventory.class))).thenReturn(testInventory);
 
         // When
@@ -383,5 +384,151 @@ class InventoryServiceTest {
         assertThatThrownBy(() -> inventoryService.updateInventoryStatus(1L, Inventory.InventoryStatus.MAINTENANCE))
                 .isInstanceOf(ResourceNotFoundException.class)
                 .hasMessageContaining("not found with id: 1");
+    }
+
+    // Additional Edge Case Tests
+
+    @Test
+    void createInventory_ShouldTrimNameAndLocation() {
+        // Given
+        testInventoryDTO.setName("  Test Warehouse  ");
+        testInventoryDTO.setLocation("  Test Location  ");
+        when(inventoryRepository.findByNameIgnoreCase("Test Warehouse")).thenReturn(Optional.empty());
+        when(inventoryRepository.existsByWarehouseCode(anyString())).thenReturn(false);
+        // Removed existsMainWarehouse mock since testInventoryDTO.isMainWarehouse is false
+        when(inventoryRepository.save(any(Inventory.class))).thenReturn(testInventory);
+
+        // When
+        InventoryDTO result = inventoryService.createInventory(testInventoryDTO);
+
+        // Then
+        assertThat(result).isNotNull();
+        verify(inventoryRepository).save(any(Inventory.class));
+    }
+
+    @Test
+    void createInventory_ShouldSetDefaultValues_WhenNotProvided() {
+        // Given
+        testInventoryDTO.setCurrentStockCount(null);
+        testInventoryDTO.setStatus(null);
+        testInventoryDTO.setIsMainWarehouse(null);
+        testInventoryDTO.setWarehouseCode(null); // Set to null so warehouse code validation is skipped
+        when(inventoryRepository.findByNameIgnoreCase(anyString())).thenReturn(Optional.empty());
+        // Removed existsByWarehouseCode mock since warehouseCode is null
+        // Removed existsMainWarehouse mock since isMainWarehouse is null
+        when(inventoryRepository.save(any(Inventory.class))).thenReturn(testInventory);
+
+        // When
+        InventoryDTO result = inventoryService.createInventory(testInventoryDTO);
+
+        // Then
+        assertThat(result).isNotNull();
+        verify(inventoryRepository).save(any(Inventory.class));
+    }
+
+    @Test
+    void updateInventory_ShouldNotUpdateName_WhenSameInventoryHasSameName() {
+        // Given
+        testInventoryDTO.setName("Test Warehouse"); // Same name as existing
+        testInventoryDTO.setIsMainWarehouse(false); // Explicitly set to false so main warehouse validation is skipped
+        when(inventoryRepository.findById(1L)).thenReturn(Optional.of(testInventory));
+        when(inventoryRepository.findByNameIgnoreCase("Test Warehouse"))
+                .thenReturn(Optional.of(testInventory)); // Same inventory
+        when(inventoryRepository.existsByWarehouseCode(anyString())).thenReturn(false);
+        // Removed existsOtherMainWarehouse mock since isMainWarehouse is false
+        when(inventoryRepository.save(any(Inventory.class))).thenReturn(testInventory);
+
+        // When
+        InventoryDTO result = inventoryService.updateInventory(1L, testInventoryDTO);
+
+        // Then
+        assertThat(result).isNotNull();
+        verify(inventoryRepository).save(any(Inventory.class));
+    }
+
+    @Test
+    void updateInventory_ShouldThrowException_WhenDifferentInventoryHasSameName() {
+        // Given
+        Inventory differentInventory = Inventory.builder()
+                .id(2L)
+                .name("Test Warehouse")
+                .build();
+
+        when(inventoryRepository.findById(1L)).thenReturn(Optional.of(testInventory));
+        when(inventoryRepository.findByNameIgnoreCase("Test Warehouse"))
+                .thenReturn(Optional.of(differentInventory)); // Different inventory with same name
+
+        // When & Then
+        assertThatThrownBy(() -> inventoryService.updateInventory(1L, testInventoryDTO))
+                .isInstanceOf(BusinessLogicException.class)
+                .hasMessageContaining("already exists");
+    }
+
+    @Test
+    void mapToDTO_ShouldCalculateCapacityUtilization() {
+        // Given
+        testInventory.setCapacity(100);
+        testInventory.setCurrentStockCount(75);
+        when(inventoryRepository.findById(1L)).thenReturn(Optional.of(testInventory));
+
+        // When
+        InventoryDTO result = inventoryService.getInventoryById(1L);
+
+        // Then
+        assertThat(result.getCapacityUtilization()).isEqualTo(75.0);
+        assertThat(result.getIsNearCapacity()).isFalse(); // 75% < 80% threshold
+    }
+
+    @Test
+    void mapToDTO_ShouldHandleNullCapacity() {
+        // Given
+        testInventory.setCapacity(null);
+        testInventory.setCurrentStockCount(50);
+        when(inventoryRepository.findById(1L)).thenReturn(Optional.of(testInventory));
+
+        // When
+        InventoryDTO result = inventoryService.getInventoryById(1L);
+
+        // Then
+        assertThat(result.getCapacityUtilization()).isEqualTo(0.0);
+        assertThat(result.getIsNearCapacity()).isFalse();
+    }
+
+    @Test
+    void mapToDTO_ShouldDetectNearCapacity() {
+        // Given
+        testInventory.setCapacity(100);
+        testInventory.setCurrentStockCount(85); // 85% > 80% threshold
+        when(inventoryRepository.findById(1L)).thenReturn(Optional.of(testInventory));
+
+        // When
+        InventoryDTO result = inventoryService.getInventoryById(1L);
+
+        // Then
+        assertThat(result.getCapacityUtilization()).isEqualTo(85.0);
+        assertThat(result.getIsNearCapacity()).isTrue();
+    }
+
+    @Test
+    void validateInventoryData_ShouldThrowException_WhenNameIsNull() {
+        // Given
+        testInventoryDTO.setName(null);
+
+        // When & Then
+        assertThatThrownBy(() -> inventoryService.createInventory(testInventoryDTO))
+                .isInstanceOf(BusinessLogicException.class)
+                .hasMessageContaining("Inventory name cannot be empty");
+    }
+
+    @Test
+    void validateInventoryData_ShouldThrowException_WhenLocationIsNull() {
+        // Given
+        testInventoryDTO.setLocation(null);
+        when(inventoryRepository.findByNameIgnoreCase(anyString())).thenReturn(Optional.empty());
+
+        // When & Then
+        assertThatThrownBy(() -> inventoryService.createInventory(testInventoryDTO))
+                .isInstanceOf(BusinessLogicException.class)
+                .hasMessageContaining("location is required");
     }
 }

@@ -1,5 +1,6 @@
 package com.hamza.salesmanagementbackend.controller;
 
+import com.hamza.salesmanagementbackend.config.ApplicationConstants;
 import com.hamza.salesmanagementbackend.dto.ProductDTO;
 import com.hamza.salesmanagementbackend.exception.ResourceNotFoundException;
 import com.hamza.salesmanagementbackend.service.ProductService;
@@ -17,7 +18,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.Map;
 
 @RestController
-@RequestMapping("/api/products")
+@RequestMapping(ApplicationConstants.API_PRODUCTS)
 @CrossOrigin(origins = "*")
 public class ProductController {
 
@@ -143,7 +144,7 @@ public class ProductController {
         }
     }
 
-    @PostMapping("/{id}/stock/reduce")
+    @PostMapping("/{id}" + ApplicationConstants.STOCK_REDUCE_ENDPOINT)
     public ResponseEntity<ProductDTO> reduceStock(@PathVariable Long id,
                                                  @RequestBody Map<String, Integer> request) {
         if (id <= 0) {

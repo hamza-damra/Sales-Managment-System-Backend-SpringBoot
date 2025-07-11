@@ -80,6 +80,20 @@ public class SaleDTO {
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 
+    // Promotion-related fields
+    private Long promotionId;
+    private String couponCode;
+    private BigDecimal originalTotal;
+    private BigDecimal finalTotal;
+    private BigDecimal promotionDiscountAmount;
+    private List<AppliedPromotionDTO> appliedPromotions;
+
+    // Computed promotion fields for API responses
+    private PromotionDTO promotionDetails;
+    private BigDecimal totalSavings;
+    private Boolean hasPromotions;
+    private Integer promotionCount;
+
     // Utility methods
     public BigDecimal getGrandTotal() {
         if (subtotal == null) return totalAmount != null ? totalAmount : BigDecimal.ZERO;

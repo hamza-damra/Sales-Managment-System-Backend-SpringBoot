@@ -1,5 +1,6 @@
 package com.hamza.salesmanagementbackend.controller;
 
+import com.hamza.salesmanagementbackend.config.ApplicationConstants;
 import com.hamza.salesmanagementbackend.dto.CategoryDTO;
 import com.hamza.salesmanagementbackend.entity.Category;
 import com.hamza.salesmanagementbackend.exception.ResourceNotFoundException;
@@ -19,7 +20,7 @@ import java.util.List;
 import java.util.Map;
 
 @RestController
-@RequestMapping("/api/categories")
+@RequestMapping(ApplicationConstants.API_CATEGORIES)
 @CrossOrigin(origins = "*")
 public class CategoryController {
 
@@ -43,7 +44,7 @@ public class CategoryController {
         return ResponseEntity.ok(categories);
     }
 
-    @GetMapping("/active")
+    @GetMapping(ApplicationConstants.ACTIVE_ENDPOINT)
     public ResponseEntity<List<CategoryDTO>> getAllActiveCategories() {
         List<CategoryDTO> categories = categoryService.getAllActiveCategories();
         return ResponseEntity.ok(categories);
@@ -139,6 +140,26 @@ public class CategoryController {
     @GetMapping("/empty")
     public ResponseEntity<List<CategoryDTO>> getEmptyCategories() {
         List<CategoryDTO> categories = categoryService.getEmptyCategories();
+        return ResponseEntity.ok(categories);
+    }
+
+    @GetMapping("/inventory/{inventoryId}")
+    public ResponseEntity<List<CategoryDTO>> getCategoriesByInventory(@PathVariable Long inventoryId) {
+        if (inventoryId <= 0) {
+            return ResponseEntity.badRequest().build();
+        }
+
+        try {
+            List<CategoryDTO> categories = categoryService.getCategoriesByInventoryId(inventoryId);
+            return ResponseEntity.ok(categories);
+        } catch (ResourceNotFoundException e) {
+            return ResponseEntity.notFound().build();
+        }
+    }
+
+    @GetMapping("/no-inventory")
+    public ResponseEntity<List<CategoryDTO>> getCategoriesWithoutInventory() {
+        List<CategoryDTO> categories = categoryService.getCategoriesWithoutInventory();
         return ResponseEntity.ok(categories);
     }
 

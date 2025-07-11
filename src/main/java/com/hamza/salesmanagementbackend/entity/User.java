@@ -116,6 +116,15 @@ public class User implements UserDetails {
     }
 
     public enum Role {
-        USER, ADMIN, MANAGER
+        USER,
+        ADMIN,
+        MANAGER,
+        SALES_ANALYST,
+        FINANCIAL_ANALYST,
+        INVENTORY_ANALYST,
+        CUSTOMER_ANALYST,
+        MARKETING_ANALYST,
+        PRODUCT_ANALYST,
+        EXECUTIVE
     }
 }

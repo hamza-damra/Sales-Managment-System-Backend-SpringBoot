@@ -162,7 +162,7 @@ public class PromotionControllerTest {
         mockMvc.perform(post("/api/promotions/validate-coupon")
                         .param("couponCode", "SUMMER2024-ABC123"))
                 .andExpect(status().isOk())
-                .andExpected(jsonPath("$.id", is(1)))
+                .andExpect(jsonPath("$.id", is(1)))
                 .andExpect(jsonPath("$.name", is("Summer Sale 2024")))
                 .andExpect(jsonPath("$.couponCode", is("SUMMER2024-ABC123")));
 

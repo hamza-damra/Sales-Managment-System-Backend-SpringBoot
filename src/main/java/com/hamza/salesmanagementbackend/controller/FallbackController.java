@@ -1,5 +1,6 @@
 package com.hamza.salesmanagementbackend.controller;
 
+import com.hamza.salesmanagementbackend.config.ApplicationConstants;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -16,18 +17,18 @@ public class FallbackController {
     /**
      * Handle requests to /auth/* (without /api prefix)
      */
-    @RequestMapping(value = "/auth/**", method = {RequestMethod.GET, RequestMethod.POST, RequestMethod.PUT, RequestMethod.DELETE})
+    @RequestMapping(value = ApplicationConstants.AUTH_BASE + "/**", method = {RequestMethod.GET, RequestMethod.POST, RequestMethod.PUT, RequestMethod.DELETE})
     public ResponseEntity<Map<String, Object>> handleAuthRequests() {
-        log.warn("Request received at /auth/* - should be /api/auth/*");
-        
+        log.warn("Request received at /auth/* - should be " + ApplicationConstants.API_AUTH + "/*");
+
         return ResponseEntity.badRequest().body(Map.of(
             "error", "Invalid endpoint",
-            "message", "Authentication endpoints are available at /api/auth/*",
+            "message", "Authentication endpoints are available at " + ApplicationConstants.API_AUTH + "/*",
             "correctEndpoints", Map.of(
-                "login", "POST /api/auth/login",
-                "signup", "POST /api/auth/signup", 
-                "refresh", "POST /api/auth/refresh",
-                "test", "GET /api/auth/test"
+                "login", "POST " + ApplicationConstants.AUTH_LOGIN_ENDPOINT,
+                "signup", "POST " + ApplicationConstants.AUTH_SIGNUP_ENDPOINT,
+                "refresh", "POST " + ApplicationConstants.AUTH_REFRESH_ENDPOINT,
+                "test", "GET " + ApplicationConstants.AUTH_TEST_ENDPOINT
             )
         ));
     }
@@ -35,14 +36,14 @@ public class FallbackController {
     /**
      * Handle requests to /signup (without any prefix)
      */
-    @RequestMapping(value = "/signup", method = {RequestMethod.GET, RequestMethod.POST})
+    @RequestMapping(value = ApplicationConstants.SIGNUP_ENDPOINT, method = {RequestMethod.GET, RequestMethod.POST})
     public ResponseEntity<Map<String, Object>> handleSignupRequests() {
-        log.warn("Request received at /signup - should be /api/auth/signup");
-        
+        log.warn("Request received at /signup - should be " + ApplicationConstants.AUTH_SIGNUP_ENDPOINT);
+
         return ResponseEntity.badRequest().body(Map.of(
             "error", "Invalid endpoint",
-            "message", "Signup endpoint is available at /api/auth/signup",
-            "correctEndpoint", "POST /api/auth/signup",
+            "message", "Signup endpoint is available at " + ApplicationConstants.AUTH_SIGNUP_ENDPOINT,
+            "correctEndpoint", "POST " + ApplicationConstants.AUTH_SIGNUP_ENDPOINT,
             "requiredHeaders", Map.of(
                 "Content-Type", "application/json"
             ),

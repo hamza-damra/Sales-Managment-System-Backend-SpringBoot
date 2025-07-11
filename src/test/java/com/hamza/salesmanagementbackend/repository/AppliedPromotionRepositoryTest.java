@@ -8,6 +8,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.boot.test.autoconfigure.orm.jpa.TestEntityManager;
 import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.TestPropertySource;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -17,6 +18,11 @@ import static org.junit.jupiter.api.Assertions.*;
 
 @DataJpaTest
 @ActiveProfiles("test")
+@TestPropertySource(properties = {
+    "spring.jpa.hibernate.ddl-auto=create-drop",
+    "spring.datasource.url=jdbc:h2:mem:testdb",
+    "spring.flyway.enabled=false"
+})
 @DisplayName("AppliedPromotionRepository Tests")
 class AppliedPromotionRepositoryTest {
 
@@ -38,10 +44,15 @@ class AppliedPromotionRepositoryTest {
 
     @BeforeEach
     void setUp() {
+        // Clear any existing data
+        entityManager.clear();
+
         // Create test category
         testCategory = Category.builder()
                 .name("ELECTRONICS")
                 .description("Electronic products")
+                .status(Category.CategoryStatus.ACTIVE)
+                .displayOrder(0)
                 .build();
         entityManager.persistAndFlush(testCategory);
 
@@ -52,6 +63,8 @@ class AppliedPromotionRepositoryTest {
                 .phone("1234567890")
                 .customerType(Customer.CustomerType.REGULAR)
                 .customerStatus(Customer.CustomerStatus.ACTIVE)
+                .totalPurchases(BigDecimal.ZERO)
+                .loyaltyPoints(0)
                 .build();
         entityManager.persistAndFlush(testCustomer);
 
@@ -63,6 +76,7 @@ class AppliedPromotionRepositoryTest {
                 .stockQuantity(50)
                 .category(testCategory)
                 .sku("TEST-001")
+                .productStatus(Product.ProductStatus.ACTIVE)
                 .build();
         entityManager.persistAndFlush(testProduct);
 
@@ -75,6 +89,11 @@ class AppliedPromotionRepositoryTest {
                 .endDate(LocalDateTime.now().plusDays(30))
                 .isActive(true)
                 .couponCode("SUMMER10")
+                .usageCount(0)
+                .minimumOrderAmount(BigDecimal.ZERO)
+                .customerEligibility(Promotion.CustomerEligibility.ALL)
+                .autoApply(false)
+                .stackable(false)
                 .build();
         entityManager.persistAndFlush(testPromotion1);
 
@@ -86,6 +105,11 @@ class AppliedPromotionRepositoryTest {
                 .endDate(LocalDateTime.now().plusDays(30))
                 .isActive(true)
                 .couponCode("FLASH15")
+                .usageCount(0)
+                .minimumOrderAmount(BigDecimal.ZERO)
+                .customerEligibility(Promotion.CustomerEligibility.ALL)
+                .autoApply(false)
+                .stackable(false)
                 .build();
         entityManager.persistAndFlush(testPromotion2);
 
@@ -96,6 +120,23 @@ class AppliedPromotionRepositoryTest {
                 .subtotal(BigDecimal.valueOf(200.00))
                 .totalAmount(BigDecimal.valueOf(200.00))
                 .status(SaleStatus.PENDING)
+                .discountAmount(BigDecimal.ZERO)
+                .discountPercentage(BigDecimal.ZERO)
+                .taxAmount(BigDecimal.ZERO)
+                .taxPercentage(BigDecimal.ZERO)
+                .shippingCost(BigDecimal.ZERO)
+                .paymentStatus(Sale.PaymentStatus.PENDING)
+                .saleType(Sale.SaleType.RETAIL)
+                .currency("USD")
+                .exchangeRate(BigDecimal.ONE)
+                .deliveryStatus(Sale.DeliveryStatus.NOT_SHIPPED)
+                .isGift(false)
+                .loyaltyPointsEarned(0)
+                .loyaltyPointsUsed(0)
+                .isReturn(false)
+                .profitMargin(BigDecimal.ZERO)
+                .costOfGoodsSold(BigDecimal.ZERO)
+                .promotionDiscountAmount(BigDecimal.ZERO)
                 .build();
         entityManager.persistAndFlush(testSale1);
 
@@ -105,47 +146,95 @@ class AppliedPromotionRepositoryTest {
                 .subtotal(BigDecimal.valueOf(300.00))
                 .totalAmount(BigDecimal.valueOf(300.00))
                 .status(SaleStatus.COMPLETED)
+                .discountAmount(BigDecimal.ZERO)
+                .discountPercentage(BigDecimal.ZERO)
+                .taxAmount(BigDecimal.ZERO)
+                .taxPercentage(BigDecimal.ZERO)
+                .shippingCost(BigDecimal.ZERO)
+                .paymentStatus(Sale.PaymentStatus.PAID)
+                .saleType(Sale.SaleType.RETAIL)
+                .currency("USD")
+                .exchangeRate(BigDecimal.ONE)
+                .deliveryStatus(Sale.DeliveryStatus.DELIVERED)
+                .isGift(false)
+                .loyaltyPointsEarned(0)
+                .loyaltyPointsUsed(0)
+                .isReturn(false)
+                .profitMargin(BigDecimal.ZERO)
+                .costOfGoodsSold(BigDecimal.ZERO)
+                .promotionDiscountAmount(BigDecimal.ZERO)
                 .build();
         entityManager.persistAndFlush(testSale2);
 
         // Create test applied promotions
-        testAppliedPromotion1 = AppliedPromotion.builder()
-                .sale(testSale1)
-                .promotion(testPromotion1)
-                .promotionName("Summer Sale")
-                .promotionType(Promotion.PromotionType.PERCENTAGE)
-                .couponCode("SUMMER10")
-                .discountAmount(BigDecimal.valueOf(20.00))
-                .discountPercentage(BigDecimal.valueOf(10.00))
-                .originalAmount(BigDecimal.valueOf(200.00))
-                .finalAmount(BigDecimal.valueOf(180.00))
-                .isAutoApplied(false)
-                .appliedAt(LocalDateTime.now())
-                .build();
-        entityManager.persistAndFlush(testAppliedPromotion1);
+        try {
+            testAppliedPromotion1 = AppliedPromotion.builder()
+                    .sale(testSale1)
+                    .promotion(testPromotion1)
+                    .promotionName("Summer Sale")
+                    .promotionType(Promotion.PromotionType.PERCENTAGE)
+                    .couponCode("SUMMER10")
+                    .discountAmount(BigDecimal.valueOf(20.00))
+                    .discountPercentage(BigDecimal.valueOf(10.00))
+                    .originalAmount(BigDecimal.valueOf(200.00))
+                    .finalAmount(BigDecimal.valueOf(180.00))
+                    .isAutoApplied(false)
+                    .appliedAt(LocalDateTime.now())
+                    .build();
+            entityManager.persistAndFlush(testAppliedPromotion1);
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to create testAppliedPromotion1: " + e.getMessage(), e);
+        }
 
-        testAppliedPromotion2 = AppliedPromotion.builder()
-                .sale(testSale2)
-                .promotion(testPromotion2)
-                .promotionName("Flash Sale")
-                .promotionType(Promotion.PromotionType.FIXED_AMOUNT)
-                .couponCode("FLASH15")
-                .discountAmount(BigDecimal.valueOf(15.00))
-                .originalAmount(BigDecimal.valueOf(300.00))
-                .finalAmount(BigDecimal.valueOf(285.00))
-                .isAutoApplied(true)
-                .appliedAt(LocalDateTime.now().minusHours(1))
-                .build();
-        entityManager.persistAndFlush(testAppliedPromotion2);
+        try {
+            testAppliedPromotion2 = AppliedPromotion.builder()
+                    .sale(testSale2)
+                    .promotion(testPromotion2)
+                    .promotionName("Flash Sale")
+                    .promotionType(Promotion.PromotionType.FIXED_AMOUNT)
+                    .couponCode("FLASH15")
+                    .discountAmount(BigDecimal.valueOf(15.00))
+                    .discountPercentage(BigDecimal.valueOf(5.00)) // 15/300 * 100 = 5%
+                    .originalAmount(BigDecimal.valueOf(300.00))
+                    .finalAmount(BigDecimal.valueOf(285.00))
+                    .isAutoApplied(true)
+                    .appliedAt(LocalDateTime.now().minusHours(1))
+                    .build();
+            entityManager.persistAndFlush(testAppliedPromotion2);
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to create testAppliedPromotion2: " + e.getMessage(), e);
+        }
 
         entityManager.clear();
+    }
+
+    @Test
+    @DisplayName("Should verify basic repository functionality")
+    void testBasicRepositoryFunctionality() {
+        // Debug: Check if entities were created
+        assertNotNull(testCustomer, "Test customer should not be null");
+        assertNotNull(testCustomer.getId(), "Test customer ID should not be null");
+        assertNotNull(testProduct, "Test product should not be null");
+        assertNotNull(testProduct.getId(), "Test product ID should not be null");
+        assertNotNull(testPromotion1, "Test promotion 1 should not be null");
+        assertNotNull(testPromotion1.getId(), "Test promotion 1 ID should not be null");
+        assertNotNull(testSale1, "Test sale 1 should not be null");
+        assertNotNull(testSale1.getId(), "Test sale 1 ID should not be null");
+        assertNotNull(testAppliedPromotion1, "Test applied promotion 1 should not be null");
+        assertNotNull(testAppliedPromotion1.getId(), "Test applied promotion 1 ID should not be null");
+
+        // When
+        long count = appliedPromotionRepository.count();
+
+        // Then
+        assertEquals(2, count, "Should have 2 applied promotions in test data");
     }
 
     @Test
     @DisplayName("Should find applied promotions by sale ID")
     void testFindBySaleId() {
         // When
-        List<AppliedPromotion> result = appliedPromotionRepository.findBySaleId(testSale1.getId());
+        List<AppliedPromotion> result = appliedPromotionRepository.findBySale_Id(testSale1.getId());
 
         // Then
         assertNotNull(result);
@@ -159,7 +248,7 @@ class AppliedPromotionRepositoryTest {
     @DisplayName("Should find applied promotions by promotion ID")
     void testFindByPromotionId() {
         // When
-        List<AppliedPromotion> result = appliedPromotionRepository.findByPromotionId(testPromotion1.getId());
+        List<AppliedPromotion> result = appliedPromotionRepository.findByPromotion_Id(testPromotion1.getId());
 
         // Then
         assertNotNull(result);
@@ -172,7 +261,7 @@ class AppliedPromotionRepositoryTest {
     @DisplayName("Should find applied promotions by sale ID and promotion ID")
     void testFindBySaleIdAndPromotionId() {
         // When
-        List<AppliedPromotion> result = appliedPromotionRepository.findBySaleIdAndPromotionId(
+        List<AppliedPromotion> result = appliedPromotionRepository.findBySale_IdAndPromotion_Id(
                 testSale1.getId(), testPromotion1.getId());
 
         // Then
@@ -219,8 +308,8 @@ class AppliedPromotionRepositoryTest {
     @DisplayName("Should count applied promotions by promotion ID")
     void testCountByPromotionId() {
         // When
-        long count1 = appliedPromotionRepository.countByPromotionId(testPromotion1.getId());
-        long count2 = appliedPromotionRepository.countByPromotionId(testPromotion2.getId());
+        long count1 = appliedPromotionRepository.countByPromotion_Id(testPromotion1.getId());
+        long count2 = appliedPromotionRepository.countByPromotion_Id(testPromotion2.getId());
 
         // Then
         assertEquals(1, count1);
@@ -274,7 +363,7 @@ class AppliedPromotionRepositoryTest {
     @DisplayName("Should return empty list when no applied promotions found")
     void testFindBySaleId_NotFound() {
         // When
-        List<AppliedPromotion> result = appliedPromotionRepository.findBySaleId(999L);
+        List<AppliedPromotion> result = appliedPromotionRepository.findBySale_Id(999L);
 
         // Then
         assertNotNull(result);
@@ -296,7 +385,7 @@ class AppliedPromotionRepositoryTest {
     @DisplayName("Should return zero count for non-existent promotion")
     void testCountByPromotionId_NotFound() {
         // When
-        long count = appliedPromotionRepository.countByPromotionId(999L);
+        long count = appliedPromotionRepository.countByPromotion_Id(999L);
 
         // Then
         assertEquals(0, count);

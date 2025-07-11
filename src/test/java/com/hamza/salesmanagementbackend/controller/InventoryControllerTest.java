@@ -1,6 +1,7 @@
 package com.hamza.salesmanagementbackend.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.hamza.salesmanagementbackend.config.ApplicationConstants;
 import com.hamza.salesmanagementbackend.dto.InventoryDTO;
 import com.hamza.salesmanagementbackend.entity.Inventory;
 import com.hamza.salesmanagementbackend.exception.BusinessLogicException;
@@ -34,7 +35,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @WebMvcTest(InventoryController.class)
-class InventoryControllerTest {
+public class InventoryControllerTest {
 
     @Autowired
     private MockMvc mockMvc;
@@ -396,5 +397,162 @@ class InventoryControllerTest {
         mockMvc.perform(get("/api/inventories/near-capacity")
                         .param("threshold", "150"))
                 .andExpect(status().isBadRequest());
+    }
+
+    // Additional Error Handling Tests
+
+    @Test
+    void createInventory_ShouldHandleBusinessLogicException() throws Exception {
+        // Given
+        when(inventoryService.createInventory(any(InventoryDTO.class)))
+                .thenThrow(new BusinessLogicException("Inventory name already exists"));
+
+        // When & Then
+        mockMvc.perform(post("/api/inventories")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(testInventoryDTO)))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void deleteInventory_ShouldHandleDataIntegrityException() throws Exception {
+        // Given
+        doThrow(new DataIntegrityException("Inventory", 1L, "Categories", "Cannot delete inventory with categories"))
+                .when(inventoryService).deleteInventory(1L);
+
+        // When & Then
+        mockMvc.perform(delete(ApplicationConstants.API_INVENTORIES + "/1"))
+                .andExpect(status().isConflict());
+    }
+
+    @Test
+    void getInventoryByWarehouseCode_ShouldReturnInventory_WhenExists() throws Exception {
+        // Given
+        when(inventoryService.getInventoryByWarehouseCode("TW001")).thenReturn(testInventoryDTO);
+
+        // When & Then
+        mockMvc.perform(get(ApplicationConstants.API_INVENTORIES + "/warehouse-code/TW001"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.warehouseCode", is("TW001")))
+                .andExpect(jsonPath("$.name", is("Test Warehouse")));
+    }
+
+    @Test
+    void getInventoryByWarehouseCode_ShouldReturnNotFound_WhenNotExists() throws Exception {
+        // Given
+        when(inventoryService.getInventoryByWarehouseCode("INVALID"))
+                .thenThrow(new ResourceNotFoundException("Inventory not found"));
+
+        // When & Then
+        mockMvc.perform(get("/api/inventories/warehouse-code/INVALID"))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
+    void getInventoryByWarehouseCode_ShouldReturnBadRequest_WhenCodeIsEmpty() throws Exception {
+        // When & Then
+        mockMvc.perform(get("/api/inventories/warehouse-code/ "))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void getAllInventories_ShouldHandleInvalidSortParameters() throws Exception {
+        // Given
+        Page<InventoryDTO> inventoryPage = new PageImpl<>(inventoryList);
+        when(inventoryService.getAllInventories(any())).thenReturn(inventoryPage);
+
+        // When & Then - Should handle invalid sort direction gracefully
+        mockMvc.perform(get("/api/inventories")
+                        .param("sortBy", "name")
+                        .param("sortDir", "invalid"))
+                .andExpect(status().isOk()); // Should default to asc
+    }
+
+    @Test
+    void searchInventories_ShouldTrimQuery() throws Exception {
+        // Given
+        Page<InventoryDTO> searchResults = new PageImpl<>(Arrays.asList(testInventoryDTO));
+        when(inventoryService.searchInventories(eq("test"), any())).thenReturn(searchResults);
+
+        // When & Then
+        mockMvc.perform(get("/api/inventories/search")
+                        .param("query", "  test  ") // Query with spaces
+                        .param("page", "0")
+                        .param("size", "10"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content", hasSize(1)));
+    }
+
+    @Test
+    void createInventory_ShouldHandleNullValues() throws Exception {
+        // Given
+        InventoryDTO inventoryWithNulls = InventoryDTO.builder()
+                .name("Valid Name")
+                .location("Valid Location")
+                .description(null)
+                .capacity(null)
+                .currentStockCount(null)
+                .isMainWarehouse(null)
+                .build();
+
+        InventoryDTO createdInventory = InventoryDTO.builder()
+                .id(1L)
+                .name("Valid Name")
+                .location("Valid Location")
+                .description(null)
+                .capacity(null)
+                .currentStockCount(0)
+                .isMainWarehouse(false)
+                .build();
+
+        when(inventoryService.createInventory(any(InventoryDTO.class))).thenReturn(createdInventory);
+
+        // When & Then
+        mockMvc.perform(post("/api/inventories")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(inventoryWithNulls)))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.name", is("Valid Name")))
+                .andExpect(jsonPath("$.currentStockCount", is(0)))
+                .andExpect(jsonPath("$.isMainWarehouse", is(false)));
+    }
+
+    @Test
+    void updateInventory_ShouldHandleBusinessLogicException() throws Exception {
+        // Given
+        when(inventoryService.updateInventory(eq(1L), any(InventoryDTO.class)))
+                .thenThrow(new BusinessLogicException("Only one main warehouse is allowed"));
+
+        // When & Then
+        mockMvc.perform(put("/api/inventories/1")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(testInventoryDTO)))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void getAllInventories_ShouldHandleEmptyResults() throws Exception {
+        // Given
+        Page<InventoryDTO> emptyPage = new PageImpl<>(Arrays.asList());
+        when(inventoryService.getAllInventories(any())).thenReturn(emptyPage);
+
+        // When & Then
+        mockMvc.perform(get("/api/inventories"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content", hasSize(0)))
+                .andExpect(jsonPath("$.totalElements", is(0)));
+    }
+
+    @Test
+    void searchInventories_ShouldHandleEmptyResults() throws Exception {
+        // Given
+        Page<InventoryDTO> emptyResults = new PageImpl<>(Arrays.asList());
+        when(inventoryService.searchInventories(eq("nonexistent"), any())).thenReturn(emptyResults);
+
+        // When & Then
+        mockMvc.perform(get("/api/inventories/search")
+                        .param("query", "nonexistent"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content", hasSize(0)));
     }
 }

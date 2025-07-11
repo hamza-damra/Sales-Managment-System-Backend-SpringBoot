@@ -72,6 +72,10 @@ public class DataIntegrityException extends RuntimeException {
                 case "purchase orders" -> "Please complete or cancel all purchase orders before deleting this supplier.";
                 default -> "Please remove or reassign all dependent records before deletion.";
             };
+            case "inventory" -> switch (dependentResource.toLowerCase()) {
+                case "categories" -> "Please move all categories to another inventory or delete them before removing this inventory.";
+                default -> "Please remove or reassign all dependent records before deletion.";
+            };
             default -> "Please remove or reassign all dependent records before deletion.";
         };
     }
@@ -116,8 +120,14 @@ public class DataIntegrityException extends RuntimeException {
     }
 
     public static DataIntegrityException supplierHasPurchaseOrders(Long supplierId, int orderCount) {
-        String message = String.format("Cannot delete supplier because they have %d active purchase order%s", 
+        String message = String.format("Cannot delete supplier because they have %d active purchase order%s",
                                      orderCount, orderCount == 1 ? "" : "s");
         return new DataIntegrityException("Supplier", supplierId, "Purchase Orders", message, "SUPPLIER_HAS_PURCHASE_ORDERS");
+    }
+
+    public static DataIntegrityException inventoryHasCategories(Long inventoryId, int categoryCount) {
+        String message = String.format("Cannot delete inventory because it contains %d categor%s",
+                                     categoryCount, categoryCount == 1 ? "y" : "ies");
+        return new DataIntegrityException("Inventory", inventoryId, "Categories", message, "INVENTORY_HAS_CATEGORIES");
     }
 }

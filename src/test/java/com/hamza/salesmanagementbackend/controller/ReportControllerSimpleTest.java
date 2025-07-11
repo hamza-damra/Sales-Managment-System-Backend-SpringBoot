@@ -1,5 +1,6 @@
 package com.hamza.salesmanagementbackend.controller;
 
+import com.hamza.salesmanagementbackend.config.ApplicationConstants;
 import com.hamza.salesmanagementbackend.dto.report.ReportRequestDTO;
 import com.hamza.salesmanagementbackend.dto.report.SalesReportDTO;
 import com.hamza.salesmanagementbackend.service.ReportService;
@@ -250,7 +251,7 @@ class ReportControllerSimpleTest {
                 .thenReturn(mockReportData);
 
         // When & Then
-        mockMvc.perform(get("/api/v1/reports/kpi/real-time"))
+        mockMvc.perform(get(ApplicationConstants.API_V1_REPORTS + "/kpi/real-time"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
                 .andExpect(jsonPath("$.metadata.reportType").value("REAL_TIME_KPI"));
@@ -259,7 +260,7 @@ class ReportControllerSimpleTest {
     @Test
     @DisplayName("Should validate date range parameters")
     void shouldValidateDateRangeParameters() throws Exception {
-        mockMvc.perform(get("/api/v1/reports/sales/comprehensive")
+        mockMvc.perform(get(ApplicationConstants.API_V1_REPORTS + "/sales/comprehensive")
                         .param("startDate", "invalid-date")
                         .param("endDate", endDate.format(DateTimeFormatter.ISO_LOCAL_DATE_TIME)))
                 .andExpect(status().isBadRequest());

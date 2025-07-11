@@ -182,7 +182,8 @@ public class Promotion {
     }
 
     public BigDecimal calculateDiscount(BigDecimal orderAmount) {
-        if (orderAmount.compareTo(this.minimumOrderAmount) < 0) {
+        // Check minimum order amount (handle null case)
+        if (this.minimumOrderAmount != null && orderAmount.compareTo(this.minimumOrderAmount) < 0) {
             return BigDecimal.ZERO;
         }
 
@@ -195,7 +196,7 @@ public class Promotion {
         };
 
         // Apply maximum discount limit if set
-        if (this.maximumDiscountAmount != null && 
+        if (this.maximumDiscountAmount != null &&
             discount.compareTo(this.maximumDiscountAmount) > 0) {
             discount = this.maximumDiscountAmount;
         }
@@ -205,6 +206,14 @@ public class Promotion {
 
     public boolean isExpired() {
         return LocalDateTime.now().isAfter(this.endDate);
+    }
+
+    public void incrementUsageCount() {
+        this.usageCount = (this.usageCount != null ? this.usageCount : 0) + 1;
+    }
+
+    public void decrementUsageCount() {
+        this.usageCount = Math.max(0, (this.usageCount != null ? this.usageCount : 0) - 1);
     }
 
     public boolean isNotYetStarted() {
@@ -239,7 +248,20 @@ public class Promotion {
     }
 
     public String getEligibilityDisplay() {
-        return this.customerEligibility != null ? 
+        return this.customerEligibility != null ?
                this.customerEligibility.name().replace("_", " ") : "ALL";
+    }
+
+    // Custom getter methods to handle null BigDecimal values safely
+    public BigDecimal getMinimumOrderAmount() {
+        return this.minimumOrderAmount != null ? this.minimumOrderAmount : BigDecimal.ZERO;
+    }
+
+    public BigDecimal getMaximumDiscountAmount() {
+        return this.maximumDiscountAmount; // This can be null, which is valid for "no maximum"
+    }
+
+    public BigDecimal getDiscountValue() {
+        return this.discountValue != null ? this.discountValue : BigDecimal.ZERO;
     }
 }
