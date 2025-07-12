@@ -8,7 +8,7 @@ import com.hamza.salesmanagementbackend.payload.response.JwtAuthenticationRespon
 import com.hamza.salesmanagementbackend.payload.response.SignUpResponse;
 import com.hamza.salesmanagementbackend.payload.response.TokenRefreshResponse;
 import com.hamza.salesmanagementbackend.service.AuthService;
-import jakarta.validation.Valid;
+import javax.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;

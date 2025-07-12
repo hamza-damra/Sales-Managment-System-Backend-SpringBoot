@@ -49,35 +49,56 @@ public class DataIntegrityException extends RuntimeException {
     }
 
     private String generateSuggestion(String resourceType, String dependentResource) {
-        return switch (resourceType.toLowerCase()) {
-            case "sale" -> switch (dependentResource.toLowerCase()) {
-                case "returns" -> "Please process or cancel all associated returns before deleting this sale.";
-                default -> "Please remove or reassign all dependent records before deletion.";
-            };
-            case "customer" -> switch (dependentResource.toLowerCase()) {
-                case "sales" -> "Please complete, cancel, or reassign all customer sales before deleting this customer.";
-                case "returns" -> "Please process all customer returns before deleting this customer.";
-                default -> "Please remove or reassign all dependent records before deletion.";
-            };
-            case "product" -> switch (dependentResource.toLowerCase()) {
-                case "sale items" -> "This product has been sold and cannot be deleted. Consider marking it as inactive instead.";
-                case "return items" -> "This product has associated returns and cannot be deleted.";
-                default -> "Please remove or reassign all dependent records before deletion.";
-            };
-            case "category" -> switch (dependentResource.toLowerCase()) {
-                case "products" -> "Please move all products to another category or delete them before removing this category.";
-                default -> "Please remove or reassign all dependent records before deletion.";
-            };
-            case "supplier" -> switch (dependentResource.toLowerCase()) {
-                case "purchase orders" -> "Please complete or cancel all purchase orders before deleting this supplier.";
-                default -> "Please remove or reassign all dependent records before deletion.";
-            };
-            case "inventory" -> switch (dependentResource.toLowerCase()) {
-                case "categories" -> "Please move all categories to another inventory or delete them before removing this inventory.";
-                default -> "Please remove or reassign all dependent records before deletion.";
-            };
-            default -> "Please remove or reassign all dependent records before deletion.";
-        };
+        switch (resourceType.toLowerCase()) {
+            case "sale":
+                switch (dependentResource.toLowerCase()) {
+                    case "returns":
+                        return "Please process or cancel all associated returns before deleting this sale.";
+                    default:
+                        return "Please remove or reassign all dependent records before deletion.";
+                }
+            case "customer":
+                switch (dependentResource.toLowerCase()) {
+                    case "sales":
+                        return "Please complete, cancel, or reassign all customer sales before deleting this customer.";
+                    case "returns":
+                        return "Please process all customer returns before deleting this customer.";
+                    default:
+                        return "Please remove or reassign all dependent records before deletion.";
+                }
+            case "product":
+                switch (dependentResource.toLowerCase()) {
+                    case "sale items":
+                        return "This product has been sold and cannot be deleted. Consider marking it as inactive instead.";
+                    case "return items":
+                        return "This product has associated returns and cannot be deleted.";
+                    default:
+                        return "Please remove or reassign all dependent records before deletion.";
+                }
+            case "category":
+                switch (dependentResource.toLowerCase()) {
+                    case "products":
+                        return "Please move all products to another category or delete them before removing this category.";
+                    default:
+                        return "Please remove or reassign all dependent records before deletion.";
+                }
+            case "supplier":
+                switch (dependentResource.toLowerCase()) {
+                    case "purchase orders":
+                        return "Please complete or cancel all purchase orders before deleting this supplier.";
+                    default:
+                        return "Please remove or reassign all dependent records before deletion.";
+                }
+            case "inventory":
+                switch (dependentResource.toLowerCase()) {
+                    case "categories":
+                        return "Please move all categories to another inventory or delete them before removing this inventory.";
+                    default:
+                        return "Please remove or reassign all dependent records before deletion.";
+                }
+            default:
+                return "Please remove or reassign all dependent records before deletion.";
+        }
     }
 
     /**

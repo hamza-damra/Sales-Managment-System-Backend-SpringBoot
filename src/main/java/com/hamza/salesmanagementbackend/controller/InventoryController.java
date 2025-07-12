@@ -6,7 +6,7 @@ import com.hamza.salesmanagementbackend.entity.Inventory;
 import com.hamza.salesmanagementbackend.exception.ResourceNotFoundException;
 import com.hamza.salesmanagementbackend.service.InventoryService;
 import com.hamza.salesmanagementbackend.util.SortingUtils;
-import jakarta.validation.Valid;
+import javax.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -170,15 +170,15 @@ public class InventoryController {
         return ResponseEntity.ok(inventories);
     }
 
-    @GetMapping("/near-capacity")
-    public ResponseEntity<List<InventoryDTO>> getInventoriesNearCapacity(
-            @RequestParam(defaultValue = "80.0") Double threshold) {
-        
-        if (threshold < 0 || threshold > 100) {
-            return ResponseEntity.badRequest().build();
-        }
-        
-        List<InventoryDTO> inventories = inventoryService.getInventoriesNearCapacity(threshold);
+    @GetMapping("/with-dimensions")
+    public ResponseEntity<List<InventoryDTO>> getInventoriesWithDimensions() {
+        List<InventoryDTO> inventories = inventoryService.getInventoriesWithDimensions();
+        return ResponseEntity.ok(inventories);
+    }
+
+    @GetMapping("/without-dimensions")
+    public ResponseEntity<List<InventoryDTO>> getInventoriesWithoutDimensions() {
+        List<InventoryDTO> inventories = inventoryService.getInventoriesWithoutDimensions();
         return ResponseEntity.ok(inventories);
     }
 

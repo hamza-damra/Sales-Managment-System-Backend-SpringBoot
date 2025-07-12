@@ -1,8 +1,8 @@
 package com.hamza.salesmanagementbackend.entity;
 
-import jakarta.persistence.*;
-import jakarta.validation.constraints.DecimalMin;
-import jakarta.validation.constraints.NotNull;
+import javax.persistence.*;
+import javax.validation.constraints.DecimalMin;
+import javax.validation.constraints.NotNull;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
 
@@ -113,11 +113,17 @@ public class AppliedPromotion {
     }
 
     public String getTypeDisplay() {
-        return switch (promotionType) {
-            case PERCENTAGE -> "Percentage Discount";
-            case FIXED_AMOUNT -> "Fixed Amount Discount";
-            case BUY_X_GET_Y -> "Buy X Get Y";
-            case FREE_SHIPPING -> "Free Shipping";
-        };
+        switch (promotionType) {
+            case PERCENTAGE:
+                return "Percentage Discount";
+            case FIXED_AMOUNT:
+                return "Fixed Amount Discount";
+            case BUY_X_GET_Y:
+                return "Buy X Get Y";
+            case FREE_SHIPPING:
+                return "Free Shipping";
+            default:
+                return "Unknown";
+        }
     }
 }

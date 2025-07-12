@@ -1,8 +1,8 @@
 package com.hamza.salesmanagementbackend.entity;
 
-import jakarta.persistence.*;
-import jakarta.validation.constraints.DecimalMin;
-import jakarta.validation.constraints.NotNull;
+import javax.persistence.*;
+import javax.validation.constraints.DecimalMin;
+import javax.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -217,17 +217,20 @@ public class Sale {
     @OneToMany(mappedBy = "sale", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     @ToString.Exclude
     @EqualsAndHashCode.Exclude
-    private List<SaleItem> items;
+    @Builder.Default
+    private List<SaleItem> items = new ArrayList<>();
 
     @OneToMany(mappedBy = "originalSale", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     @ToString.Exclude
     @EqualsAndHashCode.Exclude
-    private List<Return> returns;
+    @Builder.Default
+    private List<Return> returns = new ArrayList<>();
 
     @OneToMany(mappedBy = "sale", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     @ToString.Exclude
     @EqualsAndHashCode.Exclude
-    private List<AppliedPromotion> appliedPromotions;
+    @Builder.Default
+    private List<AppliedPromotion> appliedPromotions = new ArrayList<>();
 
     // Enums
     public enum PaymentMethod {
@@ -270,6 +273,8 @@ public class Sale {
         this.loyaltyPointsUsed = 0;
         this.isReturn = false;
         this.promotionDiscountAmount = BigDecimal.ZERO;
+        this.items = new ArrayList<>();
+        this.returns = new ArrayList<>();
         this.appliedPromotions = new ArrayList<>();
         this.profitMargin = BigDecimal.ZERO;
         this.costOfGoodsSold = BigDecimal.ZERO;

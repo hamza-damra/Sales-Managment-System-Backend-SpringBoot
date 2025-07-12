@@ -567,10 +567,18 @@ public class ReportService {
         Map<String, Object> trends = new HashMap<>();
 
         switch (groupBy.toUpperCase()) {
-            case "DAY" -> trends.putAll(generateDailyTrends(sales));
-            case "WEEK" -> trends.putAll(generateWeeklyTrends(sales));
-            case "MONTH" -> trends.putAll(generateMonthlyTrends(sales));
-            default -> trends.putAll(generateMonthlyTrends(sales));
+            case "DAY":
+                trends.putAll(generateDailyTrends(sales));
+                break;
+            case "WEEK":
+                trends.putAll(generateWeeklyTrends(sales));
+                break;
+            case "MONTH":
+                trends.putAll(generateMonthlyTrends(sales));
+                break;
+            default:
+                trends.putAll(generateMonthlyTrends(sales));
+                break;
         }
 
         // Add forecasting data
@@ -1022,7 +1030,7 @@ public class ReportService {
                     customerData.put("daysBetween", daysBetween);
                     return customerData;
                 })
-                .toList();
+                .collect(Collectors.toList());
 
         // Calculate segmentation thresholds
         List<BigDecimal> spentAmounts = customerMetrics.stream()
@@ -2748,7 +2756,7 @@ public class ReportService {
                             itemWithDate.put("saleDate", sale.getSaleDate());
                             return itemWithDate;
                         }))
-                .toList();
+                .collect(Collectors.toList());
 
         if (allItems.isEmpty()) {
             return Map.of(

@@ -64,7 +64,11 @@ public interface PurchaseOrderRepository extends JpaRepository<PurchaseOrder, Lo
     Page<PurchaseOrder> findByStatusAndSupplierId(@Param("status") PurchaseOrder.PurchaseOrderStatus status,
                                                  @Param("supplierId") Long supplierId, Pageable pageable);
 
-    @Query("SELECT po FROM PurchaseOrder po LEFT JOIN FETCH po.supplier s LEFT JOIN FETCH po.items poi LEFT JOIN FETCH poi.product " +
+    @Query(value = "SELECT po FROM PurchaseOrder po LEFT JOIN FETCH po.supplier s LEFT JOIN FETCH po.items poi LEFT JOIN FETCH poi.product " +
+           "WHERE LOWER(po.orderNumber) LIKE LOWER(CONCAT('%', :query, '%')) " +
+           "OR LOWER(s.name) LIKE LOWER(CONCAT('%', :query, '%')) " +
+           "OR LOWER(po.notes) LIKE LOWER(CONCAT('%', :query, '%'))",
+           countQuery = "SELECT COUNT(po) FROM PurchaseOrder po LEFT JOIN po.supplier s " +
            "WHERE LOWER(po.orderNumber) LIKE LOWER(CONCAT('%', :query, '%')) " +
            "OR LOWER(s.name) LIKE LOWER(CONCAT('%', :query, '%')) " +
            "OR LOWER(po.notes) LIKE LOWER(CONCAT('%', :query, '%'))")

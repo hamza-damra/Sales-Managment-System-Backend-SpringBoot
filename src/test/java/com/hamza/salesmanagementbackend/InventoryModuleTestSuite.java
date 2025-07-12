@@ -1,9 +1,6 @@
 package com.hamza.salesmanagementbackend;
 
-import com.hamza.salesmanagementbackend.controller.InventoryControllerTest;
-import com.hamza.salesmanagementbackend.repository.InventoryRepositoryCapacityTest;
-import com.hamza.salesmanagementbackend.repository.InventoryRepositoryTest;
-import com.hamza.salesmanagementbackend.service.InventoryServiceTest;
+
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.DisplayName;
 
@@ -11,14 +8,14 @@ import org.junit.jupiter.api.DisplayName;
  * Test suite for the complete Inventory module.
  *
  * This suite runs all inventory-related tests including:
- * - Repository layer tests (including the fixed getAverageCapacityUtilization query)
+ * - Repository layer tests (including dimension-based queries)
  * - Service layer tests with mocked dependencies
  * - Controller layer integration tests
- * - Capacity-specific functionality tests
+ * - Dimension-specific functionality tests
  *
  * Run individual test classes directly:
  * - mvn test -Dtest=InventoryRepositoryTest
- * - mvn test -Dtest=InventoryRepositoryCapacityTest
+ * - mvn test -Dtest=InventoryRepositoryDimensionTest
  * - mvn test -Dtest=InventoryServiceTest
  * - mvn test -Dtest=InventoryControllerTest
  *

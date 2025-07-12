@@ -49,12 +49,6 @@ public interface InventoryRepository extends JpaRepository<Inventory, Long> {
     @Query("SELECT i FROM Inventory i WHERE i.id NOT IN (SELECT DISTINCT c.inventory.id FROM Category c WHERE c.inventory IS NOT NULL)")
     List<Inventory> findEmptyInventories();
 
-    @Query("SELECT i FROM Inventory i WHERE i.capacity IS NOT NULL AND i.currentStockCount >= (i.capacity * :threshold / 100)")
-    List<Inventory> findInventoriesNearCapacity(@Param("threshold") Double threshold);
-
-    @Query("SELECT i FROM Inventory i WHERE i.capacity IS NOT NULL AND i.currentStockCount >= i.capacity")
-    List<Inventory> findFullInventories();
-
     @Query("SELECT i FROM Inventory i WHERE i.managerName = :managerName")
     List<Inventory> findByManagerName(@Param("managerName") String managerName);
 
@@ -64,8 +58,11 @@ public interface InventoryRepository extends JpaRepository<Inventory, Long> {
     @Query("SELECT COUNT(i) FROM Inventory i WHERE i.status = :status")
     Long countByStatus(@Param("status") Inventory.InventoryStatus status);
 
-    @Query("SELECT AVG(CAST(i.currentStockCount AS DOUBLE) / i.capacity * 100) FROM Inventory i WHERE i.capacity IS NOT NULL AND i.capacity > 0 AND i.status = 'ACTIVE'")
-    Double getAverageCapacityUtilization();
+    @Query("SELECT i FROM Inventory i WHERE i.length IS NOT NULL AND i.width IS NOT NULL AND i.height IS NOT NULL")
+    List<Inventory> findInventoriesWithDimensions();
+
+    @Query("SELECT i FROM Inventory i WHERE i.length IS NULL OR i.width IS NULL OR i.height IS NULL")
+    List<Inventory> findInventoriesWithoutDimensions();
 
     boolean existsByName(String name);
 

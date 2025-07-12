@@ -5,9 +5,9 @@ import com.hamza.salesmanagementbackend.dto.report.*;
 import com.hamza.salesmanagementbackend.service.ReportService;
 import com.hamza.salesmanagementbackend.service.ReportExportService;
 import com.hamza.salesmanagementbackend.service.ReportCacheService;
-import jakarta.validation.Valid;
-import jakarta.validation.constraints.Max;
-import jakarta.validation.constraints.Min;
+import javax.validation.Valid;
+import javax.validation.constraints.Max;
+import javax.validation.constraints.Min;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -761,20 +761,28 @@ public class ReportController {
     }
 
     private String getFileExtension(String format) {
-        return switch (format.toUpperCase()) {
-            case "PDF" -> "pdf";
-            case "EXCEL" -> "xlsx";
-            case "CSV" -> "csv";
-            default -> "json";
-        };
+        switch (format.toUpperCase()) {
+            case "PDF":
+                return "pdf";
+            case "EXCEL":
+                return "xlsx";
+            case "CSV":
+                return "csv";
+            default:
+                return "json";
+        }
     }
 
     private MediaType getMediaTypeForFormat(String format) {
-        return switch (format.toUpperCase()) {
-            case "PDF" -> MediaType.APPLICATION_PDF;
-            case "EXCEL" -> MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
-            case "CSV" -> MediaType.parseMediaType("text/csv");
-            default -> MediaType.APPLICATION_JSON;
-        };
+        switch (format.toUpperCase()) {
+            case "PDF":
+                return MediaType.APPLICATION_PDF;
+            case "EXCEL":
+                return MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+            case "CSV":
+                return MediaType.parseMediaType("text/csv");
+            default:
+                return MediaType.APPLICATION_JSON;
+        }
     }
 }

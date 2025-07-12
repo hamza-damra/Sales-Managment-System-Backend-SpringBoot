@@ -26,12 +26,16 @@ public class ReportExportService {
         log.info("Exporting report in {} format", request.getExportFormat());
         
         try {
-            return switch (request.getExportFormat().toUpperCase()) {
-                case "PDF" -> exportToPdf(request);
-                case "EXCEL" -> exportToExcel(request);
-                case "CSV" -> exportToCsv(request);
-                default -> throw new IllegalArgumentException("Unsupported export format: " + request.getExportFormat());
-            };
+            switch (request.getExportFormat().toUpperCase()) {
+                case "PDF":
+                    return exportToPdf(request);
+                case "EXCEL":
+                    return exportToExcel(request);
+                case "CSV":
+                    return exportToCsv(request);
+                default:
+                    throw new IllegalArgumentException("Unsupported export format: " + request.getExportFormat());
+            }
         } catch (Exception e) {
             log.error("Error exporting report: {}", e.getMessage(), e);
             throw new RuntimeException("Failed to export report", e);

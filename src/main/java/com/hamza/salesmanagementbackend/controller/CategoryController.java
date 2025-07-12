@@ -6,7 +6,7 @@ import com.hamza.salesmanagementbackend.entity.Category;
 import com.hamza.salesmanagementbackend.exception.ResourceNotFoundException;
 import com.hamza.salesmanagementbackend.service.CategoryService;
 import com.hamza.salesmanagementbackend.util.SortingUtils;
-import jakarta.validation.Valid;
+import javax.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;

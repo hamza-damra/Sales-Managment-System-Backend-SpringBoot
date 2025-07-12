@@ -73,8 +73,8 @@ public class SortingUtils {
     // Valid sort fields for Inventory entity
     public static final Set<String> VALID_INVENTORY_SORT_FIELDS = Set.of(
             "id", "name", "description", "location", "address", "managerName",
-            "capacity", "currentStockCount", "status", "warehouseCode",
-            "isMainWarehouse", "createdAt", "updatedAt"
+            "length", "width", "height", "currentStockCount", "status", "warehouseCode",
+            "isMainWarehouse", "startWorkTime", "endWorkTime", "createdAt", "updatedAt"
     );
 
     // Valid sort fields for PurchaseOrder entity

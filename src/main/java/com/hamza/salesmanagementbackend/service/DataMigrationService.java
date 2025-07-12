@@ -10,6 +10,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * Service to handle data migrations and fix data integrity issues
@@ -39,7 +40,7 @@ public class DataMigrationService implements CommandLineRunner {
         List<Sale> salesWithNullPaymentMethod = saleRepository.findAll()
                 .stream()
                 .filter(sale -> sale.getPaymentMethod() == null)
-                .toList();
+                .collect(Collectors.toList());
 
         if (!salesWithNullPaymentMethod.isEmpty()) {
             log.warn("Found {} sales with null payment methods. Fixing...", salesWithNullPaymentMethod.size());

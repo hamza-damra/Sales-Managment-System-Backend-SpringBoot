@@ -1,14 +1,15 @@
 package com.hamza.salesmanagementbackend.entity;
 
-import jakarta.persistence.*;
-import jakarta.validation.constraints.DecimalMin;
-import jakarta.validation.constraints.NotNull;
+import javax.persistence.*;
+import javax.validation.constraints.DecimalMin;
+import javax.validation.constraints.NotNull;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 
 @Entity
@@ -88,7 +89,8 @@ public class Return {
     @OneToMany(mappedBy = "returnEntity", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     @ToString.Exclude
     @EqualsAndHashCode.Exclude
-    private List<ReturnItem> items;
+    @Builder.Default
+    private List<ReturnItem> items = new ArrayList<>();
 
     // Enums
     public enum ReturnReason {
@@ -112,6 +114,7 @@ public class Return {
         this.totalRefundAmount = totalRefundAmount;
         this.status = ReturnStatus.PENDING;
         this.returnDate = LocalDateTime.now();
+        this.items = new ArrayList<>();
     }
 
     // Business logic methods

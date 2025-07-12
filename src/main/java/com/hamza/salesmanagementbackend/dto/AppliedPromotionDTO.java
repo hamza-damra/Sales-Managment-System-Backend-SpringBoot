@@ -57,11 +57,17 @@ public class AppliedPromotionDTO {
     }
 
     public String getTypeDisplay() {
-        return switch (promotionType) {
-            case PERCENTAGE -> "Percentage Discount";
-            case FIXED_AMOUNT -> "Fixed Amount Discount";
-            case BUY_X_GET_Y -> "Buy X Get Y";
-            case FREE_SHIPPING -> "Free Shipping";
-        };
+        switch (promotionType) {
+            case PERCENTAGE:
+                return "Percentage Discount";
+            case FIXED_AMOUNT:
+                return "Fixed Amount Discount";
+            case BUY_X_GET_Y:
+                return "Buy X Get Y";
+            case FREE_SHIPPING:
+                return "Free Shipping";
+            default:
+                return "Unknown";
+        }
     }
 }

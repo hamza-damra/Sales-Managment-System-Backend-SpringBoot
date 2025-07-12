@@ -1,13 +1,17 @@
 package com.hamza.salesmanagementbackend.dto;
 
 import com.hamza.salesmanagementbackend.entity.Inventory;
-import jakarta.validation.constraints.NotBlank;
+import javax.validation.constraints.NotBlank;
+import javax.validation.constraints.DecimalMin;
+import javax.validation.constraints.Digits;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 
 @Data
 @NoArgsConstructor
@@ -33,7 +37,17 @@ public class InventoryDTO {
 
     private String managerEmail;
 
-    private Integer capacity;
+    @DecimalMin(value = "0.0", inclusive = false, message = "Length must be greater than 0")
+    @Digits(integer = 10, fraction = 2, message = "Length must have at most 10 integer digits and 2 decimal places")
+    private BigDecimal length; // Length in meters
+
+    @DecimalMin(value = "0.0", inclusive = false, message = "Width must be greater than 0")
+    @Digits(integer = 10, fraction = 2, message = "Width must have at most 10 integer digits and 2 decimal places")
+    private BigDecimal width; // Width in meters
+
+    @DecimalMin(value = "0.0", inclusive = false, message = "Height must be greater than 0")
+    @Digits(integer = 10, fraction = 2, message = "Height must have at most 10 integer digits and 2 decimal places")
+    private BigDecimal height; // Height in meters
 
     private Integer currentStockCount;
 
@@ -43,7 +57,9 @@ public class InventoryDTO {
 
     private Boolean isMainWarehouse;
 
-    private String operatingHours;
+    private LocalTime startWorkTime;
+
+    private LocalTime endWorkTime;
 
     private String contactPhone;
 
@@ -58,9 +74,17 @@ public class InventoryDTO {
     // Additional fields for API responses
     private Integer categoryCount;
 
-    private Double capacityUtilization;
+    private BigDecimal volume; // Calculated volume in cubic meters
 
-    private Boolean isNearCapacity;
+    private BigDecimal floorArea; // Calculated floor area in square meters
+
+    private Boolean hasDimensions; // Whether all dimensions are set
+
+    private Boolean hasWorkTimes; // Whether both work times are set
+
+    private Boolean isWorkTimeValid; // Whether start time is before end time
+
+    private Long workDurationMinutes; // Duration of work hours in minutes
 
     // Constructor for basic inventory creation
     public InventoryDTO(String name, String description, String location) {

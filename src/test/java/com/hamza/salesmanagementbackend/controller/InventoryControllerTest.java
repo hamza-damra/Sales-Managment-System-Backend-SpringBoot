@@ -19,6 +19,8 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 
+import java.math.BigDecimal;
+import java.time.LocalTime;
 import java.util.Arrays;
 import java.util.List;
 
@@ -59,13 +61,21 @@ public class InventoryControllerTest {
                 .address("123 Test St")
                 .managerName("Test Manager")
                 .managerEmail("test@example.com")
-                .capacity(100)
+                .length(new BigDecimal("20.0"))
+                .width(new BigDecimal("15.0"))
+                .height(new BigDecimal("5.0"))
                 .currentStockCount(50)
                 .status(Inventory.InventoryStatus.ACTIVE)
                 .warehouseCode("TW001")
                 .isMainWarehouse(false)
-                .capacityUtilization(50.0)
-                .isNearCapacity(false)
+                .startWorkTime(LocalTime.of(9, 0))
+                .endWorkTime(LocalTime.of(17, 0))
+                .volume(new BigDecimal("1500.00"))
+                .floorArea(new BigDecimal("300.00"))
+                .hasDimensions(true)
+                .hasWorkTimes(true)
+                .isWorkTimeValid(true)
+                .workDurationMinutes(480L)
                 .build();
 
         InventoryDTO secondInventory = InventoryDTO.builder()
@@ -73,13 +83,21 @@ public class InventoryControllerTest {
                 .name("Second Warehouse")
                 .description("Second description")
                 .location("Second Location")
-                .capacity(200)
+                .length(new BigDecimal("25.0"))
+                .width(new BigDecimal("20.0"))
+                .height(new BigDecimal("6.0"))
                 .currentStockCount(160)
                 .status(Inventory.InventoryStatus.ACTIVE)
                 .warehouseCode("SW001")
                 .isMainWarehouse(true)
-                .capacityUtilization(80.0)
-                .isNearCapacity(true)
+                .startWorkTime(LocalTime.of(8, 0))
+                .endWorkTime(LocalTime.of(18, 0))
+                .volume(new BigDecimal("3000.00"))
+                .floorArea(new BigDecimal("500.00"))
+                .hasDimensions(true)
+                .hasWorkTimes(true)
+                .isWorkTimeValid(true)
+                .workDurationMinutes(600L)
                 .build();
 
         inventoryList = Arrays.asList(testInventoryDTO, secondInventory);
@@ -178,8 +196,14 @@ public class InventoryControllerTest {
                 .andExpect(jsonPath("$.id", is(1)))
                 .andExpect(jsonPath("$.name", is("Test Warehouse")))
                 .andExpect(jsonPath("$.location", is("Test Location")))
-                .andExpect(jsonPath("$.capacityUtilization", is(50.0)))
-                .andExpect(jsonPath("$.isNearCapacity", is(false)));
+                .andExpect(jsonPath("$.startWorkTime", is("09:00:00")))
+                .andExpect(jsonPath("$.endWorkTime", is("17:00:00")))
+                .andExpect(jsonPath("$.volume", is(1500.00)))
+                .andExpect(jsonPath("$.floorArea", is(300.00)))
+                .andExpect(jsonPath("$.hasDimensions", is(true)))
+                .andExpect(jsonPath("$.hasWorkTimes", is(true)))
+                .andExpect(jsonPath("$.isWorkTimeValid", is(true)))
+                .andExpect(jsonPath("$.workDurationMinutes", is(480)));
     }
 
     @Test
@@ -209,10 +233,14 @@ public class InventoryControllerTest {
                 .name("New Warehouse")
                 .description("New description")
                 .location("New Location")
-                .capacity(150)
+                .length(new BigDecimal("30.0"))
+                .width(new BigDecimal("25.0"))
+                .height(new BigDecimal("7.0"))
                 .currentStockCount(0)
                 .status(Inventory.InventoryStatus.ACTIVE)
                 .isMainWarehouse(false)
+                .startWorkTime(LocalTime.of(10, 0))
+                .endWorkTime(LocalTime.of(16, 0))
                 .build();
 
         InventoryDTO createdInventory = InventoryDTO.builder()
@@ -220,10 +248,14 @@ public class InventoryControllerTest {
                 .name("New Warehouse")
                 .description("New description")
                 .location("New Location")
-                .capacity(150)
+                .length(new BigDecimal("30.0"))
+                .width(new BigDecimal("25.0"))
+                .height(new BigDecimal("7.0"))
                 .currentStockCount(0)
                 .status(Inventory.InventoryStatus.ACTIVE)
                 .isMainWarehouse(false)
+                .startWorkTime(LocalTime.of(10, 0))
+                .endWorkTime(LocalTime.of(16, 0))
                 .build();
 
         when(inventoryService.createInventory(any(InventoryDTO.class))).thenReturn(createdInventory);
@@ -263,10 +295,14 @@ public class InventoryControllerTest {
                 .name("Updated Warehouse")
                 .description("Updated description")
                 .location("Updated Location")
-                .capacity(200)
+                .length(new BigDecimal("35.0"))
+                .width(new BigDecimal("30.0"))
+                .height(new BigDecimal("8.0"))
                 .currentStockCount(100)
                 .status(Inventory.InventoryStatus.ACTIVE)
                 .isMainWarehouse(false)
+                .startWorkTime(LocalTime.of(8, 30))
+                .endWorkTime(LocalTime.of(16, 30))
                 .build();
 
         when(inventoryService.updateInventory(eq(1L), any(InventoryDTO.class))).thenReturn(updatedInventory);
@@ -363,40 +399,29 @@ public class InventoryControllerTest {
     }
 
     @Test
-    void getInventoriesNearCapacity_ShouldReturnInventoriesAboveThreshold() throws Exception {
+    void getInventoriesWithDimensions_ShouldReturnInventoriesWithAllDimensions() throws Exception {
         // Given
-        List<InventoryDTO> nearCapacityInventories = Arrays.asList(inventoryList.get(1)); // Second warehouse at 80%
-        when(inventoryService.getInventoriesNearCapacity(80.0)).thenReturn(nearCapacityInventories);
+        List<InventoryDTO> inventoriesWithDimensions = Arrays.asList(inventoryList.get(0)); // First warehouse with dimensions
+        when(inventoryService.getInventoriesWithDimensions()).thenReturn(inventoriesWithDimensions);
 
         // When & Then
-        mockMvc.perform(get("/api/inventories/near-capacity")
-                        .param("threshold", "80.0"))
+        mockMvc.perform(get("/api/inventories/with-dimensions"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$", hasSize(1)))
-                .andExpect(jsonPath("$[0].isNearCapacity", is(true)));
+                .andExpect(jsonPath("$[0].hasDimensions", is(true)));
     }
 
     @Test
-    void getInventoriesNearCapacity_ShouldUseDefaultThreshold_WhenNotProvided() throws Exception {
+    void getInventoriesWithoutDimensions_ShouldReturnInventoriesMissingDimensions() throws Exception {
         // Given
-        when(inventoryService.getInventoriesNearCapacity(80.0)).thenReturn(Arrays.asList(inventoryList.get(1)));
+        List<InventoryDTO> inventoriesWithoutDimensions = Arrays.asList(inventoryList.get(1)); // Second warehouse without dimensions
+        when(inventoryService.getInventoriesWithoutDimensions()).thenReturn(inventoriesWithoutDimensions);
 
         // When & Then
-        mockMvc.perform(get("/api/inventories/near-capacity"))
+        mockMvc.perform(get("/api/inventories/without-dimensions"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$", hasSize(1)));
-    }
-
-    @Test
-    void getInventoriesNearCapacity_ShouldReturnBadRequest_WhenThresholdIsInvalid() throws Exception {
-        // When & Then
-        mockMvc.perform(get("/api/inventories/near-capacity")
-                        .param("threshold", "-10"))
-                .andExpect(status().isBadRequest());
-
-        mockMvc.perform(get("/api/inventories/near-capacity")
-                        .param("threshold", "150"))
-                .andExpect(status().isBadRequest());
+                .andExpect(jsonPath("$", hasSize(1)))
+                .andExpect(jsonPath("$[0].hasDimensions", is(false)));
     }
 
     // Additional Error Handling Tests
@@ -490,9 +515,13 @@ public class InventoryControllerTest {
                 .name("Valid Name")
                 .location("Valid Location")
                 .description(null)
-                .capacity(null)
+                .length(null)
+                .width(null)
+                .height(null)
                 .currentStockCount(null)
                 .isMainWarehouse(null)
+                .startWorkTime(null)
+                .endWorkTime(null)
                 .build();
 
         InventoryDTO createdInventory = InventoryDTO.builder()
@@ -500,9 +529,13 @@ public class InventoryControllerTest {
                 .name("Valid Name")
                 .location("Valid Location")
                 .description(null)
-                .capacity(null)
+                .length(null)
+                .width(null)
+                .height(null)
                 .currentStockCount(0)
                 .isMainWarehouse(false)
+                .startWorkTime(null)
+                .endWorkTime(null)
                 .build();
 
         when(inventoryService.createInventory(any(InventoryDTO.class))).thenReturn(createdInventory);

@@ -18,7 +18,7 @@ public final class ApplicationConstants {
      * Base domain for the application
      * Change this to update the domain across the entire application
      */
-    public static final String BASE_DOMAIN = "abusaker.zapto.org";
+    public static final String BASE_DOMAIN = "localhost";
 
     /**
      * Default port for the application

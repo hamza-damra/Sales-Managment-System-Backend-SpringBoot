@@ -2,10 +2,10 @@ package com.hamza.salesmanagementbackend.dto;
 
 import com.hamza.salesmanagementbackend.entity.Sale;
 import com.hamza.salesmanagementbackend.entity.SaleStatus;
-import jakarta.validation.constraints.DecimalMin;
-import jakarta.validation.constraints.NotEmpty;
-import jakarta.validation.constraints.NotNull;
-import jakarta.validation.Valid;
+import javax.validation.constraints.DecimalMin;
+import javax.validation.constraints.NotEmpty;
+import javax.validation.constraints.NotNull;
+import javax.validation.Valid;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;

@@ -1,9 +1,9 @@
 package com.hamza.salesmanagementbackend.entity;
 
-import jakarta.persistence.*;
-import jakarta.validation.constraints.Email;
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.Pattern;
+import javax.persistence.*;
+import javax.validation.constraints.Email;
+import javax.validation.constraints.NotBlank;
+import javax.validation.constraints.Pattern;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -16,6 +16,7 @@ import org.hibernate.annotations.UpdateTimestamp;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 
 @Entity
@@ -142,12 +143,14 @@ public class Customer {
     @OneToMany(mappedBy = "customer", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     @ToString.Exclude // Keep field-level annotation
     @EqualsAndHashCode.Exclude // Keep field-level annotation
-    private List<Sale> sales;
+    @Builder.Default
+    private List<Sale> sales = new ArrayList<>();
 
     @OneToMany(mappedBy = "customer", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     @ToString.Exclude
     @EqualsAndHashCode.Exclude
-    private List<Return> returns;
+    @Builder.Default
+    private List<Return> returns = new ArrayList<>();
 
     // Custom constructors for specific use cases
     public Customer(String name, String email, String phone, String address) {
@@ -163,6 +166,8 @@ public class Customer {
         this.totalPurchases = BigDecimal.ZERO;
         this.isEmailVerified = false;
         this.isPhoneVerified = false;
+        this.sales = new ArrayList<>();
+        this.returns = new ArrayList<>();
     }
 
     public Customer(String firstName, String lastName, String email, String phone,
@@ -183,6 +188,8 @@ public class Customer {
         this.totalPurchases = BigDecimal.ZERO;
         this.isEmailVerified = false;
         this.isPhoneVerified = false;
+        this.sales = new ArrayList<>();
+        this.returns = new ArrayList<>();
     }
 
     // Enums

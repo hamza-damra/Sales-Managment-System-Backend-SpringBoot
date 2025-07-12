@@ -17,7 +17,9 @@ import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
@@ -52,11 +54,15 @@ public class InventoryServiceTest {
                 .address("123 Test St")
                 .managerName("Test Manager")
                 .managerEmail("test@example.com")
-                .capacity(100)
+                .length(new BigDecimal("20.0"))
+                .width(new BigDecimal("15.0"))
+                .height(new BigDecimal("5.0"))
                 .currentStockCount(50)
                 .status(Inventory.InventoryStatus.ACTIVE)
                 .warehouseCode("TW001")
                 .isMainWarehouse(false)
+                .startWorkTime(LocalTime.of(9, 0))
+                .endWorkTime(LocalTime.of(17, 0))
                 .createdAt(LocalDateTime.now())
                 .updatedAt(LocalDateTime.now())
                 .build();
@@ -69,11 +75,15 @@ public class InventoryServiceTest {
                 .address("123 Test St")
                 .managerName("Test Manager")
                 .managerEmail("test@example.com")
-                .capacity(100)
+                .length(new BigDecimal("20.0"))
+                .width(new BigDecimal("15.0"))
+                .height(new BigDecimal("5.0"))
                 .currentStockCount(50)
                 .status(Inventory.InventoryStatus.ACTIVE)
                 .warehouseCode("TW001")
                 .isMainWarehouse(false)
+                .startWorkTime(LocalTime.of(9, 0))
+                .endWorkTime(LocalTime.of(17, 0))
                 .build();
 
         mainWarehouse = Inventory.builder()
@@ -81,11 +91,15 @@ public class InventoryServiceTest {
                 .name("Main Warehouse")
                 .description("Main warehouse")
                 .location("Main Location")
-                .capacity(500)
+                .length(new BigDecimal("50.0"))
+                .width(new BigDecimal("30.0"))
+                .height(new BigDecimal("8.0"))
                 .currentStockCount(250)
                 .status(Inventory.InventoryStatus.ACTIVE)
                 .warehouseCode("MW001")
                 .isMainWarehouse(true)
+                .startWorkTime(LocalTime.of(8, 0))
+                .endWorkTime(LocalTime.of(18, 0))
                 .build();
     }
 
@@ -229,11 +243,15 @@ public class InventoryServiceTest {
                 .name("Updated Warehouse")
                 .description("Updated description")
                 .location("Updated Location")
-                .capacity(200)
+                .length(new BigDecimal("25.0"))
+                .width(new BigDecimal("20.0"))
+                .height(new BigDecimal("6.0"))
                 .currentStockCount(100)
                 .status(Inventory.InventoryStatus.ACTIVE)
                 .warehouseCode("UW001") // Add warehouse code so validation is triggered
                 .isMainWarehouse(false)
+                .startWorkTime(LocalTime.of(8, 30))
+                .endWorkTime(LocalTime.of(16, 30))
                 .build();
 
         when(inventoryRepository.findById(1L)).thenReturn(Optional.of(testInventory));
@@ -350,12 +368,24 @@ public class InventoryServiceTest {
     }
 
     @Test
-    void getInventoriesNearCapacity_ShouldReturnInventoriesAboveThreshold() {
+    void getInventoriesWithDimensions_ShouldReturnInventoriesWithAllDimensions() {
         // Given
-        when(inventoryRepository.findInventoriesNearCapacity(80.0)).thenReturn(Arrays.asList(testInventory));
+        when(inventoryRepository.findInventoriesWithDimensions()).thenReturn(Arrays.asList(testInventory));
 
         // When
-        List<InventoryDTO> result = inventoryService.getInventoriesNearCapacity(80.0);
+        List<InventoryDTO> result = inventoryService.getInventoriesWithDimensions();
+
+        // Then
+        assertThat(result).hasSize(1);
+    }
+
+    @Test
+    void getInventoriesWithoutDimensions_ShouldReturnInventoriesMissingDimensions() {
+        // Given
+        when(inventoryRepository.findInventoriesWithoutDimensions()).thenReturn(Arrays.asList(testInventory));
+
+        // When
+        List<InventoryDTO> result = inventoryService.getInventoriesWithoutDimensions();
 
         // Then
         assertThat(result).hasSize(1);
@@ -465,48 +495,102 @@ public class InventoryServiceTest {
     }
 
     @Test
-    void mapToDTO_ShouldCalculateCapacityUtilization() {
+    void mapToDTO_ShouldCalculateVolume() {
         // Given
-        testInventory.setCapacity(100);
-        testInventory.setCurrentStockCount(75);
+        testInventory.setLength(new BigDecimal("10.0"));
+        testInventory.setWidth(new BigDecimal("5.0"));
+        testInventory.setHeight(new BigDecimal("3.0"));
         when(inventoryRepository.findById(1L)).thenReturn(Optional.of(testInventory));
 
         // When
         InventoryDTO result = inventoryService.getInventoryById(1L);
 
         // Then
-        assertThat(result.getCapacityUtilization()).isEqualTo(75.0);
-        assertThat(result.getIsNearCapacity()).isFalse(); // 75% < 80% threshold
+        assertThat(result.getVolume()).isEqualTo(new BigDecimal("150.00"));
+        assertThat(result.getFloorArea()).isEqualTo(new BigDecimal("50.00"));
+        assertThat(result.getHasDimensions()).isTrue();
     }
 
     @Test
-    void mapToDTO_ShouldHandleNullCapacity() {
+    void mapToDTO_ShouldHandleNullDimensions() {
         // Given
-        testInventory.setCapacity(null);
-        testInventory.setCurrentStockCount(50);
+        testInventory.setLength(null);
+        testInventory.setWidth(new BigDecimal("5.0"));
+        testInventory.setHeight(new BigDecimal("3.0"));
         when(inventoryRepository.findById(1L)).thenReturn(Optional.of(testInventory));
 
         // When
         InventoryDTO result = inventoryService.getInventoryById(1L);
 
         // Then
-        assertThat(result.getCapacityUtilization()).isEqualTo(0.0);
-        assertThat(result.getIsNearCapacity()).isFalse();
+        assertThat(result.getVolume()).isNull();
+        assertThat(result.getFloorArea()).isNull();
+        assertThat(result.getHasDimensions()).isFalse();
     }
 
     @Test
-    void mapToDTO_ShouldDetectNearCapacity() {
+    void mapToDTO_ShouldCalculateFloorAreaWithoutHeight() {
         // Given
-        testInventory.setCapacity(100);
-        testInventory.setCurrentStockCount(85); // 85% > 80% threshold
+        testInventory.setLength(new BigDecimal("10.0"));
+        testInventory.setWidth(new BigDecimal("5.0"));
+        testInventory.setHeight(null);
         when(inventoryRepository.findById(1L)).thenReturn(Optional.of(testInventory));
 
         // When
         InventoryDTO result = inventoryService.getInventoryById(1L);
 
         // Then
-        assertThat(result.getCapacityUtilization()).isEqualTo(85.0);
-        assertThat(result.getIsNearCapacity()).isTrue();
+        assertThat(result.getVolume()).isNull(); // Volume requires all dimensions
+        assertThat(result.getFloorArea()).isEqualTo(new BigDecimal("50.00"));
+        assertThat(result.getHasDimensions()).isFalse(); // Missing height
+    }
+
+    @Test
+    void mapToDTO_ShouldCalculateWorkTimeInformation() {
+        // Given
+        testInventory.setStartWorkTime(LocalTime.of(9, 0));
+        testInventory.setEndWorkTime(LocalTime.of(17, 0));
+        when(inventoryRepository.findById(1L)).thenReturn(Optional.of(testInventory));
+
+        // When
+        InventoryDTO result = inventoryService.getInventoryById(1L);
+
+        // Then
+        assertThat(result.getStartWorkTime()).isEqualTo(LocalTime.of(9, 0));
+        assertThat(result.getEndWorkTime()).isEqualTo(LocalTime.of(17, 0));
+        assertThat(result.getHasWorkTimes()).isTrue();
+        assertThat(result.getIsWorkTimeValid()).isTrue();
+        assertThat(result.getWorkDurationMinutes()).isEqualTo(480L); // 8 hours = 480 minutes
+    }
+
+    @Test
+    void mapToDTO_ShouldHandleNullWorkTimes() {
+        // Given
+        testInventory.setStartWorkTime(null);
+        testInventory.setEndWorkTime(null);
+        when(inventoryRepository.findById(1L)).thenReturn(Optional.of(testInventory));
+
+        // When
+        InventoryDTO result = inventoryService.getInventoryById(1L);
+
+        // Then
+        assertThat(result.getStartWorkTime()).isNull();
+        assertThat(result.getEndWorkTime()).isNull();
+        assertThat(result.getHasWorkTimes()).isFalse();
+        assertThat(result.getIsWorkTimeValid()).isTrue(); // Null values are considered valid
+        assertThat(result.getWorkDurationMinutes()).isNull();
+    }
+
+    @Test
+    void createInventory_ShouldThrowException_WhenStartTimeAfterEndTime() {
+        // Given
+        testInventoryDTO.setStartWorkTime(LocalTime.of(17, 0));
+        testInventoryDTO.setEndWorkTime(LocalTime.of(9, 0));
+
+        // When & Then
+        assertThatThrownBy(() -> inventoryService.createInventory(testInventoryDTO))
+                .isInstanceOf(BusinessLogicException.class)
+                .hasMessageContaining("Start work time must be before end work time");
     }
 
     @Test

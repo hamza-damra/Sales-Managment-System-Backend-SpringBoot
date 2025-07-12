@@ -12,6 +12,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -164,11 +165,22 @@ public class InventoryService {
     }
 
     /**
-     * Gets inventories near capacity
+     * Gets inventories with complete dimensions
      */
     @Transactional(readOnly = true)
-    public List<InventoryDTO> getInventoriesNearCapacity(Double threshold) {
-        return inventoryRepository.findInventoriesNearCapacity(threshold)
+    public List<InventoryDTO> getInventoriesWithDimensions() {
+        return inventoryRepository.findInventoriesWithDimensions()
+                .stream()
+                .map(this::mapToDTO)
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * Gets inventories without complete dimensions
+     */
+    @Transactional(readOnly = true)
+    public List<InventoryDTO> getInventoriesWithoutDimensions() {
+        return inventoryRepository.findInventoriesWithoutDimensions()
                 .stream()
                 .map(this::mapToDTO)
                 .collect(Collectors.toList());
@@ -218,12 +230,28 @@ public class InventoryService {
             }
         }
 
-        if (inventoryDTO.getCapacity() != null && inventoryDTO.getCapacity() < 0) {
-            throw new BusinessLogicException("Inventory capacity cannot be negative");
+        // Validate dimensions if provided
+        if (inventoryDTO.getLength() != null && inventoryDTO.getLength().compareTo(BigDecimal.ZERO) <= 0) {
+            throw new BusinessLogicException("Inventory length must be greater than 0");
+        }
+
+        if (inventoryDTO.getWidth() != null && inventoryDTO.getWidth().compareTo(BigDecimal.ZERO) <= 0) {
+            throw new BusinessLogicException("Inventory width must be greater than 0");
+        }
+
+        if (inventoryDTO.getHeight() != null && inventoryDTO.getHeight().compareTo(BigDecimal.ZERO) <= 0) {
+            throw new BusinessLogicException("Inventory height must be greater than 0");
         }
 
         if (inventoryDTO.getCurrentStockCount() != null && inventoryDTO.getCurrentStockCount() < 0) {
             throw new BusinessLogicException("Current stock count cannot be negative");
+        }
+
+        // Validate work times
+        if (inventoryDTO.getStartWorkTime() != null && inventoryDTO.getEndWorkTime() != null) {
+            if (!inventoryDTO.getStartWorkTime().isBefore(inventoryDTO.getEndWorkTime())) {
+                throw new BusinessLogicException("Start work time must be before end work time");
+            }
         }
     }
 
@@ -247,11 +275,14 @@ public class InventoryService {
         existingInventory.setManagerName(inventoryDTO.getManagerName());
         existingInventory.setManagerPhone(inventoryDTO.getManagerPhone());
         existingInventory.setManagerEmail(inventoryDTO.getManagerEmail());
-        existingInventory.setCapacity(inventoryDTO.getCapacity());
+        existingInventory.setLength(inventoryDTO.getLength());
+        existingInventory.setWidth(inventoryDTO.getWidth());
+        existingInventory.setHeight(inventoryDTO.getHeight());
         existingInventory.setCurrentStockCount(inventoryDTO.getCurrentStockCount() != null ? inventoryDTO.getCurrentStockCount() : 0);
         existingInventory.setWarehouseCode(inventoryDTO.getWarehouseCode());
         existingInventory.setIsMainWarehouse(inventoryDTO.getIsMainWarehouse() != null ? inventoryDTO.getIsMainWarehouse() : false);
-        existingInventory.setOperatingHours(inventoryDTO.getOperatingHours());
+        existingInventory.setStartWorkTime(inventoryDTO.getStartWorkTime());
+        existingInventory.setEndWorkTime(inventoryDTO.getEndWorkTime());
         existingInventory.setContactPhone(inventoryDTO.getContactPhone());
         existingInventory.setContactEmail(inventoryDTO.getContactEmail());
         existingInventory.setNotes(inventoryDTO.getNotes());
@@ -271,20 +302,27 @@ public class InventoryService {
                 .managerName(inventory.getManagerName())
                 .managerPhone(inventory.getManagerPhone())
                 .managerEmail(inventory.getManagerEmail())
-                .capacity(inventory.getCapacity())
+                .length(inventory.getLength())
+                .width(inventory.getWidth())
+                .height(inventory.getHeight())
                 .currentStockCount(inventory.getCurrentStockCount())
                 .status(inventory.getStatus())
                 .warehouseCode(inventory.getWarehouseCode())
                 .isMainWarehouse(inventory.getIsMainWarehouse())
-                .operatingHours(inventory.getOperatingHours())
+                .startWorkTime(inventory.getStartWorkTime())
+                .endWorkTime(inventory.getEndWorkTime())
                 .contactPhone(inventory.getContactPhone())
                 .contactEmail(inventory.getContactEmail())
                 .notes(inventory.getNotes())
                 .createdAt(inventory.getCreatedAt())
                 .updatedAt(inventory.getUpdatedAt())
                 .categoryCount(inventory.getCategoryCount())
-                .capacityUtilization(inventory.getCapacityUtilization())
-                .isNearCapacity(inventory.isNearCapacity(80.0)) // 80% threshold
+                .volume(inventory.getVolume())
+                .floorArea(inventory.getFloorArea())
+                .hasDimensions(inventory.hasDimensions())
+                .hasWorkTimes(inventory.hasWorkTimes())
+                .isWorkTimeValid(inventory.isWorkTimeValid())
+                .workDurationMinutes(inventory.getWorkDurationMinutes())
                 .build();
         return dto;
     }
@@ -298,12 +336,15 @@ public class InventoryService {
                 .managerName(inventoryDTO.getManagerName())
                 .managerPhone(inventoryDTO.getManagerPhone())
                 .managerEmail(inventoryDTO.getManagerEmail())
-                .capacity(inventoryDTO.getCapacity())
+                .length(inventoryDTO.getLength())
+                .width(inventoryDTO.getWidth())
+                .height(inventoryDTO.getHeight())
                 .currentStockCount(inventoryDTO.getCurrentStockCount() != null ? inventoryDTO.getCurrentStockCount() : 0)
                 .status(inventoryDTO.getStatus() != null ? inventoryDTO.getStatus() : Inventory.InventoryStatus.ACTIVE)
                 .warehouseCode(inventoryDTO.getWarehouseCode())
                 .isMainWarehouse(inventoryDTO.getIsMainWarehouse() != null ? inventoryDTO.getIsMainWarehouse() : false)
-                .operatingHours(inventoryDTO.getOperatingHours())
+                .startWorkTime(inventoryDTO.getStartWorkTime())
+                .endWorkTime(inventoryDTO.getEndWorkTime())
                 .contactPhone(inventoryDTO.getContactPhone())
                 .contactEmail(inventoryDTO.getContactEmail())
                 .notes(inventoryDTO.getNotes())

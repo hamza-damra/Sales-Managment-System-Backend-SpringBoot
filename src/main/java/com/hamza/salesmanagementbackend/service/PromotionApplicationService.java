@@ -115,13 +115,25 @@ public class PromotionApplicationService {
             return BigDecimal.ZERO;
         }
 
-        BigDecimal discount = switch (promotion.getType()) {
-            case PERCENTAGE -> applicableAmount.multiply(promotion.getDiscountValue())
-                    .divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP);
-            case FIXED_AMOUNT -> promotion.getDiscountValue();
-            case FREE_SHIPPING -> BigDecimal.ZERO; // Handled separately in shipping calculation
-            case BUY_X_GET_Y -> calculateBuyXGetYDiscount(promotion, saleItems);
-        };
+        BigDecimal discount;
+        switch (promotion.getType()) {
+            case PERCENTAGE:
+                discount = applicableAmount.multiply(promotion.getDiscountValue())
+                        .divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP);
+                break;
+            case FIXED_AMOUNT:
+                discount = promotion.getDiscountValue();
+                break;
+            case FREE_SHIPPING:
+                discount = BigDecimal.ZERO; // Handled separately in shipping calculation
+                break;
+            case BUY_X_GET_Y:
+                discount = calculateBuyXGetYDiscount(promotion, saleItems);
+                break;
+            default:
+                discount = BigDecimal.ZERO;
+                break;
+        }
 
         // Apply maximum discount limit if set
         BigDecimal maximumDiscountAmount = promotion.getMaximumDiscountAmount();

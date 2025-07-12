@@ -113,7 +113,11 @@ public class InventoryReportDTO {
         private Long productCount;
         private BigDecimal totalValue;
         private Double utilizationRate;
-        private Integer capacity;
+        private BigDecimal length; // Length in meters
+        private BigDecimal width; // Width in meters
+        private BigDecimal height; // Height in meters
+        private BigDecimal volume; // Volume in cubic meters
+        private BigDecimal floorArea; // Floor area in square meters
         private Integer currentStock;
         private List<StockAlert> alerts;
     }

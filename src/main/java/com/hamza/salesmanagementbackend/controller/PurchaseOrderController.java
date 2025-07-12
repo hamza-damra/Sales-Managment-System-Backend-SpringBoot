@@ -6,7 +6,7 @@ import com.hamza.salesmanagementbackend.entity.PurchaseOrder;
 import com.hamza.salesmanagementbackend.exception.ResourceNotFoundException;
 import com.hamza.salesmanagementbackend.service.PurchaseOrderService;
 import com.hamza.salesmanagementbackend.util.SortingUtils;
-import jakarta.validation.Valid;
+import javax.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;

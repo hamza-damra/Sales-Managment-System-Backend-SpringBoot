@@ -11,6 +11,8 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.test.context.ActiveProfiles;
 
+import java.math.BigDecimal;
+import java.time.LocalTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -29,8 +31,8 @@ public class InventoryRepositoryTest {
     private Inventory activeInventory;
     private Inventory inactiveInventory;
     private Inventory mainWarehouse;
-    private Inventory nearCapacityInventory;
-    private Inventory fullInventory;
+    private Inventory inventoryWithDimensions;
+    private Inventory inventoryWithoutDimensions;
 
     @BeforeEach
     void setUp() {
@@ -42,63 +44,82 @@ public class InventoryRepositoryTest {
                 .address("123 Main St")
                 .managerName("John Manager")
                 .managerEmail("john@example.com")
-                .capacity(100)
+                .length(new BigDecimal("20.0"))
+                .width(new BigDecimal("15.0"))
+                .height(new BigDecimal("5.0"))
                 .currentStockCount(50)
                 .status(Inventory.InventoryStatus.ACTIVE)
                 .warehouseCode("WH001")
                 .isMainWarehouse(false)
+                .startWorkTime(LocalTime.of(9, 0))
+                .endWorkTime(LocalTime.of(17, 0))
                 .build();
 
         inactiveInventory = Inventory.builder()
                 .name("Secondary Warehouse")
                 .description("Secondary storage")
                 .location("Uptown")
-                .capacity(200)
+                .length(new BigDecimal("25.0"))
+                .width(new BigDecimal("10.0"))
+                .height(new BigDecimal("4.0"))
                 .currentStockCount(30)
                 .status(Inventory.InventoryStatus.INACTIVE)
                 .warehouseCode("WH002")
                 .isMainWarehouse(false)
+                .startWorkTime(LocalTime.of(8, 0))
+                .endWorkTime(LocalTime.of(16, 0))
                 .build();
 
         mainWarehouse = Inventory.builder()
                 .name("Central Hub")
                 .description("Main distribution center")
                 .location("Central")
-                .capacity(500)
+                .length(new BigDecimal("50.0"))
+                .width(new BigDecimal("30.0"))
+                .height(new BigDecimal("8.0"))
                 .currentStockCount(250)
                 .status(Inventory.InventoryStatus.ACTIVE)
                 .warehouseCode("WH003")
                 .isMainWarehouse(true)
+                .startWorkTime(LocalTime.of(7, 0))
+                .endWorkTime(LocalTime.of(19, 0))
                 .build();
 
-        nearCapacityInventory = Inventory.builder()
+        inventoryWithDimensions = Inventory.builder()
                 .name("Small Storage")
-                .description("Small capacity storage")
+                .description("Storage with complete dimensions")
                 .location("East Side")
-                .capacity(50)
-                .currentStockCount(45) // 90% capacity
+                .length(new BigDecimal("10.0"))
+                .width(new BigDecimal("8.0"))
+                .height(new BigDecimal("3.0"))
+                .currentStockCount(45)
                 .status(Inventory.InventoryStatus.ACTIVE)
                 .warehouseCode("WH004")
                 .isMainWarehouse(false)
+                .startWorkTime(LocalTime.of(10, 0))
+                .endWorkTime(LocalTime.of(18, 0))
                 .build();
 
-        fullInventory = Inventory.builder()
-                .name("Full Storage")
-                .description("At capacity storage")
+        inventoryWithoutDimensions = Inventory.builder()
+                .name("Incomplete Storage")
+                .description("Storage missing some dimensions")
                 .location("West Side")
-                .capacity(100)
-                .currentStockCount(100) // 100% capacity
+                .length(new BigDecimal("15.0"))
+                // width and height are null
+                .currentStockCount(100)
                 .status(Inventory.InventoryStatus.ACTIVE)
                 .warehouseCode("WH005")
                 .isMainWarehouse(false)
+                .startWorkTime(LocalTime.of(6, 0))
+                .endWorkTime(LocalTime.of(14, 0))
                 .build();
 
         // Persist test data
         entityManager.persistAndFlush(activeInventory);
         entityManager.persistAndFlush(inactiveInventory);
         entityManager.persistAndFlush(mainWarehouse);
-        entityManager.persistAndFlush(nearCapacityInventory);
-        entityManager.persistAndFlush(fullInventory);
+        entityManager.persistAndFlush(inventoryWithDimensions);
+        entityManager.persistAndFlush(inventoryWithoutDimensions);
     }
 
     @Test
@@ -148,7 +169,7 @@ public class InventoryRepositoryTest {
         List<Inventory> result = inventoryRepository.findByStatus(Inventory.InventoryStatus.ACTIVE);
 
         // Then
-        assertThat(result).hasSize(4); // activeInventory, mainWarehouse, nearCapacityInventory, fullInventory
+        assertThat(result).hasSize(4); // activeInventory, mainWarehouse, inventoryWithDimensions, inventoryWithoutDimensions
         assertThat(result).allMatch(inventory -> inventory.getStatus() == Inventory.InventoryStatus.ACTIVE);
     }
 
@@ -204,27 +225,28 @@ public class InventoryRepositoryTest {
     }
 
     @Test
-    void findInventoriesNearCapacity_ShouldReturnInventoriesAboveThreshold() {
-        // When - Find inventories at 80% or more capacity
-        List<Inventory> result = inventoryRepository.findInventoriesNearCapacity(80.0);
+    void findInventoriesWithDimensions_ShouldReturnInventoriesWithAllDimensions() {
+        // When
+        List<Inventory> result = inventoryRepository.findInventoriesWithDimensions();
 
         // Then
-        assertThat(result).hasSize(2); // nearCapacityInventory (90%) and fullInventory (100%)
-        assertThat(result).allMatch(inventory -> {
-            double utilization = (double) inventory.getCurrentStockCount() / inventory.getCapacity() * 100;
-            return utilization >= 80.0;
-        });
+        assertThat(result).hasSize(3); // activeInventory, inactiveInventory, mainWarehouse, inventoryWithDimensions
+        assertThat(result).allMatch(inventory ->
+            inventory.getLength() != null &&
+            inventory.getWidth() != null &&
+            inventory.getHeight() != null);
     }
 
     @Test
-    void findFullInventories_ShouldReturnInventoriesAtCapacity() {
+    void findInventoriesWithoutDimensions_ShouldReturnInventoriesMissingDimensions() {
         // When
-        List<Inventory> result = inventoryRepository.findFullInventories();
+        List<Inventory> result = inventoryRepository.findInventoriesWithoutDimensions();
 
         // Then
-        assertThat(result).hasSize(1);
-        assertThat(result.get(0).getName()).isEqualTo("Full Storage");
-        assertThat(result.get(0).getCurrentStockCount()).isEqualTo(result.get(0).getCapacity());
+        assertThat(result).hasSize(1); // inventoryWithoutDimensions
+        assertThat(result.get(0).getName()).isEqualTo("Incomplete Storage");
+        assertThat(result.get(0).getWidth()).isNull();
+        assertThat(result.get(0).getHeight()).isNull();
     }
 
     @Test
@@ -238,21 +260,7 @@ public class InventoryRepositoryTest {
         assertThat(inactiveCount).isEqualTo(1);
     }
 
-    @Test
-    void getAverageCapacityUtilization_ShouldCalculateCorrectAverage() {
-        // When
-        Double averageUtilization = inventoryRepository.getAverageCapacityUtilization();
 
-        // Then
-        // Expected calculation:
-        // activeInventory: 50/100 * 100 = 50%
-        // mainWarehouse: 250/500 * 100 = 50%
-        // nearCapacityInventory: 45/50 * 100 = 90%
-        // fullInventory: 100/100 * 100 = 100%
-        // Average: (50 + 50 + 90 + 100) / 4 = 72.5%
-        assertThat(averageUtilization).isNotNull();
-        assertThat(averageUtilization).isEqualTo(72.5);
-    }
 
     @Test
     void existsByName_ShouldReturnTrue_WhenNameExists() {

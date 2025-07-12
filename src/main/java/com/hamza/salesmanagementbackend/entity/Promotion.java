@@ -1,9 +1,9 @@
 package com.hamza.salesmanagementbackend.entity;
 
-import jakarta.persistence.*;
-import jakarta.validation.constraints.DecimalMin;
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
+import javax.persistence.*;
+import javax.validation.constraints.DecimalMin;
+import javax.validation.constraints.NotBlank;
+import javax.validation.constraints.NotNull;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
@@ -172,13 +172,20 @@ public class Promotion {
             return this.customerEligibility == CustomerEligibility.ALL;
         }
 
-        return switch (this.customerEligibility) {
-            case ALL -> true;
-            case VIP_ONLY -> customer.getCustomerType() == Customer.CustomerType.VIP;
-            case NEW_CUSTOMERS -> customer.getTotalPurchases().compareTo(BigDecimal.ZERO) == 0;
-            case RETURNING_CUSTOMERS -> customer.getTotalPurchases().compareTo(BigDecimal.ZERO) > 0;
-            case PREMIUM_ONLY -> customer.getCustomerType() == Customer.CustomerType.PREMIUM;
-        };
+        switch (this.customerEligibility) {
+            case ALL:
+                return true;
+            case VIP_ONLY:
+                return customer.getCustomerType() == Customer.CustomerType.VIP;
+            case NEW_CUSTOMERS:
+                return customer.getTotalPurchases().compareTo(BigDecimal.ZERO) == 0;
+            case RETURNING_CUSTOMERS:
+                return customer.getTotalPurchases().compareTo(BigDecimal.ZERO) > 0;
+            case PREMIUM_ONLY:
+                return customer.getCustomerType() == Customer.CustomerType.PREMIUM;
+            default:
+                return false;
+        }
     }
 
     public BigDecimal calculateDiscount(BigDecimal orderAmount) {
@@ -187,13 +194,25 @@ public class Promotion {
             return BigDecimal.ZERO;
         }
 
-        BigDecimal discount = switch (this.type) {
-            case PERCENTAGE -> orderAmount.multiply(this.discountValue)
-                    .divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP);
-            case FIXED_AMOUNT -> this.discountValue;
-            case FREE_SHIPPING -> BigDecimal.ZERO; // Handled separately
-            case BUY_X_GET_Y -> BigDecimal.ZERO; // Complex logic, handled separately
-        };
+        BigDecimal discount;
+        switch (this.type) {
+            case PERCENTAGE:
+                discount = orderAmount.multiply(this.discountValue)
+                        .divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP);
+                break;
+            case FIXED_AMOUNT:
+                discount = this.discountValue;
+                break;
+            case FREE_SHIPPING:
+                discount = BigDecimal.ZERO; // Handled separately
+                break;
+            case BUY_X_GET_Y:
+                discount = BigDecimal.ZERO; // Complex logic, handled separately
+                break;
+            default:
+                discount = BigDecimal.ZERO;
+                break;
+        }
 
         // Apply maximum discount limit if set
         if (this.maximumDiscountAmount != null &&

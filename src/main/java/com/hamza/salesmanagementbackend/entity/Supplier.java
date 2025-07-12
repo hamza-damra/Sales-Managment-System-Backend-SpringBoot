@@ -1,15 +1,16 @@
 package com.hamza.salesmanagementbackend.entity;
 
-import jakarta.persistence.*;
-import jakarta.validation.constraints.Email;
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.Pattern;
+import javax.persistence.*;
+import javax.validation.constraints.Email;
+import javax.validation.constraints.NotBlank;
+import javax.validation.constraints.Pattern;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 
 @Entity
@@ -88,7 +89,8 @@ public class Supplier {
     @OneToMany(mappedBy = "supplier", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     @ToString.Exclude
     @EqualsAndHashCode.Exclude
-    private List<PurchaseOrder> purchaseOrders;
+    @Builder.Default
+    private List<PurchaseOrder> purchaseOrders = new ArrayList<>();
 
     // Enums
     public enum SupplierStatus {
@@ -106,6 +108,7 @@ public class Supplier {
         this.rating = 0.0;
         this.totalOrders = 0;
         this.totalAmount = BigDecimal.ZERO;
+        this.purchaseOrders = new ArrayList<>();
     }
 
     // Business logic methods

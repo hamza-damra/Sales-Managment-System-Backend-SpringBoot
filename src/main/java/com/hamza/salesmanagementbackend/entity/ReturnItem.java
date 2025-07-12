@@ -1,9 +1,9 @@
 package com.hamza.salesmanagementbackend.entity;
 
-import jakarta.persistence.*;
-import jakarta.validation.constraints.DecimalMin;
-import jakarta.validation.constraints.Min;
-import jakarta.validation.constraints.NotNull;
+import javax.persistence.*;
+import javax.validation.constraints.DecimalMin;
+import javax.validation.constraints.Min;
+import javax.validation.constraints.NotNull;
 import lombok.*;
 
 import java.math.BigDecimal;
@@ -167,11 +167,20 @@ public class ReturnItem {
             return true; // Default to restockable
         }
         
-        return switch (condition) {
-            case NEW, LIKE_NEW, GOOD -> true;
-            case FAIR -> true; // Might be restockable with discount
-            case POOR, DAMAGED, DEFECTIVE -> false;
-        };
+        switch (condition) {
+            case NEW:
+            case LIKE_NEW:
+            case GOOD:
+                return true;
+            case FAIR:
+                return true; // Might be restockable with discount
+            case POOR:
+            case DAMAGED:
+            case DEFECTIVE:
+                return false;
+            default:
+                return false;
+        }
     }
 
     public String getConditionDisplay() {
