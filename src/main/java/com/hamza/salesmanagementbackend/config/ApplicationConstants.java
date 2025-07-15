@@ -45,6 +45,59 @@ public final class ApplicationConstants {
      */
     public static final String PHPMYADMIN_URL = "http://" + BASE_DOMAIN + ":" + PHPMYADMIN_PORT;
 
+    // ==================== DATABASE CONFIGURATION ====================
+
+    /**
+     * Database Configuration
+     * Values loaded from environment variables for security
+     */
+    public static final String DB_HOST = System.getenv().getOrDefault("DB_HOST", "localhost");
+
+    /**
+     * Database port
+     */
+    public static final String DB_PORT = System.getenv().getOrDefault("DB_PORT", "3306");
+
+    /**
+     * Database name
+     */
+    public static final String DB_NAME = System.getenv().getOrDefault("DB_NAME", "sales_management");
+
+    /**
+     * Database username
+     */
+    public static final String DB_USERNAME = System.getenv().getOrDefault("DB_USERNAME", "sales_user");
+
+    /**
+     * Database password
+     */
+    public static final String DB_PASSWORD = System.getenv().getOrDefault("DB_PASSWORD", "password");
+
+    /**
+     * Primary database URL with SSL
+     */
+    public static final String DB_URL = "jdbc:mysql://" + DB_HOST + ":" + DB_PORT + "/" + DB_NAME + "?ssl-mode=REQUIRED";
+
+    /**
+     * Replica database host
+     */
+    public static final String DB_REPLICA_HOST = System.getenv().getOrDefault("DB_REPLICA_HOST", "replica-" + DB_HOST);
+
+    /**
+     * Replica database URL with SSL
+     */
+    public static final String DB_REPLICA_URL = "jdbc:mysql://" + DB_REPLICA_HOST + ":" + DB_PORT + "/" + DB_NAME + "?ssl-mode=REQUIRED";
+
+    /**
+     * Complete MySQL service URI (constructed from environment variables)
+     */
+    public static final String DB_SERVICE_URI = "mysql://" + DB_USERNAME + ":" + DB_PASSWORD + "@" + DB_HOST + ":" + DB_PORT + "/" + DB_NAME + "?ssl-mode=REQUIRED";
+
+    /**
+     * Complete MySQL replica URI (constructed from environment variables)
+     */
+    public static final String DB_REPLICA_SERVICE_URI = "mysql://" + DB_USERNAME + ":" + DB_PASSWORD + "@" + DB_REPLICA_HOST + ":" + DB_PORT + "/" + DB_NAME + "?ssl-mode=REQUIRED";
+
     // ==================== BASE API CONFIGURATION ====================
 
     /**
