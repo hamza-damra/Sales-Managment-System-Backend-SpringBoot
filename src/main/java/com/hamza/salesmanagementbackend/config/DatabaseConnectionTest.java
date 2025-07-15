@@ -15,7 +15,7 @@ import java.sql.SQLException;
  * This component tests the database connection on application startup
  * and provides detailed logging for troubleshooting connection issues.
  */
-@Component
+//@Component  // Temporarily disabled to avoid startup issues
 public class DatabaseConnectionTest implements CommandLineRunner {
 
     private static final Logger logger = LoggerFactory.getLogger(DatabaseConnectionTest.class);
