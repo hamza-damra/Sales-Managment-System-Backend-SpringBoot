@@ -6,18 +6,18 @@ For successful deployment on Render.com, you need to set the following environme
 
 ### Database Configuration
 
-**Option 1: Using DATABASE_URL (Recommended)**
-```
-DATABASE_URL=mysql://username:password@host:port/database?ssl-mode=REQUIRED&useSSL=true&requireSSL=true&allowPublicKeyRetrieval=true&serverTimezone=UTC&useUnicode=true&characterEncoding=utf8&autoReconnect=true&failOverReadOnly=false&maxReconnects=10
-```
-
-**Option 2: Using Individual Variables**
+**Using Individual Variables (Current Configuration)**
 ```
 DB_HOST=your_mysql_host
 DB_PORT=3306
 DB_NAME=your_database_name
 DB_USERNAME=your_username
 DB_PASSWORD=your_password
+```
+
+**Alternative: Using DATABASE_URL**
+```
+DATABASE_URL=mysql://username:password@host:port/database?ssl-mode=REQUIRED&useSSL=true&requireSSL=true&allowPublicKeyRetrieval=true&serverTimezone=UTC&useUnicode=true&characterEncoding=utf8&autoReconnect=true&failOverReadOnly=false&maxReconnects=10
 ```
 
 ### Required Environment Variables
