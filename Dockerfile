@@ -62,8 +62,8 @@ EXPOSE ${PORT:-8081}
 HEALTHCHECK --interval=30s --timeout=10s --start-period=90s --retries=3 \
     CMD curl -f http://localhost:${PORT:-8081}/actuator/health || exit 1
 
-# Environment variables optimized for Aiven MySQL Database
-ENV SPRING_PROFILES_ACTIVE=${SPRING_PROFILES_ACTIVE:-aiven}
+# Environment variables optimized for Render.com deployment
+ENV SPRING_PROFILES_ACTIVE=${SPRING_PROFILES_ACTIVE:-render}
 ENV JAVA_OPTS="${JAVA_OPTS:--Xmx512m -Xms256m -XX:+UseContainerSupport -XX:MaxRAMPercentage=75.0}"
 
 # Use dumb-init to handle signals properly in containers
