@@ -1,13 +1,12 @@
 # Multi-stage build for Spring Boot Sales Management System
 # Optimized for Render.com deployment
 # Stage 1: Build the application
-FROM openjdk:17-jdk-slim AS build
+FROM eclipse-temurin:17-jdk-alpine AS build
 
 # Install Maven and necessary tools
-RUN apt-get update && apt-get install -y \
+RUN apk add --no-cache \
     maven \
-    curl \
-    && rm -rf /var/lib/apt/lists/*
+    curl
 
 # Set working directory
 WORKDIR /app
@@ -31,14 +30,14 @@ COPY src ./src
 RUN mvn clean package -DskipTests -B
 
 # Stage 2: Create the runtime image optimized for Render.com
-FROM openjdk:17-jre-slim
+FROM eclipse-temurin:17-jre-alpine
 
 # Install necessary packages and create app user for security
-RUN apt-get update && apt-get install -y \
+RUN apk add --no-cache \
     curl \
     dumb-init \
-    && rm -rf /var/lib/apt/lists/* \
-    && groupadd -r appuser && useradd -r -g appuser appuser
+    && addgroup -g 1001 -S appuser \
+    && adduser -S -D -H -u 1001 -h /app -s /sbin/nologin -G appuser appuser
 
 # Set working directory
 WORKDIR /app
