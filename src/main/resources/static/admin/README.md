@@ -51,6 +51,13 @@ VALUES ('admin', 'admin@example.com', '$2a$10$encrypted_password_here', 'ADMIN',
 - [x] Detailed version information modals
 - [x] Form validation and error handling
 - [x] Auto token refresh and session management
+- [x] **RTL (Right-to-Left) Language Support**
+  - Full RTL layout support for Arabic, Hebrew, and other RTL languages
+  - Window control buttons positioned on the left for RTL mode
+  - Toggle button for switching between RTL/LTR modes
+  - Automatic language detection based on browser settings
+  - Persistent direction preference storage
+  - Keyboard shortcut (Ctrl+Shift+R) for quick direction toggle
 
 ### 🚧 Future Enhancements
 - [ ] Version editing functionality
@@ -66,6 +73,32 @@ VALUES ('admin', 'admin@example.com', '$2a$10$encrypted_password_here', 'ADMIN',
 - **Input Validation**: Client and server-side validation
 - **CSRF Protection**: Built-in protection against cross-site attacks
 - **Secure File Upload**: File type and size validation
+
+## RTL Language Support
+
+The admin interface includes comprehensive RTL (Right-to-Left) language support for Arabic, Hebrew, Persian, Urdu, and other RTL languages.
+
+### Features
+- **Automatic Detection**: Automatically detects RTL languages from browser settings
+- **Manual Toggle**: Click the language button (🌐) in the top-right corner to switch modes
+- **Keyboard Shortcut**: Press `Ctrl+Shift+R` to quickly toggle between RTL/LTR
+- **Persistent Settings**: Your direction preference is saved and restored on next visit
+- **Complete Layout Support**: All UI elements properly positioned for RTL reading
+
+### Window Controls
+In RTL mode:
+- Modal close buttons (×) appear on the left side
+- Navigation elements are reversed
+- Form layouts adapt to RTL reading patterns
+- Action buttons follow RTL conventions
+
+### Supported Languages
+- Arabic (ar)
+- Hebrew (he)
+- Persian/Farsi (fa)
+- Urdu (ur)
+- Kurdish (ku)
+- Dhivehi (dv)
 
 ## Browser Support
 

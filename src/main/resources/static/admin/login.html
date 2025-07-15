@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" dir="ltr">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -64,10 +64,22 @@
             z-index: 1;
         }
 
+        /* RTL Support for Login Form Icons */
+        [dir="rtl"] .form-group i {
+            left: auto;
+            right: 1rem;
+        }
+
         .form-group input {
             padding-left: 3rem;
             height: 3rem;
             border: 2px solid var(--border-color);
+        }
+
+        /* RTL Support for Login Form Inputs */
+        [dir="rtl"] .form-group input {
+            padding-left: 1rem;
+            padding-right: 3rem;
             border-radius: var(--border-radius);
             font-size: 1rem;
             transition: all 0.2s;
@@ -156,6 +168,11 @@
     </style>
 </head>
 <body>
+    <!-- RTL Toggle Button -->
+    <button class="rtl-toggle" onclick="toggleRTL()" title="Toggle RTL/LTR">
+        <i class="fas fa-language"></i>
+    </button>
+
     <div class="login-container">
         <div class="login-header">
             <h1>
@@ -382,5 +399,8 @@
             new LoginManager();
         });
     </script>
+
+    <!-- RTL Support Script -->
+    <script src="../js/rtl-support.js"></script>
 </body>
 </html>

@@ -9,7 +9,7 @@
     --warning-color: #d97706;
     --danger-color: #dc2626;
     --info-color: #0891b2;
-    
+
     --bg-primary: #ffffff;
     --bg-secondary: #f8fafc;
     --bg-tertiary: #f1f5f9;
@@ -17,16 +17,44 @@
     --text-primary: #1e293b;
     --text-secondary: #64748b;
     --text-muted: #94a3b8;
-    
+
     --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
     --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
     --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
-    
+
     --border-radius: 8px;
     --border-radius-sm: 4px;
     --border-radius-lg: 12px;
-    
+
     --font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+}
+
+/* RTL Support Variables */
+:root {
+    --text-align-start: left;
+    --text-align-end: right;
+    --margin-start: margin-left;
+    --margin-end: margin-right;
+    --padding-start: padding-left;
+    --padding-end: padding-right;
+    --border-start: border-left;
+    --border-end: border-right;
+    --inset-start: left;
+    --inset-end: right;
+}
+
+/* RTL Direction Support */
+[dir="rtl"] {
+    --text-align-start: right;
+    --text-align-end: left;
+    --margin-start: margin-right;
+    --margin-end: margin-left;
+    --padding-start: padding-right;
+    --padding-end: padding-left;
+    --border-start: border-right;
+    --border-end: border-left;
+    --inset-start: right;
+    --inset-end: left;
 }
 
 /* Reset and Base Styles */
@@ -63,6 +91,11 @@ body {
     height: 64px;
 }
 
+/* RTL Support for Navigation */
+[dir="rtl"] .nav-container {
+    flex-direction: row-reverse;
+}
+
 .nav-brand {
     display: flex;
     align-items: center;
@@ -72,10 +105,20 @@ body {
     color: var(--primary-color);
 }
 
+/* RTL Support for Brand */
+[dir="rtl"] .nav-brand {
+    flex-direction: row-reverse;
+}
+
 .nav-menu {
     display: flex;
     align-items: center;
     gap: 1rem;
+}
+
+/* RTL Support for Menu */
+[dir="rtl"] .nav-menu {
+    flex-direction: row-reverse;
 }
 
 .user-info {
@@ -169,6 +212,18 @@ body {
     display: flex;
     align-items: center;
     gap: 0.5rem;
+}
+
+/* RTL Support for Forms */
+[dir="rtl"] .form-group label {
+    text-align: var(--text-align-start);
+    flex-direction: row-reverse;
+}
+
+[dir="rtl"] .form-group input,
+[dir="rtl"] .form-group textarea,
+[dir="rtl"] .form-group select {
+    text-align: var(--text-align-start);
 }
 
 .form-group input,
@@ -329,6 +384,11 @@ body {
     cursor: pointer;
     transition: all 0.2s;
     background: transparent;
+}
+
+/* RTL Support for Buttons */
+[dir="rtl"] .btn {
+    flex-direction: row-reverse;
 }
 
 .btn:disabled {
@@ -621,10 +681,16 @@ body {
     align-items: center;
 }
 
+/* RTL Support for Modal Header */
+[dir="rtl"] .modal-header {
+    flex-direction: row-reverse;
+}
+
 .modal-header h3 {
     margin: 0;
     font-size: 1.25rem;
     font-weight: 600;
+    text-align: var(--text-align-start);
 }
 
 .modal-close {
@@ -634,6 +700,12 @@ body {
     cursor: pointer;
     color: var(--text-muted);
     padding: 0.25rem;
+    order: 1;
+}
+
+/* RTL: Move close button to the left */
+[dir="rtl"] .modal-close {
+    order: -1;
 }
 
 .modal-close:hover {
@@ -656,6 +728,11 @@ body {
 .action-buttons {
     display: flex;
     gap: 0.25rem;
+}
+
+/* RTL Support for Action Buttons */
+[dir="rtl"] .action-buttons {
+    flex-direction: row-reverse;
 }
 
 .action-btn {
@@ -829,5 +906,145 @@ body {
     .action-btn {
         width: 100%;
         justify-content: center;
+    }
+}
+
+/* ==================== RTL SUPPORT ==================== */
+
+/* RTL Language Toggle Button */
+.rtl-toggle {
+    position: fixed;
+    top: 80px;
+    right: 20px;
+    z-index: 1000;
+    background: var(--primary-color);
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 48px;
+    height: 48px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    box-shadow: var(--shadow-lg);
+    transition: all 0.3s ease;
+    font-size: 1.2rem;
+}
+
+[dir="rtl"] .rtl-toggle {
+    right: auto;
+    left: 20px;
+}
+
+.rtl-toggle:hover {
+    background: var(--primary-hover);
+    transform: scale(1.1);
+}
+
+/* RTL Text Direction */
+[dir="rtl"] {
+    text-align: right;
+}
+
+[dir="rtl"] .text-center {
+    text-align: center;
+}
+
+[dir="rtl"] .text-right {
+    text-align: left;
+}
+
+/* RTL Modal Footer */
+[dir="rtl"] .modal-footer {
+    justify-content: flex-start;
+    flex-direction: row-reverse;
+}
+
+/* RTL Card Header */
+[dir="rtl"] .card-header {
+    flex-direction: row-reverse;
+}
+
+/* RTL File Info */
+[dir="rtl"] .file-details {
+    flex-direction: row-reverse;
+}
+
+/* RTL Progress Text */
+[dir="rtl"] .progress-text {
+    flex-direction: row-reverse;
+}
+
+/* RTL Pagination */
+[dir="rtl"] .pagination-container {
+    flex-direction: row-reverse;
+}
+
+[dir="rtl"] .pagination-controls {
+    flex-direction: row-reverse;
+}
+
+/* RTL User Info */
+[dir="rtl"] .user-info {
+    flex-direction: row-reverse;
+}
+
+/* RTL Form Actions */
+[dir="rtl"] .form-actions {
+    flex-direction: row-reverse;
+}
+
+/* RTL Filters */
+[dir="rtl"] .filters {
+    flex-direction: row-reverse;
+}
+
+/* RTL Alert */
+[dir="rtl"] .alert {
+    flex-direction: row-reverse;
+}
+
+/* RTL Checkbox */
+[dir="rtl"] .checkbox-label {
+    flex-direction: row-reverse;
+}
+
+/* RTL File Upload Area */
+[dir="rtl"] .file-upload-area {
+    text-align: center;
+}
+
+/* RTL Data Table */
+[dir="rtl"] .data-table {
+    direction: rtl;
+}
+
+[dir="rtl"] .data-table th,
+[dir="rtl"] .data-table td {
+    text-align: var(--text-align-start);
+}
+
+/* RTL Responsive Adjustments */
+@media (max-width: 768px) {
+    [dir="rtl"] .card-header {
+        flex-direction: column-reverse;
+        align-items: flex-end;
+    }
+
+    [dir="rtl"] .form-actions {
+        flex-direction: column-reverse;
+    }
+
+    [dir="rtl"] .filters {
+        flex-direction: column-reverse;
+    }
+
+    [dir="rtl"] .pagination-container {
+        flex-direction: column-reverse;
+    }
+
+    [dir="rtl"] .action-buttons {
+        flex-direction: column-reverse;
     }
 }
