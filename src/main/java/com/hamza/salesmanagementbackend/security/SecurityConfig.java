@@ -50,6 +50,16 @@ public class SecurityConfig {
                     new AntPathRequestMatcher(ApplicationConstants.SWAGGER_UI_WILDCARD),
                     new AntPathRequestMatcher(ApplicationConstants.SWAGGER_UI_HTML)
                 ).permitAll()
+                // Allow access to static resources (CSS, JS, images)
+                .requestMatchers(
+                    new AntPathRequestMatcher("/static/**"),
+                    new AntPathRequestMatcher("/css/**"),
+                    new AntPathRequestMatcher("/js/**"),
+                    new AntPathRequestMatcher("/images/**"),
+                    new AntPathRequestMatcher("/admin/**")
+                ).permitAll()
+                .requestMatchers(new AntPathRequestMatcher(ApplicationConstants.API_V1_UPDATES_WILDCARD)).authenticated()
+                .requestMatchers(new AntPathRequestMatcher(ApplicationConstants.API_V1_ADMIN_UPDATES_WILDCARD)).hasRole("ADMIN")
                 .anyRequest().authenticated()
             )
             .sessionManagement(session -> session

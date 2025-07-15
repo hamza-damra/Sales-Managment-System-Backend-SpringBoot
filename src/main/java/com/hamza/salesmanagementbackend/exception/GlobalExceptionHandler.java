@@ -1,5 +1,6 @@
 package com.hamza.salesmanagementbackend.exception;
 
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.mapping.PropertyReferenceException;
 import org.springframework.http.HttpStatus;
@@ -18,6 +19,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 @RestControllerAdvice
+@Slf4j
 public class GlobalExceptionHandler {
 
     @ExceptionHandler(ResourceNotFoundException.class)
@@ -97,6 +99,51 @@ public class GlobalExceptionHandler {
         errorResponse.setDetails(details);
 
         return ResponseEntity.status(HttpStatus.CONFLICT).body(errorResponse);
+    }
+
+    @ExceptionHandler(javax.persistence.NonUniqueResultException.class)
+    public ResponseEntity<ErrorResponse> handleNonUniqueResultException(javax.persistence.NonUniqueResultException ex) {
+        log.error("NonUniqueResultException occurred", ex);
+
+        ErrorResponse errorResponse = ErrorResponse.builder()
+                .status(HttpStatus.INTERNAL_SERVER_ERROR.value())
+                .error("Data Consistency Error")
+                .message("Multiple records found where only one was expected. This indicates a data consistency issue that needs to be resolved.")
+                .errorCode("NON_UNIQUE_RESULT")
+                .timestamp(LocalDateTime.now())
+                .suggestions("Please contact system administrator. This may require database cleanup or migration.")
+                .build();
+
+        Map<String, Object> details = new HashMap<>();
+        details.put("exceptionType", "NonUniqueResultException");
+        details.put("originalMessage", ex.getMessage());
+        errorResponse.setDetails(details);
+
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
+    }
+
+    @ExceptionHandler(org.springframework.dao.IncorrectResultSizeDataAccessException.class)
+    public ResponseEntity<ErrorResponse> handleIncorrectResultSizeDataAccessException(
+            org.springframework.dao.IncorrectResultSizeDataAccessException ex) {
+        log.error("IncorrectResultSizeDataAccessException occurred", ex);
+
+        ErrorResponse errorResponse = ErrorResponse.builder()
+                .status(HttpStatus.INTERNAL_SERVER_ERROR.value())
+                .error("Data Query Error")
+                .message("Query returned unexpected number of results. This indicates a data consistency issue.")
+                .errorCode("INCORRECT_RESULT_SIZE")
+                .timestamp(LocalDateTime.now())
+                .suggestions("Please contact system administrator. Database may need cleanup or constraints review.")
+                .build();
+
+        Map<String, Object> details = new HashMap<>();
+        details.put("exceptionType", "IncorrectResultSizeDataAccessException");
+        details.put("expectedSize", ex.getExpectedSize());
+        details.put("actualSize", ex.getActualSize());
+        details.put("originalMessage", ex.getMessage());
+        errorResponse.setDetails(details);
+
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
     }
 
     @ExceptionHandler(DataIntegrityViolationException.class)
@@ -266,6 +313,34 @@ public class GlobalExceptionHandler {
         errorResponse.setDetails(details);
 
         return ResponseEntity.status(HttpStatus.UNSUPPORTED_MEDIA_TYPE).body(errorResponse);
+    }
+
+    @ExceptionHandler(UpdateNotFoundException.class)
+    public ResponseEntity<ErrorResponse> handleUpdateNotFoundException(UpdateNotFoundException ex) {
+        ErrorResponse errorResponse = ErrorResponse.builder()
+                .status(HttpStatus.NOT_FOUND.value())
+                .error("Update Not Found")
+                .message(ex.getMessage())
+                .errorCode("UPDATE_NOT_FOUND")
+                .timestamp(LocalDateTime.now())
+                .suggestions("Please verify the version number or check if there are any active versions available.")
+                .build();
+
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(errorResponse);
+    }
+
+    @ExceptionHandler(FileUploadException.class)
+    public ResponseEntity<ErrorResponse> handleFileUploadException(FileUploadException ex) {
+        ErrorResponse errorResponse = ErrorResponse.builder()
+                .status(HttpStatus.BAD_REQUEST.value())
+                .error("File Upload Error")
+                .message(ex.getMessage())
+                .errorCode("FILE_UPLOAD_ERROR")
+                .timestamp(LocalDateTime.now())
+                .suggestions("Please check the file format, size, and ensure it meets the upload requirements.")
+                .build();
+
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
     }
 
     @ExceptionHandler(IllegalArgumentException.class)

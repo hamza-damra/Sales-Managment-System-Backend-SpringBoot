@@ -124,6 +124,16 @@ public final class ApplicationConstants {
      */
     public static final String REPORTS_BASE = "/reports";
 
+    /**
+     * Updates controller base path
+     */
+    public static final String UPDATES_BASE = "/updates";
+
+    /**
+     * Admin controller base path
+     */
+    public static final String ADMIN_BASE = "/admin";
+
     // ==================== COMPLETE API PATHS ====================
     
     /**
@@ -191,6 +201,16 @@ public final class ApplicationConstants {
      */
     public static final String API_V1_REPORTS = API_V1_BASE + REPORTS_BASE;
 
+    /**
+     * Complete updates API v1 path
+     */
+    public static final String API_V1_UPDATES = API_V1_BASE + UPDATES_BASE;
+
+    /**
+     * Complete admin updates API v1 path
+     */
+    public static final String API_V1_ADMIN_UPDATES = API_V1_BASE + ADMIN_BASE + UPDATES_BASE;
+
     // ==================== SECURITY PATHS ====================
     
     /**
@@ -202,6 +222,16 @@ public final class ApplicationConstants {
      * WebSocket wildcard path for security configuration
      */
     public static final String WS_WILDCARD = "/ws/**";
+
+    /**
+     * Updates wildcard path for security configuration
+     */
+    public static final String API_V1_UPDATES_WILDCARD = API_V1_UPDATES + "/**";
+
+    /**
+     * Admin updates wildcard path for security configuration
+     */
+    public static final String API_V1_ADMIN_UPDATES_WILDCARD = API_V1_ADMIN_UPDATES + "/**";
     
     /**
      * H2 console path for security configuration
@@ -324,6 +354,66 @@ public final class ApplicationConstants {
      * Product endpoint pattern
      */
     public static final String PRODUCT_ENDPOINT = "/product";
+
+    /**
+     * Latest endpoint pattern
+     */
+    public static final String LATEST_ENDPOINT = "/latest";
+
+    /**
+     * Check endpoint pattern
+     */
+    public static final String CHECK_ENDPOINT = "/check";
+
+    /**
+     * Download endpoint pattern
+     */
+    public static final String DOWNLOAD_ENDPOINT = "/download";
+
+    /**
+     * Versions endpoint pattern
+     */
+    public static final String VERSIONS_ENDPOINT = "/versions";
+
+    /**
+     * Statistics endpoint pattern
+     */
+    public static final String STATISTICS_ENDPOINT = "/statistics";
+
+    /**
+     * Metadata endpoint pattern
+     */
+    public static final String METADATA_ENDPOINT = "/metadata";
+
+    /**
+     * Compatibility endpoint pattern
+     */
+    public static final String COMPATIBILITY_ENDPOINT = "/compatibility";
+
+    /**
+     * Rollback endpoint pattern
+     */
+    public static final String ROLLBACK_ENDPOINT = "/rollback";
+
+    /**
+     * Delta endpoint pattern
+     */
+    public static final String DELTA_ENDPOINT = "/delta";
+
+    /**
+     * Analytics endpoint pattern
+     */
+    public static final String ANALYTICS_ENDPOINT = "/analytics";
+
+    /**
+     * Channels endpoint pattern
+     */
+    public static final String CHANNELS_ENDPOINT = "/channels";
+
+    /**
+     * WebSocket updates endpoint
+     */
+    public static final String WS_UPDATES_ENDPOINT = "/ws/updates";
 
     // ==================== SPECIFIC ENDPOINT PATHS ====================
     

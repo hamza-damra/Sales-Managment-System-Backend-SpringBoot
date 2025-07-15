@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sales Management System - Admin Update Manager</title>
+    <link rel="stylesheet" href="../css/admin-styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+    <!-- Navigation Header -->
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="nav-brand">
+                <i class="fas fa-cogs"></i>
+                <span>Sales Management Admin</span>
+            </div>
+            <div class="nav-menu">
+                <span class="user-info">
+                    <i class="fas fa-user"></i>
+                    <span id="currentUser">Loading...</span>
+                </span>
+                <button class="btn btn-outline" onclick="logout()">
+                    <i class="fas fa-sign-out-alt"></i>
+                    Logout
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="container">
+        <!-- Page Header -->
+        <div class="page-header">
+            <h1><i class="fas fa-upload"></i> Application Update Manager</h1>
+            <p>Upload and manage application versions for the Sales Management System</p>
+        </div>
+
+        <!-- Alert Container -->
+        <div id="alertContainer"></div>
+
+        <!-- Upload Section -->
+        <div class="card">
+            <div class="card-header">
+                <h2><i class="fas fa-cloud-upload-alt"></i> Upload New Version</h2>
+            </div>
+            <div class="card-body">
+                <form id="uploadForm" enctype="multipart/form-data">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="versionNumber">
+                                <i class="fas fa-tag"></i>
+                                Version Number *
+                            </label>
+                            <input type="text" id="versionNumber" name="versionNumber" 
+                                   placeholder="e.g., 1.0.0" pattern="^\d+\.\d+\.\d+$" required>
+                            <small class="form-help">Use semantic versioning format (e.g., 1.0.0)</small>
+                        </div>
+                        <div class="form-group">
+                            <label for="minimumClientVersion">
+                                <i class="fas fa-code-branch"></i>
+                                Minimum Client Version
+                            </label>
+                            <input type="text" id="minimumClientVersion" name="minimumClientVersion" 
+                                   placeholder="e.g., 0.9.0" pattern="^\d+\.\d+\.\d+$">
+                            <small class="form-help">Minimum version required for compatibility</small>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="releaseDate">
+                                <i class="fas fa-calendar"></i>
+                                Release Date *
+                            </label>
+                            <input type="datetime-local" id="releaseDate" name="releaseDate" required>
+                        </div>
+                        <div class="form-group checkbox-group">
+                            <label class="checkbox-label">
+                                <input type="checkbox" id="isMandatory" name="isMandatory">
+                                <span class="checkmark"></span>
+                                <i class="fas fa-exclamation-triangle"></i>
+                                Mandatory Update
+                            </label>
+                            <small class="form-help">Force users to update to this version</small>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="releaseNotes">
+                            <i class="fas fa-sticky-note"></i>
+                            Release Notes *
+                        </label>
+                        <textarea id="releaseNotes" name="releaseNotes" rows="4" 
+                                  placeholder="Describe what's new in this version..." required></textarea>
+                    </div>
+
+                    <!-- File Upload Area -->
+                    <div class="form-group">
+                        <label>
+                            <i class="fas fa-file-upload"></i>
+                            Application File *
+                        </label>
+                        <div class="file-upload-area" id="fileUploadArea">
+                            <div class="file-upload-content">
+                                <i class="fas fa-cloud-upload-alt file-upload-icon"></i>
+                                <p class="file-upload-text">
+                                    Drag and drop your file here, or <span class="file-upload-link">click to browse</span>
+                                </p>
+                                <p class="file-upload-info">
+                                    Supported formats: JAR, EXE, MSI, DMG, DEB, RPM (Max: 500MB)
+                                </p>
+                            </div>
+                            <input type="file" id="fileInput" name="file" accept=".jar,.exe,.msi,.dmg,.deb,.rpm" required>
+                        </div>
+                        <div id="fileInfo" class="file-info" style="display: none;">
+                            <div class="file-details">
+                                <i class="fas fa-file"></i>
+                                <span id="fileName"></span>
+                                <span id="fileSize"></span>
+                            </div>
+                            <button type="button" class="btn btn-sm btn-danger" onclick="clearFile()">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Progress Bar -->
+                    <div id="uploadProgress" class="progress-container" style="display: none;">
+                        <div class="progress-bar">
+                            <div class="progress-fill" id="progressFill"></div>
+                        </div>
+                        <div class="progress-text">
+                            <span id="progressText">Uploading...</span>
+                            <span id="progressPercent">0%</span>
+                        </div>
+                    </div>
+
+                    <!-- Submit Button -->
+                    <div class="form-actions">
+                        <button type="submit" class="btn btn-primary" id="submitBtn">
+                            <i class="fas fa-upload"></i>
+                            Upload Version
+                        </button>
+                        <button type="button" class="btn btn-secondary" onclick="resetForm()">
+                            <i class="fas fa-undo"></i>
+                            Reset Form
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Versions Management Section -->
+        <div class="card">
+            <div class="card-header">
+                <h2><i class="fas fa-list"></i> Manage Versions</h2>
+                <div class="card-actions">
+                    <button class="btn btn-outline" onclick="refreshVersions()">
+                        <i class="fas fa-sync-alt"></i>
+                        Refresh
+                    </button>
+                </div>
+            </div>
+            <div class="card-body">
+                <!-- Filters -->
+                <div class="filters">
+                    <div class="filter-group">
+                        <label for="statusFilter">Status:</label>
+                        <select id="statusFilter" onchange="filterVersions()">
+                            <option value="">All</option>
+                            <option value="active">Active</option>
+                            <option value="inactive">Inactive</option>
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <label for="mandatoryFilter">Type:</label>
+                        <select id="mandatoryFilter" onchange="filterVersions()">
+                            <option value="">All</option>
+                            <option value="mandatory">Mandatory</option>
+                            <option value="optional">Optional</option>
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <label for="searchFilter"></label><input type="text" id="searchFilter" placeholder="Search versions..."
+                                                                 onkeyup="filterVersions()">
+                    </div>
+                </div>
+
+                <!-- Loading State -->
+                <div id="versionsLoading" class="loading-state">
+                    <i class="fas fa-spinner fa-spin"></i>
+                    <span>Loading versions...</span>
+                </div>
+
+                <!-- Versions Table -->
+                <div id="versionsTable" class="table-container" style="display: none;">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Version</th>
+                                <th>Release Date</th>
+                                <th>Status</th>
+                                <th>Type</th>
+                                <th>File Size</th>
+                                <th>Downloads</th>
+                                <th>Created By</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="versionsTableBody">
+                            <!-- Dynamic content will be inserted here -->
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Empty State -->
+                <div id="emptyState" class="empty-state" style="display: none;">
+                    <i class="fas fa-inbox"></i>
+                    <h3>No Versions Found</h3>
+                    <p>Upload your first application version to get started.</p>
+                </div>
+
+                <!-- Pagination -->
+                <div id="pagination" class="pagination-container" style="display: none;">
+                    <div class="pagination-info">
+                        <span id="paginationInfo">Showing 0 of 0 versions</span>
+                    </div>
+                    <div class="pagination-controls">
+                        <button class="btn btn-sm" id="prevPage" onclick="changePage(-1)" disabled>
+                            <i class="fas fa-chevron-left"></i>
+                            Previous
+                        </button>
+                        <span id="pageNumbers"></span>
+                        <button class="btn btn-sm" id="nextPage" onclick="changePage(1)" disabled>
+                            Next
+                            <i class="fas fa-chevron-right"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modals -->
+    <!-- Version Details Modal -->
+    <div id="versionModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="modalTitle">Version Details</h3>
+                <button class="modal-close" onclick="closeModal('versionModal')">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body" id="modalBody">
+                <!-- Dynamic content will be inserted here -->
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeModal('versionModal')">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Confirmation Modal -->
+    <div id="confirmModal" class="modal">
+        <div class="modal-content modal-sm">
+            <div class="modal-header">
+                <h3 id="confirmTitle">Confirm Action</h3>
+                <button class="modal-close" onclick="closeModal('confirmModal')">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <p id="confirmMessage">Are you sure you want to perform this action?</p>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-danger" id="confirmBtn" onclick="confirmAction()">Confirm</button>
+                <button class="btn btn-secondary" onclick="closeModal('confirmModal')">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="../js/admin-auth.js?v=2025071402"></script>
+    <script src="../js/admin-api.js?v=2025071402"></script>
+    <script src="../js/admin-ui.js?v=2025071402"></script>
+    <script src="../js/admin-main.js?v=2025071402"></script>
+</body>
+</html>

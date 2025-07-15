@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>File Upload Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        input, textarea, button {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        button {
+            background-color: #007bff;
+            color: white;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        button:disabled {
+            background-color: #6c757d;
+            cursor: not-allowed;
+        }
+        .progress {
+            width: 100%;
+            height: 20px;
+            background-color: #f0f0f0;
+            border-radius: 10px;
+            overflow: hidden;
+            margin: 10px 0;
+            display: none;
+        }
+        .progress-bar {
+            height: 100%;
+            background-color: #007bff;
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+        .alert {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+        }
+        .alert-success {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .alert-error {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+    </style>
+</head>
+<body>
+    <h1>File Upload Test</h1>
+    <p>This is a simple test page to verify the file upload functionality.</p>
+    
+    <div id="alertContainer"></div>
+    
+    <form id="uploadForm">
+        <div class="form-group">
+            <label for="versionNumber">Version Number:</label>
+            <input type="text" id="versionNumber" name="versionNumber" value="3.0.0" required>
+        </div>
+        
+        <div class="form-group">
+            <label for="releaseDate">Release Date:</label>
+            <input type="datetime-local" id="releaseDate" name="releaseDate" required>
+        </div>
+        
+        <div class="form-group">
+            <label for="releaseNotes">Release Notes:</label>
+            <textarea id="releaseNotes" name="releaseNotes" rows="4" required>Test release notes for version 3.0.0. This is a test upload to verify the file upload functionality is working correctly.</textarea>
+        </div>
+        
+        <div class="form-group">
+            <label for="minimumClientVersion">Minimum Client Version (optional):</label>
+            <input type="text" id="minimumClientVersion" name="minimumClientVersion" value="2.0.0">
+        </div>
+        
+        <div class="form-group">
+            <label for="isMandatory">
+                <input type="checkbox" id="isMandatory" name="isMandatory" style="width: auto; margin-right: 5px;">
+                Mandatory Update
+            </label>
+        </div>
+        
+        <div class="form-group">
+            <label for="file">JAR File:</label>
+            <input type="file" id="file" name="file" accept=".jar" required>
+            <small style="color: #666; font-size: 12px; display: block; margin-top: 5px;">
+                Only JAR files are allowed for application updates
+            </small>
+        </div>
+        
+        <div class="progress" id="progress">
+            <div class="progress-bar" id="progressBar"></div>
+        </div>
+        
+        <button type="submit" id="submitBtn">Upload Version</button>
+    </form>
+
+    <script>
+        // Set default release date to current time
+        document.addEventListener('DOMContentLoaded', function() {
+            const now = new Date();
+            const releaseDate = document.getElementById('releaseDate');
+            releaseDate.value = now.toISOString().slice(0, 16);
+        });
+
+        // Handle form submission
+        document.getElementById('uploadForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const form = e.target;
+            const formData = new FormData(form);
+            const submitBtn = document.getElementById('submitBtn');
+            const progress = document.getElementById('progress');
+            const progressBar = document.getElementById('progressBar');
+            
+            // Handle checkbox value explicitly
+            const isMandatoryCheckbox = document.getElementById('isMandatory');
+            formData.delete('isMandatory');
+            formData.append('isMandatory', isMandatoryCheckbox.checked ? 'true' : 'false');
+            
+            try {
+                // Show progress
+                progress.style.display = 'block';
+                progressBar.style.width = '0%';
+                submitBtn.disabled = true;
+                submitBtn.textContent = 'Uploading...';
+                
+                // Create XMLHttpRequest for progress tracking
+                const response = await new Promise((resolve, reject) => {
+                    const xhr = new XMLHttpRequest();
+                    
+                    // Progress tracking
+                    xhr.upload.addEventListener('progress', (event) => {
+                        if (event.lengthComputable) {
+                            const percentComplete = (event.loaded / event.total) * 100;
+                            progressBar.style.width = percentComplete + '%';
+                        }
+                    });
+                    
+                    // Response handling
+                    xhr.addEventListener('load', () => {
+                        if (xhr.status >= 200 && xhr.status < 300) {
+                            try {
+                                const response = JSON.parse(xhr.responseText);
+                                resolve(response);
+                            } catch (error) {
+                                reject(new Error('Invalid response format'));
+                            }
+                        } else {
+                            try {
+                                const errorData = JSON.parse(xhr.responseText);
+                                reject(new Error(errorData.message || 'Upload failed'));
+                            } catch (error) {
+                                reject(new Error(`Upload failed with status: ${xhr.status}`));
+                            }
+                        }
+                    });
+                    
+                    xhr.addEventListener('error', () => {
+                        reject(new Error('Network error during upload'));
+                    });
+                    
+                    // Open request and send
+                    xhr.open('POST', 'http://localhost:8081/api/v1/admin/updates/versions');
+                    
+                    // Add auth header (you'll need to get a valid token)
+                    // xhr.setRequestHeader('Authorization', 'Bearer YOUR_TOKEN_HERE');
+                    
+                    xhr.send(formData);
+                });
+                
+                showAlert('success', 'Version uploaded successfully!');
+                form.reset();
+                
+            } catch (error) {
+                showAlert('error', 'Upload failed: ' + error.message);
+            } finally {
+                // Reset UI
+                progress.style.display = 'none';
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Upload Version';
+            }
+        });
+        
+        function showAlert(type, message) {
+            const alertContainer = document.getElementById('alertContainer');
+            const alert = document.createElement('div');
+            alert.className = `alert alert-${type}`;
+            alert.textContent = message;
+            
+            alertContainer.innerHTML = '';
+            alertContainer.appendChild(alert);
+            
+            // Auto-remove after 5 seconds
+            setTimeout(() => {
+                alert.remove();
+            }, 5000);
+        }
+    </script>
+</body>
+</html>

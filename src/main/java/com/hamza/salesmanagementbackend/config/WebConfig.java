@@ -32,7 +32,11 @@ public class WebConfig implements WebMvcConfigurer {
         registry.addResourceHandler("/images/**")
                 .addResourceLocations("classpath:/static/images/")
                 .setCachePeriod(3600);
-                
+
+        registry.addResourceHandler("/admin/**")
+                .addResourceLocations("classpath:/static/admin/")
+                .setCachePeriod(3600);
+
         // Ensure API endpoints are not treated as static resources
         log.debug("Static resource handlers configured successfully");
     }

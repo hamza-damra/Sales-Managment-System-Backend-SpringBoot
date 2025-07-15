@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Login - Sales Management System</title>
+    <link rel="stylesheet" href="../css/admin-styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        /* Login-specific styles */
+        body {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+
+        .login-container {
+            background: var(--bg-primary);
+            border-radius: var(--border-radius-lg);
+            box-shadow: var(--shadow-lg);
+            padding: 2rem;
+            width: 100%;
+            max-width: 400px;
+            margin: 1rem;
+        }
+
+        .login-header {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        .login-header h1 {
+            color: var(--primary-color);
+            margin-bottom: 0.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+        }
+
+        .login-header p {
+            color: var(--text-secondary);
+            font-size: 0.875rem;
+        }
+
+        .login-form {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .form-group {
+            position: relative;
+        }
+
+        .form-group i {
+            position: absolute;
+            left: 1rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-muted);
+            z-index: 1;
+        }
+
+        .form-group input {
+            padding-left: 3rem;
+            height: 3rem;
+            border: 2px solid var(--border-color);
+            border-radius: var(--border-radius);
+            font-size: 1rem;
+            transition: all 0.2s;
+        }
+
+        .form-group input:focus {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgb(37 99 235 / 0.1);
+        }
+
+        .login-btn {
+            height: 3rem;
+            font-size: 1rem;
+            font-weight: 600;
+            margin-top: 1rem;
+        }
+
+        .login-footer {
+            text-align: center;
+            margin-top: 2rem;
+            padding-top: 1rem;
+            border-top: 1px solid var(--border-color);
+        }
+
+        .login-footer p {
+            color: var(--text-secondary);
+            font-size: 0.875rem;
+        }
+
+        .error-message {
+            background: rgb(220 38 38 / 0.1);
+            border: 1px solid rgb(220 38 38 / 0.2);
+            color: var(--danger-color);
+            padding: 0.75rem;
+            border-radius: var(--border-radius-sm);
+            margin-bottom: 1rem;
+            display: none;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+
+        .loading-spinner {
+            background: var(--bg-primary);
+            padding: 2rem;
+            border-radius: var(--border-radius);
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            color: var(--text-primary);
+        }
+
+        .spinner {
+            width: 24px;
+            height: 24px;
+            border: 3px solid var(--border-color);
+            border-top: 3px solid var(--primary-color);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 480px) {
+            .login-container {
+                margin: 0.5rem;
+                padding: 1.5rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="login-container">
+        <div class="login-header">
+            <h1>
+                <i class="fas fa-shield-alt"></i>
+                Admin Login
+            </h1>
+            <p>Sales Management System Administration</p>
+        </div>
+
+        <div id="errorMessage" class="error-message">
+            <i class="fas fa-exclamation-circle"></i>
+            <span id="errorText">Invalid credentials</span>
+        </div>
+
+        <form id="loginForm" class="login-form">
+            <div class="form-group">
+                <i class="fas fa-user"></i>
+                <input type="text" id="username" name="username" placeholder="Username" required autocomplete="username">
+            </div>
+
+            <div class="form-group">
+                <i class="fas fa-lock"></i>
+                <input type="password" id="password" name="password" placeholder="Password" required autocomplete="current-password">
+            </div>
+
+            <button type="submit" class="btn btn-primary login-btn" id="loginBtn">
+                <i class="fas fa-sign-in-alt"></i>
+                Sign In
+            </button>
+        </form>
+
+        <div class="login-footer">
+            <p>
+                <i class="fas fa-info-circle"></i>
+                Admin access required for this area
+            </p>
+        </div>
+    </div>
+
+    <!-- Loading Overlay -->
+    <div id="loadingOverlay" class="loading-overlay">
+        <div class="loading-spinner">
+            <div class="spinner"></div>
+            <span>Authenticating...</span>
+        </div>
+    </div>
+
+    <script>
+        class LoginManager {
+            constructor() {
+                // Use port 8081 for the backend API
+                this.baseUrl = window.location.protocol + '//' + window.location.hostname + ':8081';
+                this.apiBase = '/api/auth';
+                this.init();
+            }
+
+            init() {
+                // Check if already authenticated
+                this.checkExistingAuth();
+                
+                // Setup form submission
+                const loginForm = document.getElementById('loginForm');
+                if (loginForm) {
+                    loginForm.addEventListener('submit', this.handleLogin.bind(this));
+                }
+
+                // Focus on username field
+                const usernameField = document.getElementById('username');
+                if (usernameField) {
+                    usernameField.focus();
+                }
+            }
+
+            checkExistingAuth() {
+                const token = localStorage.getItem('admin_jwt_token');
+                const userInfo = localStorage.getItem('admin_user_info');
+
+                if (token && userInfo) {
+                    try {
+                        const payload = JSON.parse(atob(token.split('.')[1]));
+                        const user = JSON.parse(userInfo);
+                        const currentTime = Date.now() / 1000;
+
+                        if (payload.exp > currentTime && user.role === 'ADMIN') {
+                            // Token is still valid and user is admin, redirect to admin
+                            window.location.href = this.baseUrl + '/admin/index.html';
+                            return;
+                        }
+                    } catch (error) {
+                        // Invalid token or user info, clear it
+                        localStorage.removeItem('admin_jwt_token');
+                        localStorage.removeItem('admin_user_info');
+                        localStorage.removeItem('admin_refresh_token');
+                    }
+                }
+            }
+
+            async handleLogin(event) {
+                event.preventDefault();
+                
+                const username = document.getElementById('username').value;
+                const password = document.getElementById('password').value;
+                
+                if (!username || !password) {
+                    this.showError('Please enter both username and password');
+                    return;
+                }
+
+                try {
+                    this.showLoading(true);
+                    this.hideError();
+                    
+                    const response = await fetch(`${this.baseUrl}${this.apiBase}/login`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            username: username,
+                            password: password
+                        })
+                    });
+
+                    if (!response.ok) {
+                        const errorData = await response.json();
+                        throw new Error(errorData.message || 'Login failed');
+                    }
+
+                    const data = await response.json();
+                    
+                    // Store authentication data
+                    localStorage.setItem('admin_jwt_token', data.accessToken);
+                    if (data.refreshToken) {
+                        localStorage.setItem('admin_refresh_token', data.refreshToken);
+                    }
+                    
+                    // Extract and verify user info
+                    let userInfo;
+                    if (data.user) {
+                        // Use user info from response
+                        userInfo = {
+                            username: data.user.username,
+                            role: data.user.role,
+                            email: data.user.email,
+                            firstName: data.user.firstName,
+                            lastName: data.user.lastName,
+                            id: data.user.id
+                        };
+                    } else {
+                        // Fallback to extracting from token
+                        userInfo = this.extractUserInfoFromToken(data.accessToken);
+                    }
+
+                    if (!userInfo || userInfo.role !== 'ADMIN') {
+                        throw new Error('Access denied. Admin privileges required.');
+                    }
+
+                    localStorage.setItem('admin_user_info', JSON.stringify(userInfo));
+
+                    // Redirect to admin interface
+                    window.location.href = this.baseUrl + '/admin/index.html';
+                    
+                } catch (error) {
+                    console.error('Login error:', error);
+                    this.showError(error.message);
+                } finally {
+                    this.showLoading(false);
+                }
+            }
+
+            extractUserInfoFromToken(token) {
+                try {
+                    const payload = JSON.parse(atob(token.split('.')[1]));
+                    return {
+                        username: payload.sub,
+                        role: payload.role || 'USER',
+                        exp: payload.exp,
+                        iat: payload.iat
+                    };
+                } catch (error) {
+                    console.error('Error extracting user info from token:', error);
+                    return null;
+                }
+            }
+
+            showError(message) {
+                const errorElement = document.getElementById('errorMessage');
+                const errorText = document.getElementById('errorText');
+                
+                if (errorElement && errorText) {
+                    errorText.textContent = message;
+                    errorElement.style.display = 'flex';
+                }
+            }
+
+            hideError() {
+                const errorElement = document.getElementById('errorMessage');
+                if (errorElement) {
+                    errorElement.style.display = 'none';
+                }
+            }
+
+            showLoading(show) {
+                const loadingOverlay = document.getElementById('loadingOverlay');
+                const loginBtn = document.getElementById('loginBtn');
+                
+                if (loadingOverlay) {
+                    loadingOverlay.style.display = show ? 'flex' : 'none';
+                }
+                
+                if (loginBtn) {
+                    loginBtn.disabled = show;
+                    if (show) {
+                        loginBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Signing In...';
+                    } else {
+                        loginBtn.innerHTML = '<i class="fas fa-sign-in-alt"></i> Sign In';
+                    }
+                }
+            }
+        }
+
+        // Initialize login manager when DOM is loaded
+        document.addEventListener('DOMContentLoaded', () => {
+            new LoginManager();
+        });
+    </script>
+</body>
+</html>
