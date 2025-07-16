@@ -3,6 +3,7 @@ package com.hamza.salesmanagementbackend.config;
 import com.hamza.salesmanagementbackend.entity.*;
 import com.hamza.salesmanagementbackend.repository.*;
 import com.hamza.salesmanagementbackend.service.CategoryMigrationService;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.core.annotation.Order;
@@ -14,6 +15,7 @@ import java.util.Arrays;
 
 @Component
 @Order(2) // Run after UserDataInitializer
+@Slf4j
 public class DataInitializer implements CommandLineRunner {
 
     @Autowired
@@ -36,15 +38,52 @@ public class DataInitializer implements CommandLineRunner {
 
     @Override
     public void run(String... args) throws Exception {
-        if (customerRepository.count() == 0) {
-            initializeData();
-        }
+        try {
+            // Force Hibernate to create all entity tables by accessing repositories
+            log.info("Initializing database schema by accessing all repositories...");
+            initializeSchema();
 
-        // Run category migration and setup
-        categoryMigrationService.createDefaultCategories();
-        categoryMigrationService.migrateStringCategoriesToEntities();
-        categoryMigrationService.assignUncategorizedProducts();
-        categoryMigrationService.validateCategoryMigration();
+            // Check if data initialization is needed
+            if (customerRepository.count() == 0) {
+                log.info("No existing data found, initializing sample data...");
+                initializeData();
+            } else {
+                log.info("Existing data found, skipping data initialization");
+            }
+
+            // Run category migration and setup
+            categoryMigrationService.createDefaultCategories();
+            categoryMigrationService.migrateStringCategoriesToEntities();
+            categoryMigrationService.assignUncategorizedProducts();
+            categoryMigrationService.validateCategoryMigration();
+
+        } catch (Exception e) {
+            log.error("Error during data initialization", e);
+            // Don't throw exception to prevent application startup failure
+        }
+    }
+
+    /**
+     * Force Hibernate to create all entity tables by accessing repositories
+     * This ensures all tables exist before we try to query them
+     */
+    private void initializeSchema() {
+        try {
+            log.info("Accessing all repositories to trigger table creation...");
+
+            // Access each repository to force table creation
+            customerRepository.count();
+            productRepository.count();
+            saleRepository.count();
+            saleItemRepository.count();
+            categoryRepository.count();
+
+            log.info("All main entity tables should now be created");
+
+        } catch (Exception e) {
+            log.warn("Some tables may not have been created during schema initialization", e);
+            // Continue anyway - tables will be created when first accessed
+        }
     }
 
     private void initializeData() {

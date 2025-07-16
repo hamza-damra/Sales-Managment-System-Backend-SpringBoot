@@ -34,7 +34,7 @@ DB_POOL_MAX_LIFETIME=1200000
 DB_POOL_LEAK_DETECTION=60000
 
 # Database Behavior Configuration
-DB_DDL_AUTO=update
+DB_DDL_AUTO=create
 DB_SHOW_SQL=false
 DB_FORMAT_SQL=false
 

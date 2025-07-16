@@ -21,7 +21,7 @@ import java.time.LocalDateTime;
 @Service
 @RequiredArgsConstructor
 @Slf4j
-@Order(1) // Run early in the startup process
+@Order(1) // Run after SchemaInitializationService (Order 0)
 public class DatabaseInitializationService implements CommandLineRunner {
 
     private final UserRepository userRepository;
