@@ -1,6 +1,4 @@
 package com.hamza.salesmanagementbackend.controller;
-
-import com.hamza.salesmanagementbackend.config.ApplicationConstants;
 import com.hamza.salesmanagementbackend.dto.*;
 import com.hamza.salesmanagementbackend.entity.RateLimitTracker;
 import com.hamza.salesmanagementbackend.entity.ReleaseChannel;
@@ -26,7 +24,7 @@ import java.util.Map;
  * REST Controller for client-facing update operations
  */
 @RestController
-@RequestMapping(ApplicationConstants.API_V1_UPDATES)
+@RequestMapping("/api/v1/updates")
 @RequiredArgsConstructor
 @Slf4j
 public class UpdateController {
@@ -41,7 +39,7 @@ public class UpdateController {
      * Get the latest available version
      * GET /api/v1/updates/latest
      */
-    @GetMapping(ApplicationConstants.LATEST_ENDPOINT)
+    @GetMapping("/latest")
     @PreAuthorize("hasRole('USER') or hasRole('ADMIN')")
     public ResponseEntity<ApiResponse<ApplicationVersionDTO>> getLatestVersion() {
         log.info("Request received to get latest version");
@@ -73,7 +71,7 @@ public class UpdateController {
      * Check for updates for a specific client version
      * GET /api/v1/updates/check?currentVersion={version}
      */
-    @GetMapping(ApplicationConstants.CHECK_ENDPOINT)
+    @GetMapping("/check")
     @PreAuthorize("hasRole('USER') or hasRole('ADMIN')")
     public ResponseEntity<ApiResponse<UpdateCheckResponseDTO>> checkForUpdates(
             @RequestParam("currentVersion") String currentVersion) {
@@ -108,7 +106,7 @@ public class UpdateController {
      * GET /api/v1/updates/download/{version}
      * Supports resumable downloads with Range header
      */
-    @GetMapping(ApplicationConstants.DOWNLOAD_ENDPOINT + "/{version}")
+    @GetMapping("/download/{version}")
     @PreAuthorize("hasRole('USER') or hasRole('ADMIN')")
     public ResponseEntity<Resource> downloadUpdate(
             @PathVariable String version,
@@ -270,11 +268,12 @@ public class UpdateController {
      */
     private Resource handleRangeRequest(String filePath, String rangeHeader) {
         try {
+            // TODO: Implement partial content support using range header values
             // Parse range header (e.g., "bytes=0-1023")
-            String[] ranges = rangeHeader.substring(6).split("-");
-            long start = Long.parseLong(ranges[0]);
-            long end = ranges.length > 1 && !ranges[1].isEmpty() ?
-                      Long.parseLong(ranges[1]) : -1;
+            // String[] ranges = rangeHeader.substring(6).split("-");
+            // long start = Long.parseLong(ranges[0]);
+            // long end = ranges.length > 1 && !ranges[1].isEmpty() ?
+            //           Long.parseLong(ranges[1]) : -1;
 
             // For now, return full resource (actual implementation would return partial content)
             // In production, you'd implement a custom Resource that supports byte ranges
@@ -360,7 +359,7 @@ public class UpdateController {
      * Get metadata for a specific version without initiating download
      * GET /api/v1/updates/metadata/{version}
      */
-    @GetMapping(ApplicationConstants.METADATA_ENDPOINT + "/{version}")
+    @GetMapping("/metadata/{version}")
     @PreAuthorize("hasRole('USER') or hasRole('ADMIN')")
     public ResponseEntity<ApiResponse<UpdateMetadataDTO>> getVersionMetadata(
             @PathVariable String version,
@@ -432,7 +431,7 @@ public class UpdateController {
      * Check system compatibility for a specific version
      * GET /api/v1/updates/compatibility/{version}
      */
-    @GetMapping(ApplicationConstants.COMPATIBILITY_ENDPOINT + "/{version}")
+    @GetMapping("/compatibility/{version}")
     @PreAuthorize("hasRole('USER') or hasRole('ADMIN')")
     public ResponseEntity<ApiResponse<CompatibilityCheckDTO>> checkCompatibility(
             @PathVariable String version,
@@ -487,7 +486,7 @@ public class UpdateController {
      * Get differential update between two versions
      * GET /api/v1/updates/delta/{fromVersion}/{toVersion}
      */
-    @GetMapping(ApplicationConstants.DELTA_ENDPOINT + "/{fromVersion}/{toVersion}")
+    @GetMapping("/delta/{fromVersion}/{toVersion}")
     @PreAuthorize("hasRole('USER') or hasRole('ADMIN')")
     public ResponseEntity<ApiResponse<DifferentialUpdateDTO>> getDifferentialUpdate(
             @PathVariable String fromVersion,
@@ -541,7 +540,7 @@ public class UpdateController {
      * Download differential update file
      * GET /api/v1/updates/delta/{fromVersion}/{toVersion}/download
      */
-    @GetMapping(ApplicationConstants.DELTA_ENDPOINT + "/{fromVersion}/{toVersion}/download")
+    @GetMapping("/delta/{fromVersion}/{toVersion}/download")
     @PreAuthorize("hasRole('USER') or hasRole('ADMIN')")
     public ResponseEntity<Resource> downloadDifferentialUpdate(
             @PathVariable String fromVersion,
@@ -584,7 +583,7 @@ public class UpdateController {
      * Get available release channels
      * GET /api/v1/updates/channels
      */
-    @GetMapping(ApplicationConstants.CHANNELS_ENDPOINT)
+    @GetMapping("/channels")
     @PreAuthorize("hasRole('USER') or hasRole('ADMIN')")
     public ResponseEntity<ApiResponse<Map<String, ReleaseChannelDTO>>> getAvailableChannels() {
         log.info("Request for available release channels");
@@ -627,7 +626,7 @@ public class UpdateController {
      * Get latest version for specific channel
      * GET /api/v1/updates/channels/{channel}/latest
      */
-    @GetMapping(ApplicationConstants.CHANNELS_ENDPOINT + "/{channel}" + ApplicationConstants.LATEST_ENDPOINT)
+    @GetMapping("/channels/{channel}/latest")
     @PreAuthorize("hasRole('USER') or hasRole('ADMIN')")
     public ResponseEntity<ApiResponse<ApplicationVersionDTO>> getLatestVersionForChannel(
             @PathVariable String channel) {

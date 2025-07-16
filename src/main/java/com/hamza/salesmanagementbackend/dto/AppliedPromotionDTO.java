@@ -28,12 +28,8 @@ public class AppliedPromotionDTO {
     private Boolean isAutoApplied;
     private LocalDateTime appliedAt;
 
-    // Computed fields for display
-    private String displayText;
-    private String typeDisplay;
-    private BigDecimal savingsAmount;
-    private Boolean isPercentageDiscount;
-    private Boolean isFixedAmountDiscount;
+    // Note: displayText, typeDisplay, savingsAmount, isPercentageDiscount, and isFixedAmountDiscount
+    // are computed properties provided by getter methods below
 
     // Utility methods
     public BigDecimal getSavingsAmount() {

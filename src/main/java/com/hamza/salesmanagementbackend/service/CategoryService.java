@@ -8,7 +8,7 @@ import com.hamza.salesmanagementbackend.exception.DataIntegrityException;
 import com.hamza.salesmanagementbackend.exception.ResourceNotFoundException;
 import com.hamza.salesmanagementbackend.repository.CategoryRepository;
 import com.hamza.salesmanagementbackend.repository.InventoryRepository;
-import org.springframework.beans.factory.annotation.Autowired;
+
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -24,7 +24,6 @@ public class CategoryService {
     private final CategoryRepository categoryRepository;
     private final InventoryRepository inventoryRepository;
 
-    @Autowired
     public CategoryService(CategoryRepository categoryRepository, InventoryRepository inventoryRepository) {
         this.categoryRepository = categoryRepository;
         this.inventoryRepository = inventoryRepository;
@@ -99,8 +98,10 @@ public class CategoryService {
      * Deletes a category by ID
      */
     public void deleteCategory(Long id) {
-        Category category = categoryRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Category not found with id: " + id));
+        // Verify category exists
+        if (!categoryRepository.existsById(id)) {
+            throw new ResourceNotFoundException("Category not found with id: " + id);
+        }
 
         // Check if category has products
         Long productCount = categoryRepository.countProductsByCategoryId(id);

@@ -1,6 +1,6 @@
 package com.hamza.salesmanagementbackend.controller;
 
-import com.hamza.salesmanagementbackend.config.ApplicationConstants;
+
 import com.hamza.salesmanagementbackend.dto.SupplierDTO;
 import com.hamza.salesmanagementbackend.entity.Supplier;
 import com.hamza.salesmanagementbackend.exception.ResourceNotFoundException;
@@ -21,7 +21,7 @@ import java.util.List;
 import java.util.Map;
 
 @RestController
-@RequestMapping(ApplicationConstants.API_SUPPLIERS)
+@RequestMapping("/api/v1/suppliers")
 @CrossOrigin(origins = "*")
 public class SupplierController {
 

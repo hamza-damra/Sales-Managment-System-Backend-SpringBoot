@@ -86,7 +86,11 @@ public class FileManagementService {
         validateVersionNumber(versionNumber);
 
         // Generate filename and paths
-        String originalFileName = StringUtils.cleanPath(file.getOriginalFilename());
+        String rawFileName = file.getOriginalFilename();
+        if (rawFileName == null || rawFileName.trim().isEmpty()) {
+            throw FileUploadException.invalidFileName("File name cannot be empty");
+        }
+        String originalFileName = StringUtils.cleanPath(rawFileName);
         String fileExtension = getFileExtension(originalFileName);
         String fileName = String.format("sales-management-%s.%s", versionNumber, fileExtension);
 
@@ -319,10 +323,11 @@ public class FileManagementService {
         }
 
         // Validate file name
-        String fileName = StringUtils.cleanPath(file.getOriginalFilename());
-        if (fileName == null || fileName.trim().isEmpty()) {
+        String rawFileName = file.getOriginalFilename();
+        if (rawFileName == null || rawFileName.trim().isEmpty()) {
             throw FileUploadException.invalidFileName("File name cannot be empty");
         }
+        String fileName = StringUtils.cleanPath(rawFileName);
 
         // Check for path traversal attempts in filename
         if (fileName.contains("..") || fileName.contains("/") || fileName.contains("\\")) {
@@ -423,7 +428,6 @@ public class FileManagementService {
      */
     private void validateJarContents(MultipartFile file, String fileName) throws IOException {
         boolean hasManifest = false;
-        boolean hasClassFiles = false;
         int entryCount = 0;
         Set<String> suspiciousPatterns = new HashSet<>();
 
@@ -441,9 +445,7 @@ public class FileManagementService {
                 }
 
                 // Check for class files (indicates it's a Java application)
-                if (entryName.endsWith(".class")) {
-                    hasClassFiles = true;
-                }
+                // Note: Class file detection removed as it was not being used
 
                 // Security checks for suspicious patterns
                 validateEntryName(entryName, fileName, suspiciousPatterns);

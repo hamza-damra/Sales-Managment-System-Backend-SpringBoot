@@ -1,0 +1,148 @@
+{
+  "properties": [
+    {
+      "name": "jwt.secret",
+      "type": "java.lang.String",
+      "description": "JWT secret key for token signing and verification. Should be a Base64 encoded string of at least 256 bits for security.",
+      "defaultValue": "bXlTZWNyZXRLZXkxMjM0NTY3ODkwMTIzNDU2Nzg5MDEyMzQ1Njc4OTAxMjM0NTY3ODkw"
+    },
+    {
+      "name": "jwt.expiration",
+      "type": "java.lang.Long",
+      "description": "JWT token expiration time in milliseconds. Default is 24 hours (86400000 ms).",
+      "defaultValue": 86400000
+    },
+    {
+      "name": "cors.allowed-origins",
+      "type": "java.lang.String",
+      "description": "Comma-separated list of allowed CORS origins. Use '*' to allow all origins (not recommended for production).",
+      "defaultValue": "*"
+    },
+    {
+      "name": "cors.allowed-methods",
+      "type": "java.lang.String",
+      "description": "Comma-separated list of allowed HTTP methods. Common values: GET,POST,PUT,DELETE,OPTIONS",
+      "defaultValue": "GET,POST,PUT,DELETE,OPTIONS"
+    },
+    {
+      "name": "cors.allowed-headers",
+      "type": "java.lang.String",
+      "description": "Comma-separated list of allowed request headers. Use '*' to allow all headers.",
+      "defaultValue": "*"
+    },
+    {
+      "name": "cors.max-age",
+      "type": "java.lang.Long",
+      "description": "CORS preflight request cache duration in seconds. Default is 1 hour (3600 seconds).",
+      "defaultValue": 3600
+    },
+    {
+      "name": "app.updates.storage-path",
+      "type": "java.lang.String",
+      "description": "Directory path for storing update files. Default is './versions' for local development.",
+      "defaultValue": "./versions"
+    },
+    {
+      "name": "app.updates.max-file-size",
+      "type": "java.lang.Long",
+      "description": "Maximum allowed file size for updates in bytes. Default is 500MB (524288000 bytes).",
+      "defaultValue": 524288000
+    },
+    {
+      "name": "app.updates.allowed-extensions",
+      "type": "java.lang.String",
+      "description": "Comma-separated list of allowed file extensions for updates. Default is 'jar' for Java application updates.",
+      "defaultValue": "jar"
+    },
+    {
+      "name": "app.updates.enable-resumable-downloads",
+      "type": "java.lang.Boolean",
+      "description": "Enable resumable download functionality for update files. Allows clients to resume interrupted downloads.",
+      "defaultValue": true
+    },
+    {
+      "name": "app.updates.cleanup-orphaned-files",
+      "type": "java.lang.Boolean",
+      "description": "Enable automatic cleanup of orphaned update files. Removes files that are no longer referenced.",
+      "defaultValue": true
+    },
+    {
+      "name": "app.updates.websocket.heartbeat-interval",
+      "type": "java.lang.Long",
+      "description": "WebSocket heartbeat interval in milliseconds. Default is 30 seconds (30000 ms).",
+      "defaultValue": 30000
+    },
+    {
+      "name": "app.updates.websocket.connection-timeout",
+      "type": "java.lang.Long",
+      "description": "WebSocket connection timeout in milliseconds. Default is 5 minutes (300000 ms).",
+      "defaultValue": 300000
+    },
+    {
+      "name": "app.updates.security.admin-role",
+      "type": "java.lang.String",
+      "description": "Required admin role for update operations. Default is 'ADMIN'.",
+      "defaultValue": "ADMIN"
+    },
+    {
+      "name": "app.updates.security.rate-limit",
+      "type": "java.lang.Integer",
+      "description": "Rate limit for update operations per user. Default is 10 operations per time window.",
+      "defaultValue": 10
+    },
+    {
+      "name": "app.updates.jar-validation.strict-mime-type",
+      "type": "java.lang.Boolean",
+      "description": "Enable strict MIME type validation for JAR files. Ensures uploaded files have correct MIME type.",
+      "defaultValue": true
+    },
+    {
+      "name": "app.updates.jar-validation.require-manifest",
+      "type": "java.lang.Boolean",
+      "description": "Require manifest file in JAR uploads. Default is false to allow simple JAR files.",
+      "defaultValue": false
+    },
+    {
+      "name": "app.updates.jar-validation.max-entries",
+      "type": "java.lang.Integer",
+      "description": "Maximum number of entries allowed in JAR files. Prevents zip bombs and oversized archives.",
+      "defaultValue": 10000
+    },
+    {
+      "name": "app.updates.jar-validation.max-manifest-size",
+      "type": "java.lang.Integer",
+      "description": "Maximum manifest file size in bytes. Default is 64KB (65536 bytes).",
+      "defaultValue": 65536
+    },
+    {
+      "name": "management.endpoints.web.exposure.include",
+      "type": "java.lang.String",
+      "description": "Comma-separated list of endpoints to expose via web. Standard Spring Boot Actuator property.",
+      "defaultValue": "health,info"
+    },
+    {
+      "name": "management.endpoint.health.show-details",
+      "type": "java.lang.String",
+      "description": "When to show health details. Values: never, when-authorized, always. Standard Spring Boot Actuator property.",
+      "defaultValue": "never"
+    },
+    {
+      "name": "management.health.db.enabled",
+      "type": "java.lang.Boolean",
+      "description": "Enable database health indicator. Standard Spring Boot Actuator property.",
+      "defaultValue": true
+    },
+    {
+      "name": "management.health.diskspace.enabled",
+      "type": "java.lang.Boolean",
+      "description": "Enable disk space health indicator. Standard Spring Boot Actuator property.",
+      "defaultValue": true
+    },
+    {
+      "name": "management.health.ping.enabled",
+      "type": "java.lang.Boolean",
+      "description": "Enable ping health indicator. Standard Spring Boot Actuator property.",
+      "defaultValue": true
+    }
+  ]
+}

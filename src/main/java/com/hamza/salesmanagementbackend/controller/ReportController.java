@@ -1,6 +1,6 @@
 package com.hamza.salesmanagementbackend.controller;
 
-import com.hamza.salesmanagementbackend.config.ApplicationConstants;
+
 import com.hamza.salesmanagementbackend.dto.report.*;
 import com.hamza.salesmanagementbackend.service.ReportService;
 import com.hamza.salesmanagementbackend.service.ReportExportService;
@@ -36,7 +36,7 @@ import java.util.concurrent.CompletableFuture;
  * including caching, export functionality, and real-time KPIs.
  */
 @RestController
-@RequestMapping(ApplicationConstants.API_V1_REPORTS)
+@RequestMapping("/api/v1/reports")
 @CrossOrigin(origins = "*")
 @RequiredArgsConstructor
 @Validated
@@ -179,7 +179,9 @@ public class ReportController {
         boolean fromCache = false;
 
         if (useCache) {
-            report = reportCacheService.getCachedReport(cacheKey, Map.class);
+            @SuppressWarnings("unchecked")
+            Map<String, Object> cachedReport = (Map<String, Object>) reportCacheService.getCachedReport(cacheKey, Map.class);
+            report = cachedReport;
             if (report != null) {
                 fromCache = true;
                 log.debug("Retrieved sales summary from cache");
@@ -652,7 +654,7 @@ public class ReportController {
      * @param days Number of days to analyze (1-365)
      * @return Default dashboard with general business metrics
      */
-    @GetMapping(ApplicationConstants.DASHBOARD_ENDPOINT)
+    @GetMapping("/dashboard")
     @PreAuthorize("hasRole('ADMIN') or hasRole('MANAGER') or hasRole('USER')")
     public ResponseEntity<StandardReportResponse<Map<String, Object>>> getDefaultDashboard(
             @RequestParam(defaultValue = "30") @Min(1) @Max(365) int days) {

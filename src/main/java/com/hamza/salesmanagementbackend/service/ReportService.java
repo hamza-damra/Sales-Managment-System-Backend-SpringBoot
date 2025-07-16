@@ -30,13 +30,9 @@ public class ReportService {
     private final SaleRepository saleRepository;
     private final CustomerRepository customerRepository;
     private final ProductRepository productRepository;
-    private final PromotionRepository promotionRepository;
     private final AppliedPromotionRepository appliedPromotionRepository;
     private final ReportHelperService reportHelperService;
     private final ReturnRepository returnRepository;
-    private final InventoryRepository inventoryRepository;
-    private final CategoryRepository categoryRepository;
-    private final UserRepository userRepository;
 
     private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd");
     private static final DateTimeFormatter MONTH_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM");
@@ -698,8 +694,16 @@ public class ReportService {
         // Data validation and consistency checks
         performance.put("dataValidation", performDataValidationChecks(sales));
 
-        log.info("Product performance report generated successfully with {} products analyzed",
-                ((Map<String, Object>) performance.get("productRankings")).get("summary"));
+        // Safe access to nested map data for logging
+        Object productRankings = performance.get("productRankings");
+        if (productRankings instanceof Map) {
+            @SuppressWarnings("unchecked")
+            Map<String, Object> rankingsMap = (Map<String, Object>) productRankings;
+            Object summary = rankingsMap.get("summary");
+            log.info("Product performance report generated successfully with {} products analyzed", summary);
+        } else {
+            log.info("Product performance report generated successfully");
+        }
 
         return performance;
     }
@@ -1706,7 +1710,6 @@ public class ReportService {
     private Map<String, Object> generateChurnAnalysis(int months) {
         log.debug("Generating churn analysis for {} months", months);
 
-        LocalDateTime cutoffDate = LocalDateTime.now().minusMonths(months);
         LocalDateTime churnThreshold = LocalDateTime.now().minusDays(90); // Consider churned if no purchase in 90 days
 
         // Get all customers who had purchases before the churn threshold
@@ -2271,9 +2274,6 @@ public class ReportService {
                     BigDecimal profitMargin = totalRevenue.compareTo(BigDecimal.ZERO) > 0 ?
                             totalProfit.divide(totalRevenue, 4, RoundingMode.HALF_UP).multiply(BigDecimal.valueOf(100)) :
                             BigDecimal.ZERO;
-
-                    // Calculate revenue percentage of total
-                    BigDecimal revenuePercentage = BigDecimal.ZERO; // Will be calculated after all products
 
                     Map<String, Object> metrics = new HashMap<>();
                     metrics.put("productId", product.getId());

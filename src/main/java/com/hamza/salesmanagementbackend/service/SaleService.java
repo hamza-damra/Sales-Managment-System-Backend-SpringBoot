@@ -19,7 +19,7 @@ import com.hamza.salesmanagementbackend.repository.CustomerRepository;
 import com.hamza.salesmanagementbackend.repository.ProductRepository;
 import com.hamza.salesmanagementbackend.repository.SaleRepository;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
+
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -45,7 +45,6 @@ public class SaleService {
     private final PromotionApplicationService promotionApplicationService;
     private final PromotionService promotionService;
 
-    @Autowired
     public SaleService(SaleRepository saleRepository,
                       CustomerRepository customerRepository,
                       ProductRepository productRepository,
@@ -494,12 +493,8 @@ public class SaleService {
         dto.setIsAutoApplied(appliedPromotion.getIsAutoApplied());
         dto.setAppliedAt(appliedPromotion.getAppliedAt());
 
-        // Set computed fields
-        dto.setDisplayText(appliedPromotion.getDisplayText());
-        dto.setTypeDisplay(appliedPromotion.getTypeDisplay());
-        dto.setSavingsAmount(appliedPromotion.getSavingsAmount());
-        dto.setIsPercentageDiscount(appliedPromotion.isPercentageDiscount());
-        dto.setIsFixedAmountDiscount(appliedPromotion.isFixedAmountDiscount());
+        // Note: Computed fields (displayText, typeDisplay, savingsAmount, isPercentageDiscount, isFixedAmountDiscount)
+        // are automatically calculated by the DTO's getter methods and don't need to be set explicitly
 
         return dto;
     }

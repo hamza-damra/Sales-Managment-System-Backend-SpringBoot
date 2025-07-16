@@ -1,6 +1,4 @@
 package com.hamza.salesmanagementbackend.controller;
-
-import com.hamza.salesmanagementbackend.config.ApplicationConstants;
 import com.hamza.salesmanagementbackend.dto.ApplicationVersionDTO;
 import com.hamza.salesmanagementbackend.dto.UpdateStatisticsDTO;
 import com.hamza.salesmanagementbackend.exception.FileUploadException;
@@ -29,7 +27,7 @@ import java.util.Map;
  * REST Controller for admin update management operations
  */
 @RestController
-@RequestMapping(ApplicationConstants.API_V1_ADMIN_UPDATES)
+@RequestMapping("/api/v1/admin/updates")
 @RequiredArgsConstructor
 @Slf4j
 @PreAuthorize("hasRole('ADMIN')")
@@ -43,7 +41,7 @@ public class AdminUpdateController {
      * Get all versions with pagination
      * GET /api/v1/admin/updates/versions
      */
-    @GetMapping(ApplicationConstants.VERSIONS_ENDPOINT)
+    @GetMapping("/versions")
     public ResponseEntity<ApiResponse<Page<ApplicationVersionDTO>>> getAllVersions(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size) {
@@ -66,7 +64,7 @@ public class AdminUpdateController {
      * Get all active versions
      * GET /api/v1/admin/updates/versions/active
      */
-    @GetMapping(ApplicationConstants.VERSIONS_ENDPOINT + ApplicationConstants.ACTIVE_ENDPOINT)
+    @GetMapping("/versions/active")
     public ResponseEntity<ApiResponse<List<ApplicationVersionDTO>>> getAllActiveVersions() {
         log.info("Admin request to get all active versions");
         
@@ -85,7 +83,7 @@ public class AdminUpdateController {
      * Create new version with file upload
      * POST /api/v1/admin/updates/versions
      */
-    @PostMapping(ApplicationConstants.VERSIONS_ENDPOINT)
+    @PostMapping("/versions")
     public ResponseEntity<ApiResponse<ApplicationVersionDTO>> createVersion(
             @RequestParam("versionNumber") String versionNumber,
             @RequestParam(value = "isMandatory", required = false, defaultValue = "false") Boolean isMandatory,
@@ -114,7 +112,7 @@ public class AdminUpdateController {
             // Store the uploaded file
             String fileName = fileManagementService.storeFile(file, versionNumber);
             String checksum = fileManagementService.calculateChecksum(file);
-            String downloadUrl = ApplicationConstants.API_V1_UPDATES + ApplicationConstants.DOWNLOAD_ENDPOINT + "/" + versionNumber;
+            String downloadUrl = "/api/v1/updates/download/" + versionNumber;
 
             // Create version DTO
             ApplicationVersionDTO versionDTO = ApplicationVersionDTO.builder()
@@ -167,7 +165,7 @@ public class AdminUpdateController {
      * Update version information
      * PUT /api/v1/admin/updates/versions/{id}
      */
-    @PutMapping(ApplicationConstants.VERSIONS_ENDPOINT + "/{id}")
+    @PutMapping("/versions/{id}")
     public ResponseEntity<ApiResponse<ApplicationVersionDTO>> updateVersion(
             @PathVariable Long id,
             @Valid @RequestBody ApplicationVersionDTO versionDTO) {
@@ -201,7 +199,7 @@ public class AdminUpdateController {
      * Update version status (active/inactive)
      * PUT /api/v1/admin/updates/versions/{id}/status
      */
-    @PutMapping(ApplicationConstants.VERSIONS_ENDPOINT + "/{id}" + ApplicationConstants.STATUS_ENDPOINT)
+    @PutMapping("/versions/{id}/status")
     public ResponseEntity<ApiResponse<ApplicationVersionDTO>> updateVersionStatus(
             @PathVariable Long id,
             @RequestBody Map<String, Boolean> statusUpdate) {
@@ -236,7 +234,7 @@ public class AdminUpdateController {
      * Delete version
      * DELETE /api/v1/admin/updates/versions/{id}
      */
-    @DeleteMapping(ApplicationConstants.VERSIONS_ENDPOINT + "/{id}")
+    @DeleteMapping("/versions/{id}")
     public ResponseEntity<ApiResponse<String>> deleteVersion(@PathVariable Long id) {
         log.info("Admin request to delete version ID: {}", id);
         
@@ -267,7 +265,7 @@ public class AdminUpdateController {
      * Get update system statistics
      * GET /api/v1/admin/updates/statistics
      */
-    @GetMapping(ApplicationConstants.STATISTICS_ENDPOINT)
+    @GetMapping("/statistics")
     public ResponseEntity<ApiResponse<UpdateStatisticsDTO>> getUpdateStatistics() {
         log.info("Admin request for update statistics");
         

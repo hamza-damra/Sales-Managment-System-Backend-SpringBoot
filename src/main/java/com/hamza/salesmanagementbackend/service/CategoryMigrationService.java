@@ -6,7 +6,6 @@ import com.hamza.salesmanagementbackend.repository.CategoryRepository;
 import com.hamza.salesmanagementbackend.repository.ProductRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -23,7 +22,6 @@ public class CategoryMigrationService {
     private final CategoryRepository categoryRepository;
     private final ProductRepository productRepository;
 
-    @Autowired
     public CategoryMigrationService(CategoryRepository categoryRepository, ProductRepository productRepository) {
         this.categoryRepository = categoryRepository;
         this.productRepository = productRepository;

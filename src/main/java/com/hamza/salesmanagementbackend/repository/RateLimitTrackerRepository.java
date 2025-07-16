@@ -160,10 +160,10 @@ public interface RateLimitTrackerRepository extends JpaRepository<RateLimitTrack
     /**
      * Get daily violation counts
      */
-    @Query("SELECT DATE(rlt.firstViolationTime) as violationDate, COUNT(rlt) as violationCount " +
+    @Query("SELECT CAST(rlt.firstViolationTime AS date) as violationDate, COUNT(rlt) as violationCount " +
            "FROM RateLimitTracker rlt WHERE rlt.firstViolationTime IS NOT NULL " +
            "AND rlt.firstViolationTime >= :startDate " +
-           "GROUP BY DATE(rlt.firstViolationTime) ORDER BY violationDate DESC")
+           "GROUP BY CAST(rlt.firstViolationTime AS date) ORDER BY violationDate DESC")
     List<Object[]> getDailyViolationCounts(@Param("startDate") LocalDateTime startDate);
 
     /**

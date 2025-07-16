@@ -8,6 +8,7 @@ import com.hamza.salesmanagementbackend.repository.ConnectedClientRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.lang.NonNull;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import org.springframework.web.socket.*;
@@ -41,7 +42,7 @@ public class UpdateWebSocketHandler implements WebSocketHandler {
     private final Map<String, ConnectedClient> sessionClients = new ConcurrentHashMap<>();
 
     @Override
-    public void afterConnectionEstablished(WebSocketSession session) throws Exception {
+    public void afterConnectionEstablished(@NonNull WebSocketSession session) throws Exception {
         log.info("WebSocket connection established: {}", session.getId());
 
         try {
@@ -77,7 +78,7 @@ public class UpdateWebSocketHandler implements WebSocketHandler {
     }
 
     @Override
-    public void handleMessage(WebSocketSession session, org.springframework.web.socket.WebSocketMessage<?> message) throws Exception {
+    public void handleMessage(@NonNull WebSocketSession session, @NonNull org.springframework.web.socket.WebSocketMessage<?> message) throws Exception {
         log.debug("Received WebSocket message from session {}: {}", session.getId(), message);
 
         try {
@@ -95,7 +96,7 @@ public class UpdateWebSocketHandler implements WebSocketHandler {
     }
 
     @Override
-    public void handleTransportError(WebSocketSession session, Throwable exception) throws Exception {
+    public void handleTransportError(@NonNull WebSocketSession session, @NonNull Throwable exception) throws Exception {
         log.error("WebSocket transport error for session {}: {}", session.getId(), exception.getMessage());
         
         // Clean up session
@@ -103,7 +104,7 @@ public class UpdateWebSocketHandler implements WebSocketHandler {
     }
 
     @Override
-    public void afterConnectionClosed(WebSocketSession session, CloseStatus closeStatus) throws Exception {
+    public void afterConnectionClosed(@NonNull WebSocketSession session, @NonNull CloseStatus closeStatus) throws Exception {
         log.info("WebSocket connection closed for session {}: {}", session.getId(), closeStatus);
         
         // Clean up session
@@ -380,6 +381,8 @@ public class UpdateWebSocketHandler implements WebSocketHandler {
             activeSessions.values().parallelStream().forEach(session -> {
                 try {
                     if (session.isOpen()) {
+                        // Send both the heartbeat message and a ping
+                        sendMessage(session, heartbeat);
                         session.sendMessage(new PingMessage());
                     }
                 } catch (Exception e) {

@@ -2,7 +2,6 @@ package com.hamza.salesmanagementbackend.service;
 
 import com.hamza.salesmanagementbackend.entity.*;
 import com.hamza.salesmanagementbackend.exception.BusinessLogicException;
-import com.hamza.salesmanagementbackend.exception.ResourceNotFoundException;
 import com.hamza.salesmanagementbackend.repository.PromotionRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

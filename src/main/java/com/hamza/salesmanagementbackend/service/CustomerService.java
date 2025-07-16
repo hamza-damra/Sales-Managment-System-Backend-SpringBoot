@@ -3,7 +3,6 @@ package com.hamza.salesmanagementbackend.service;
 import com.hamza.salesmanagementbackend.dto.CustomerDTO;
 import com.hamza.salesmanagementbackend.entity.Customer;
 import com.hamza.salesmanagementbackend.exception.BusinessLogicException;
-import com.hamza.salesmanagementbackend.exception.DataIntegrityException;
 import com.hamza.salesmanagementbackend.exception.ResourceNotFoundException;
 import com.hamza.salesmanagementbackend.repository.CustomerRepository;
 import lombok.RequiredArgsConstructor;
@@ -166,7 +165,8 @@ public class CustomerService {
      * @param id Customer ID to hard delete
      */
     public void hardDeleteCustomer(Long id) {
-        Customer customer = customerRepository.findById(id)
+        // Verify customer exists before deletion
+        customerRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Customer not found with id: " + id));
 
         // Log cascade deletion for audit purposes

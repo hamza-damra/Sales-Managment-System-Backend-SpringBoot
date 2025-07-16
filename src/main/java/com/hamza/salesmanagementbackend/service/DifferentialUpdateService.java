@@ -1,6 +1,4 @@
 package com.hamza.salesmanagementbackend.service;
-
-import com.hamza.salesmanagementbackend.config.ApplicationConstants;
 import com.hamza.salesmanagementbackend.dto.DifferentialUpdateDTO;
 import com.hamza.salesmanagementbackend.entity.ApplicationVersion;
 import com.hamza.salesmanagementbackend.repository.ApplicationVersionRepository;
@@ -34,7 +32,6 @@ import java.util.zip.ZipOutputStream;
 public class DifferentialUpdateService {
 
     private final ApplicationVersionRepository versionRepository;
-    private final FileManagementService fileManagementService;
 
     @Value("${app.updates.storage-path:./versions}")
     private String storagePath;
@@ -85,10 +82,8 @@ public class DifferentialUpdateService {
             String deltaChecksum = calculateFileChecksum(deltaPath);
 
             // Create download URLs
-            String deltaDownloadUrl = ApplicationConstants.API_V1_UPDATES + ApplicationConstants.DELTA_ENDPOINT + 
-                                    "/" + fromVersion + "/" + toVersion;
-            String fullDownloadUrl = ApplicationConstants.API_V1_UPDATES + ApplicationConstants.DOWNLOAD_ENDPOINT + 
-                                   "/" + toVersion;
+            String deltaDownloadUrl = "/api/v1/updates/delta/" + fromVersion + "/" + toVersion;
+            String fullDownloadUrl = "/api/v1/updates/download/" + toVersion;
 
             return DifferentialUpdateDTO.builder()
                 .fromVersion(fromVersion)
@@ -339,8 +334,7 @@ public class DifferentialUpdateService {
             fullSize = toVersionEntity.getFileSize();
         }
 
-        String fullDownloadUrl = ApplicationConstants.API_V1_UPDATES + ApplicationConstants.DOWNLOAD_ENDPOINT + 
-                               "/" + toVersion;
+        String fullDownloadUrl = "/api/v1/updates/download/" + toVersion;
 
         return DifferentialUpdateDTO.builder()
             .fromVersion(fromVersion)

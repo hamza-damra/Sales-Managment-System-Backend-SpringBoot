@@ -1,6 +1,6 @@
 package com.hamza.salesmanagementbackend.controller;
 
-import com.hamza.salesmanagementbackend.config.ApplicationConstants;
+
 import com.hamza.salesmanagementbackend.dto.InventoryDTO;
 import com.hamza.salesmanagementbackend.entity.Inventory;
 import com.hamza.salesmanagementbackend.exception.ResourceNotFoundException;
@@ -20,7 +20,7 @@ import java.util.List;
 import java.util.Map;
 
 @RestController
-@RequestMapping(ApplicationConstants.API_INVENTORIES)
+@RequestMapping("/api/v1/inventories")
 @CrossOrigin(origins = "*")
 public class InventoryController {
 

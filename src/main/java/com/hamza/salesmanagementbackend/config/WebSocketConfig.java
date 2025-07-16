@@ -6,6 +6,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.lang.NonNull;
 import org.springframework.web.socket.config.annotation.EnableWebSocket;
 import org.springframework.web.socket.config.annotation.WebSocketConfigurer;
 import org.springframework.web.socket.config.annotation.WebSocketHandlerRegistry;
@@ -26,11 +27,11 @@ public class WebSocketConfig implements WebSocketConfigurer {
     private String allowedOrigins;
 
     @Override
-    public void registerWebSocketHandlers(WebSocketHandlerRegistry registry) {
+    public void registerWebSocketHandlers(@NonNull WebSocketHandlerRegistry registry) {
         log.info("Registering WebSocket handlers for update system");
         
         // Register update WebSocket handler
-        registry.addHandler(updateWebSocketHandler, ApplicationConstants.WS_UPDATES_ENDPOINT)
+        registry.addHandler(updateWebSocketHandler, "/ws/updates")
                 .addInterceptors(webSocketAuthInterceptor)
                 .setAllowedOrigins(getAllowedOriginsArray())
                 .withSockJS(); // Enable SockJS fallback for browsers that don't support WebSocket

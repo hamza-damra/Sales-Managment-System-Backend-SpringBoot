@@ -1,6 +1,6 @@
 package com.hamza.salesmanagementbackend.controller;
 
-import com.hamza.salesmanagementbackend.config.ApplicationConstants;
+
 import com.hamza.salesmanagementbackend.dto.PromotionDTO;
 import com.hamza.salesmanagementbackend.dto.SaleDTO;
 import com.hamza.salesmanagementbackend.entity.SaleStatus;
@@ -21,10 +21,9 @@ import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Map;
 
 @RestController
-@RequestMapping(ApplicationConstants.API_SALES)
+@RequestMapping("/api/v1/sales")
 @CrossOrigin(origins = "*")
 public class SaleController {
 
@@ -122,7 +121,7 @@ public class SaleController {
         return ResponseEntity.noContent().build();
     }
 
-    @PostMapping("/{id}" + ApplicationConstants.COMPLETE_ENDPOINT)
+    @PostMapping("/{id}/complete")
     public ResponseEntity<SaleDTO> completeSale(@PathVariable Long id) {
         if (id <= 0) {
             return ResponseEntity.badRequest().build();
@@ -132,7 +131,7 @@ public class SaleController {
         return ResponseEntity.ok(completedSale);
     }
 
-    @PostMapping("/{id}" + ApplicationConstants.CANCEL_ENDPOINT)
+    @PostMapping("/{id}/cancel")
     public ResponseEntity<SaleDTO> cancelSale(@PathVariable Long id) {
         if (id <= 0) {
             return ResponseEntity.badRequest().build();

@@ -1,6 +1,4 @@
 package com.hamza.salesmanagementbackend.controller;
-
-import com.hamza.salesmanagementbackend.config.ApplicationConstants;
 import com.hamza.salesmanagementbackend.dto.report.ReportMetadata;
 import com.hamza.salesmanagementbackend.dto.report.StandardReportResponse;
 import com.hamza.salesmanagementbackend.service.ReportService;
@@ -22,7 +20,7 @@ import java.util.Map;
  * Redirects to the main ReportController functionality
  */
 @RestController
-@RequestMapping(ApplicationConstants.API_REPORTS)
+@RequestMapping("/api/reports")
 @CrossOrigin(origins = "*")
 @RequiredArgsConstructor
 @Validated
@@ -38,7 +36,7 @@ public class LegacyReportController {
      * @param days Number of days to analyze (1-365)
      * @return Default dashboard with general business metrics
      */
-    @GetMapping(ApplicationConstants.DASHBOARD_ENDPOINT)
+    @GetMapping("/dashboard")
     @PreAuthorize("hasRole('ADMIN') or hasRole('MANAGER') or hasRole('USER')")
     public ResponseEntity<StandardReportResponse<Map<String, Object>>> getLegacyDashboard(
             @RequestParam(defaultValue = "30") @Min(1) @Max(365) int days) {
@@ -114,7 +112,7 @@ public class LegacyReportController {
      * Legacy KPI endpoint
      * Handles requests to /api/reports/kpi/real-time
      */
-    @GetMapping(ApplicationConstants.KPI_REAL_TIME_ENDPOINT_LEGACY)
+    @GetMapping("/kpi/real-time")
     @PreAuthorize("hasRole('ADMIN') or hasRole('MANAGER')")
     public ResponseEntity<StandardReportResponse<Map<String, Object>>> getLegacyRealTimeKPIs() {
 
@@ -142,13 +140,13 @@ public class LegacyReportController {
         log.warn("Legacy report endpoint accessed - redirecting to v1 API");
 
         Map<String, Object> response = Map.of(
-                "message", "This endpoint has been moved to " + ApplicationConstants.API_V1_REPORTS + "/",
-                "newApiBase", ApplicationConstants.API_V1_REPORTS,
+                "message", "This endpoint has been moved to /api/v1/reports/",
+                "newApiBase", "/api/v1/reports",
                 "availableEndpoints", Map.of(
-                        "dashboard", ApplicationConstants.API_V1_DASHBOARD,
-                        "executiveDashboard", ApplicationConstants.API_V1_EXECUTIVE_DASHBOARD,
-                        "operationalDashboard", ApplicationConstants.API_V1_OPERATIONAL_DASHBOARD,
-                        "realTimeKPIs", ApplicationConstants.API_V1_REAL_TIME_KPI
+                        "dashboard", "/api/v1/reports/dashboard",
+                        "executiveDashboard", "/api/v1/reports/executive-dashboard",
+                        "operationalDashboard", "/api/v1/reports/operational-dashboard",
+                        "realTimeKPIs", "/api/v1/reports/kpi/real-time"
                 )
         );
 
@@ -160,6 +158,6 @@ public class LegacyReportController {
 
         return ResponseEntity.status(301) // Moved Permanently
                 .body(StandardReportResponse.success(response, metadata,
-                        "Please use the new API endpoints under " + ApplicationConstants.API_V1_REPORTS + "/"));
+                        "Please use the new API endpoints under /api/v1/reports/"));
     }
 }

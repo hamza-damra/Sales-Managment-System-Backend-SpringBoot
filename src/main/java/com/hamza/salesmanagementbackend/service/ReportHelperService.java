@@ -25,8 +25,6 @@ import java.util.stream.Collectors;
 public class ReportHelperService {
 
     private final SaleRepository saleRepository;
-    private final CustomerRepository customerRepository;
-    private final ProductRepository productRepository;
 
     private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd");
 

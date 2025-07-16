@@ -9,7 +9,7 @@ import com.hamza.salesmanagementbackend.exception.InsufficientStockException;
 import com.hamza.salesmanagementbackend.exception.ResourceNotFoundException;
 import com.hamza.salesmanagementbackend.repository.ProductRepository;
 import com.hamza.salesmanagementbackend.repository.CategoryRepository;
-import org.springframework.beans.factory.annotation.Autowired;
+
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -31,7 +31,6 @@ public class ProductService {
     private final CategoryRepository categoryRepository;
     private static final Integer LOW_STOCK_THRESHOLD = 10;
 
-    @Autowired
     public ProductService(ProductRepository productRepository, CategoryRepository categoryRepository) {
         this.productRepository = productRepository;
         this.categoryRepository = categoryRepository;

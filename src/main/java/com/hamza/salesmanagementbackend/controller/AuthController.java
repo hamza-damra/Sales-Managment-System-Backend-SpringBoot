@@ -1,6 +1,5 @@
 package com.hamza.salesmanagementbackend.controller;
 
-import com.hamza.salesmanagementbackend.config.ApplicationConstants;
 import com.hamza.salesmanagementbackend.payload.request.SignInRequest;
 import com.hamza.salesmanagementbackend.payload.request.SignUpRequest;
 import com.hamza.salesmanagementbackend.payload.request.TokenRefreshRequest;
@@ -16,7 +15,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.Map;
 
 @RestController
-@RequestMapping(ApplicationConstants.API_AUTH)
+@RequestMapping("/api/v1/auth")
 @Slf4j
 public class AuthController {
 
@@ -29,29 +28,29 @@ public class AuthController {
     /**
      * Test endpoint to verify controller is working
      */
-    @GetMapping(ApplicationConstants.TEST_ENDPOINT)
+    @GetMapping("/test")
     public ResponseEntity<Map<String, String>> testEndpoint() {
         log.info("Auth controller test endpoint accessed");
         return ResponseEntity.ok(Map.of(
             "message", "Auth controller is working",
-            "endpoint", ApplicationConstants.AUTH_TEST_ENDPOINT,
+            "endpoint", "/api/v1/auth/test",
             "timestamp", java.time.LocalDateTime.now().toString()
         ));
     }
 
-    @PostMapping(ApplicationConstants.LOGIN_ENDPOINT)
+    @PostMapping("/login")
     public ResponseEntity<JwtAuthenticationResponse> authenticateUser(@Valid @RequestBody SignInRequest signInRequest) {
         log.info("Login attempt for user: {}", signInRequest.getUsername());
         return ResponseEntity.ok(authService.signIn(signInRequest));
     }
 
-    @PostMapping(ApplicationConstants.SIGNUP_ENDPOINT)
+    @PostMapping("/signup")
     public ResponseEntity<SignUpResponse> registerUser(@Valid @RequestBody SignUpRequest signUpRequest) {
         log.info("Signup attempt for user: {} with email: {}", signUpRequest.getUsername(), signUpRequest.getEmail());
         return ResponseEntity.ok(authService.signUp(signUpRequest));
     }
 
-    @PostMapping(ApplicationConstants.REFRESH_ENDPOINT)
+    @PostMapping("/refresh")
     public ResponseEntity<TokenRefreshResponse> refreshToken(@Valid @RequestBody TokenRefreshRequest tokenRefreshRequest) {
         log.info("Token refresh attempt");
         return ResponseEntity.ok(authService.refreshToken(tokenRefreshRequest));

@@ -8,7 +8,6 @@ import com.hamza.salesmanagementbackend.repository.ConnectedClientRepository;
 import com.hamza.salesmanagementbackend.repository.UpdateDownloadRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -163,9 +162,7 @@ public class UpdateStatisticsService {
     private List<UpdateStatisticsDTO.DailyDownloadCount> getDailyDownloadCounts() {
         LocalDateTime thirtyDaysAgo = LocalDateTime.now().minusDays(30);
         List<Object[]> dailyCounts = downloadRepository.getDownloadCountByDate(thirtyDaysAgo);
-        
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
-        
+
         return dailyCounts.stream()
             .map(row -> UpdateStatisticsDTO.DailyDownloadCount.builder()
                 .date(row[0].toString())
@@ -180,8 +177,7 @@ public class UpdateStatisticsService {
     private List<UpdateStatisticsDTO.VersionDownloadStat> getTopVersionsByDownloads() {
         // This would require a more complex query, for now we'll return a simplified version
         // In a real implementation, you'd want to join with ApplicationVersion and group by version
-        List<Object[]> topClients = downloadRepository.getTopDownloadingClients(PageRequest.of(0, 10));
-        
+
         // For now, return empty list - this would need proper implementation
         return List.of();
     }

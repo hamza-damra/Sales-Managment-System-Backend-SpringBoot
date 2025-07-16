@@ -110,19 +110,19 @@ public interface UpdateAnalyticsRepository extends JpaRepository<UpdateAnalytics
     /**
      * Get daily download counts
      */
-    @Query("SELECT DATE(ua.eventTimestamp) as downloadDate, COUNT(ua) as downloadCount " +
+    @Query("SELECT CAST(ua.eventTimestamp AS date) as downloadDate, COUNT(ua) as downloadCount " +
            "FROM UpdateAnalytics ua WHERE ua.eventType = 'DOWNLOAD_COMPLETED' " +
            "AND ua.eventTimestamp >= :startDate " +
-           "GROUP BY DATE(ua.eventTimestamp) ORDER BY DATE(ua.eventTimestamp) DESC")
+           "GROUP BY CAST(ua.eventTimestamp AS date) ORDER BY CAST(ua.eventTimestamp AS date) DESC")
     List<Object[]> getDailyDownloadCounts(@Param("startDate") LocalDateTime startDate);
 
     /**
      * Get hourly download distribution
      */
-    @Query("SELECT HOUR(ua.eventTimestamp) as hour, COUNT(ua) as downloadCount " +
+    @Query("SELECT EXTRACT(HOUR FROM ua.eventTimestamp) as hour, COUNT(ua) as downloadCount " +
            "FROM UpdateAnalytics ua WHERE ua.eventType = 'DOWNLOAD_COMPLETED' " +
            "AND ua.eventTimestamp >= :startDate " +
-           "GROUP BY HOUR(ua.eventTimestamp) ORDER BY hour")
+           "GROUP BY EXTRACT(HOUR FROM ua.eventTimestamp) ORDER BY hour")
     List<Object[]> getHourlyDownloadDistribution(@Param("startDate") LocalDateTime startDate);
 
     /**

@@ -27,9 +27,6 @@ public class ReturnService {
     private ReturnRepository returnRepository;
 
     @Autowired
-    private ReturnItemRepository returnItemRepository;
-
-    @Autowired
     private SaleRepository saleRepository;
 
     @Autowired

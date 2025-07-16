@@ -1,6 +1,5 @@
 package com.hamza.salesmanagementbackend.security;
 
-import com.hamza.salesmanagementbackend.config.ApplicationConstants;
 import com.hamza.salesmanagementbackend.config.CorsProperties;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
@@ -42,13 +41,13 @@ public class SecurityConfig {
             .csrf(csrf -> csrf.disable())
             .cors(cors -> cors.configurationSource(corsConfigurationSource()))
             .authorizeHttpRequests(auth -> auth
-                .requestMatchers(new AntPathRequestMatcher(ApplicationConstants.API_AUTH_WILDCARD)).permitAll()
-                .requestMatchers(new AntPathRequestMatcher(ApplicationConstants.WS_WILDCARD)).permitAll()
-                .requestMatchers(new AntPathRequestMatcher(ApplicationConstants.H2_CONSOLE_WILDCARD)).permitAll()
+                .requestMatchers(new AntPathRequestMatcher("/api/v1/auth/**")).permitAll()
+                .requestMatchers(new AntPathRequestMatcher("/ws/**")).permitAll()
+
                 .requestMatchers(
-                    new AntPathRequestMatcher(ApplicationConstants.SWAGGER_API_DOCS_WILDCARD),
-                    new AntPathRequestMatcher(ApplicationConstants.SWAGGER_UI_WILDCARD),
-                    new AntPathRequestMatcher(ApplicationConstants.SWAGGER_UI_HTML)
+                    new AntPathRequestMatcher("/v3/api-docs/**"),
+                    new AntPathRequestMatcher("/swagger-ui/**"),
+                    new AntPathRequestMatcher("/swagger-ui.html")
                 ).permitAll()
                 // Allow access to static resources (CSS, JS, images)
                 .requestMatchers(
@@ -58,8 +57,8 @@ public class SecurityConfig {
                     new AntPathRequestMatcher("/images/**"),
                     new AntPathRequestMatcher("/admin/**")
                 ).permitAll()
-                .requestMatchers(new AntPathRequestMatcher(ApplicationConstants.API_V1_UPDATES_WILDCARD)).authenticated()
-                .requestMatchers(new AntPathRequestMatcher(ApplicationConstants.API_V1_ADMIN_UPDATES_WILDCARD)).hasRole("ADMIN")
+                .requestMatchers(new AntPathRequestMatcher("/api/v1/updates/**")).authenticated()
+                .requestMatchers(new AntPathRequestMatcher("/api/v1/admin/updates/**")).hasRole("ADMIN")
                 .anyRequest().authenticated()
             )
             .sessionManagement(session -> session

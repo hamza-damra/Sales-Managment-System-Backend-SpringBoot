@@ -1,6 +1,5 @@
 package com.hamza.salesmanagementbackend.controller;
 
-import com.hamza.salesmanagementbackend.config.ApplicationConstants;
 import com.hamza.salesmanagementbackend.dto.PurchaseOrderDTO;
 import com.hamza.salesmanagementbackend.entity.PurchaseOrder;
 import com.hamza.salesmanagementbackend.exception.ResourceNotFoundException;
@@ -22,7 +21,7 @@ import java.time.LocalDateTime;
 import java.util.Map;
 
 @RestController
-@RequestMapping(ApplicationConstants.API_PURCHASE_ORDERS)
+@RequestMapping("/api/v1/purchase-orders")
 @CrossOrigin(origins = "*")
 @RequiredArgsConstructor
 @Slf4j

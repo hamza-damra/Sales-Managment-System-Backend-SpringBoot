@@ -1,6 +1,6 @@
 package com.hamza.salesmanagementbackend.controller;
 
-import com.hamza.salesmanagementbackend.config.ApplicationConstants;
+
 import com.hamza.salesmanagementbackend.dto.CustomerDTO;
 import com.hamza.salesmanagementbackend.exception.ResourceNotFoundException;
 import com.hamza.salesmanagementbackend.service.CustomerService;
@@ -19,7 +19,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 @RestController
-@RequestMapping(ApplicationConstants.API_CUSTOMERS)
+@RequestMapping("/api/v1/customers")
 @CrossOrigin(origins = "*")
 public class CustomerController {
 
@@ -164,7 +164,7 @@ public class CustomerController {
      * Debug endpoint: Fix customers with NULL isDeleted values
      * This endpoint should only be used for maintenance purposes
      */
-    @PostMapping(ApplicationConstants.DEBUG_FIX_NULL_DELETED_ENDPOINT)
+    @PostMapping("/debug/fix-null-deleted")
     public ResponseEntity<Map<String, Object>> fixCustomersWithNullIsDeleted() {
         int fixed = customerService.fixCustomersWithNullIsDeleted();
         Map<String, Object> response = new HashMap<>();

@@ -1,6 +1,6 @@
 package com.hamza.salesmanagementbackend.controller;
 
-import com.hamza.salesmanagementbackend.config.ApplicationConstants;
+
 import com.hamza.salesmanagementbackend.dto.CategoryDTO;
 import com.hamza.salesmanagementbackend.entity.Category;
 import com.hamza.salesmanagementbackend.exception.ResourceNotFoundException;
@@ -20,7 +20,7 @@ import java.util.List;
 import java.util.Map;
 
 @RestController
-@RequestMapping(ApplicationConstants.API_CATEGORIES)
+@RequestMapping("/api/v1/categories")
 @CrossOrigin(origins = "*")
 public class CategoryController {
 
@@ -44,7 +44,7 @@ public class CategoryController {
         return ResponseEntity.ok(categories);
     }
 
-    @GetMapping(ApplicationConstants.ACTIVE_ENDPOINT)
+    @GetMapping("/active")
     public ResponseEntity<List<CategoryDTO>> getAllActiveCategories() {
         List<CategoryDTO> categories = categoryService.getAllActiveCategories();
         return ResponseEntity.ok(categories);

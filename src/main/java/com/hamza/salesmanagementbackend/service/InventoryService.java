@@ -6,7 +6,7 @@ import com.hamza.salesmanagementbackend.exception.BusinessLogicException;
 import com.hamza.salesmanagementbackend.exception.DataIntegrityException;
 import com.hamza.salesmanagementbackend.exception.ResourceNotFoundException;
 import com.hamza.salesmanagementbackend.repository.InventoryRepository;
-import org.springframework.beans.factory.annotation.Autowired;
+
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -22,7 +22,6 @@ public class InventoryService {
 
     private final InventoryRepository inventoryRepository;
 
-    @Autowired
     public InventoryService(InventoryRepository inventoryRepository) {
         this.inventoryRepository = inventoryRepository;
     }
@@ -110,8 +109,10 @@ public class InventoryService {
      * Deletes an inventory by ID
      */
     public void deleteInventory(Long id) {
-        Inventory inventory = inventoryRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Inventory not found with id: " + id));
+        // Verify inventory exists
+        if (!inventoryRepository.existsById(id)) {
+            throw new ResourceNotFoundException("Inventory not found with id: " + id);
+        }
 
         // Check if inventory has categories
         Long categoryCount = inventoryRepository.countCategoriesByInventoryId(id);

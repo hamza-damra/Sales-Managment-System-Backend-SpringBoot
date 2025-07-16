@@ -1,7 +1,6 @@
 package com.hamza.salesmanagementbackend.service;
 
 import com.hamza.salesmanagementbackend.dto.ApplicationVersionDTO;
-import com.hamza.salesmanagementbackend.entity.ReleaseChannel;
 import com.hamza.salesmanagementbackend.websocket.UpdateWebSocketHandler;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

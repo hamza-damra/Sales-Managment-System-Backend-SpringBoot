@@ -221,9 +221,13 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(MethodArgumentTypeMismatchException.class)
     public ResponseEntity<ErrorResponse> handleTypeMismatchException(MethodArgumentTypeMismatchException ex) {
-        String parameterName = ex.getName();
-        String expectedType = ex.getRequiredType() != null ? ex.getRequiredType().getSimpleName() : "unknown";
-        String providedValue = ex.getValue() != null ? ex.getValue().toString() : "null";
+        String parameterName = ex.getName() != null ? ex.getName() : "unknown";
+
+        Class<?> requiredType = ex.getRequiredType();
+        String expectedType = requiredType != null ? requiredType.getSimpleName() : "unknown";
+
+        Object value = ex.getValue();
+        String providedValue = value != null ? value.toString() : "null";
 
         String message = String.format("Invalid value '%s' for parameter '%s'. Expected a valid %s.",
                 providedValue, parameterName, expectedType.toLowerCase());
@@ -272,7 +276,8 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(HttpMessageNotReadableException.class)
     public ResponseEntity<ErrorResponse> handleHttpMessageNotReadableException(HttpMessageNotReadableException ex) {
         String message = "Invalid JSON format in request body";
-        if (ex.getMessage() != null && ex.getMessage().contains("JSON parse error")) {
+        String exceptionMessage = ex.getMessage();
+        if (exceptionMessage != null && exceptionMessage.contains("JSON parse error")) {
             message = "The request body contains malformed JSON. Please check the syntax and try again.";
         }
 
@@ -308,7 +313,8 @@ public class GlobalExceptionHandler {
                 .build();
 
         Map<String, Object> details = new HashMap<>();
-        details.put("providedContentType", ex.getContentType() != null ? ex.getContentType().toString() : "unknown");
+        org.springframework.http.MediaType contentType = ex.getContentType();
+        details.put("providedContentType", contentType != null ? contentType.toString() : "unknown");
         details.put("supportedContentTypes", ex.getSupportedMediaTypes());
         errorResponse.setDetails(details);
 

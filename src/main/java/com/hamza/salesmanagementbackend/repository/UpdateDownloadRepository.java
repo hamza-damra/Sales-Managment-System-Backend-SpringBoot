@@ -2,7 +2,6 @@ package com.hamza.salesmanagementbackend.repository;
 
 import com.hamza.salesmanagementbackend.entity.UpdateDownload;
 import com.hamza.salesmanagementbackend.entity.UpdateDownload.DownloadStatus;
-import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -117,9 +116,9 @@ public interface UpdateDownloadRepository extends JpaRepository<UpdateDownload, 
     /**
      * Get download count by date (for charts)
      */
-    @Query("SELECT DATE(ud.downloadStartedAt) as downloadDate, COUNT(ud) as downloadCount " +
+    @Query("SELECT CAST(ud.downloadStartedAt AS date) as downloadDate, COUNT(ud) as downloadCount " +
            "FROM UpdateDownload ud WHERE ud.downloadStartedAt >= :since " +
-           "GROUP BY DATE(ud.downloadStartedAt) ORDER BY downloadDate")
+           "GROUP BY CAST(ud.downloadStartedAt AS date) ORDER BY downloadDate")
     List<Object[]> getDownloadCountByDate(@Param("since") LocalDateTime since);
 
     /**

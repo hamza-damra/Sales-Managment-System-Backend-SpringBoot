@@ -9,7 +9,6 @@ import com.hamza.salesmanagementbackend.entity.Supplier;
 import com.hamza.salesmanagementbackend.exception.BusinessLogicException;
 import com.hamza.salesmanagementbackend.exception.ResourceNotFoundException;
 import com.hamza.salesmanagementbackend.repository.ProductRepository;
-import com.hamza.salesmanagementbackend.repository.PurchaseOrderItemRepository;
 import com.hamza.salesmanagementbackend.repository.PurchaseOrderRepository;
 import com.hamza.salesmanagementbackend.repository.SupplierRepository;
 import lombok.RequiredArgsConstructor;
@@ -21,7 +20,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -33,7 +31,6 @@ import java.util.stream.Collectors;
 public class PurchaseOrderService {
 
     private final PurchaseOrderRepository purchaseOrderRepository;
-    private final PurchaseOrderItemRepository purchaseOrderItemRepository;
     private final SupplierRepository supplierRepository;
     private final ProductRepository productRepository;
 
@@ -228,6 +225,19 @@ public class PurchaseOrderService {
 
         // Handle specific status changes
         switch (newStatus) {
+            case PENDING:
+                // No specific action needed for PENDING status
+                // Status is already set above
+                break;
+            case APPROVED:
+                // For APPROVED status, we need to set approval details
+                // This should typically be done through the approvePurchaseOrder method
+                // but we'll handle it here for direct status updates
+                if (purchaseOrder.getStatus() == PurchaseOrder.PurchaseOrderStatus.PENDING) {
+                    purchaseOrder.setApprovedDate(LocalDateTime.now());
+                    // Note: approvedBy should be set by the caller if needed
+                }
+                break;
             case SENT:
                 purchaseOrder.markAsSent();
                 break;

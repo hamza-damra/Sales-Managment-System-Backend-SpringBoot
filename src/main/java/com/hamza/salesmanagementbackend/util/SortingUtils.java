@@ -2,7 +2,6 @@ package com.hamza.salesmanagementbackend.util;
 
 import org.springframework.data.domain.Sort;
 
-import java.util.Arrays;
 import java.util.Set;
 
 /**
