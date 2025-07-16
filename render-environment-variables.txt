@@ -10,7 +10,7 @@
 # =============================================================================
 
 # Database Configuration - MySQL Cloud Database (Aiven)
-DATABASE_URL=jdbc:mysql://mysql-28deff92-hamzatemp3123-95b3.e.aivencloud.com:26632/defaultdb?createDatabaseIfNotExist=true&ssl-mode=REQUIRED&useSSL=true&requireSSL=true&allowPublicKeyRetrieval=true&serverTimezone=UTC&useUnicode=true&characterEncoding=utf8&autoReconnect=true&failOverReadOnly=false&maxReconnects=10&connectTimeout=60000&socketTimeout=60000&sessionVariables=sql_require_primary_key=0
+DATABASE_URL=jdbc:mysql://mysql-28deff92-hamzatemp3123-95b3.e.aivencloud.com:26632/defaultdb?createDatabaseIfNotExist=true&ssl-mode=REQUIRED&useSSL=true&requireSSL=true&allowPublicKeyRetrieval=true&serverTimezone=UTC&useUnicode=true&characterEncoding=utf8&autoReconnect=true&failOverReadOnly=false&maxReconnects=10&connectTimeout=60000&socketTimeout=60000&sessionVariables=sql_require_primary_key=0,foreign_key_checks=0
 DB_USERNAME=avnadmin
 DB_PASSWORD=your_aiven_mysql_password
 
@@ -34,7 +34,7 @@ DB_POOL_MAX_LIFETIME=1200000
 DB_POOL_LEAK_DETECTION=60000
 
 # Database Behavior Configuration
-DB_DDL_AUTO=create
+DB_DDL_AUTO=create-drop
 DB_SHOW_SQL=false
 DB_FORMAT_SQL=false
 

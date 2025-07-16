@@ -39,9 +39,10 @@ public class DataInitializer implements CommandLineRunner {
     @Override
     public void run(String... args) throws Exception {
         try {
-            // Force Hibernate to create all entity tables by accessing repositories
-            log.info("Initializing database schema by accessing all repositories...");
-            initializeSchema();
+            log.info("Starting data initialization...");
+
+            // Wait a bit for schema creation to complete
+            Thread.sleep(5000);
 
             // Check if data initialization is needed
             if (customerRepository.count() == 0) {
@@ -57,34 +58,15 @@ public class DataInitializer implements CommandLineRunner {
             categoryMigrationService.assignUncategorizedProducts();
             categoryMigrationService.validateCategoryMigration();
 
+            log.info("Data initialization completed successfully");
+
         } catch (Exception e) {
             log.error("Error during data initialization", e);
             // Don't throw exception to prevent application startup failure
         }
     }
 
-    /**
-     * Force Hibernate to create all entity tables by accessing repositories
-     * This ensures all tables exist before we try to query them
-     */
-    private void initializeSchema() {
-        try {
-            log.info("Accessing all repositories to trigger table creation...");
 
-            // Access each repository to force table creation
-            customerRepository.count();
-            productRepository.count();
-            saleRepository.count();
-            saleItemRepository.count();
-            categoryRepository.count();
-
-            log.info("All main entity tables should now be created");
-
-        } catch (Exception e) {
-            log.warn("Some tables may not have been created during schema initialization", e);
-            // Continue anyway - tables will be created when first accessed
-        }
-    }
 
     private void initializeData() {
         // Create sample customers
