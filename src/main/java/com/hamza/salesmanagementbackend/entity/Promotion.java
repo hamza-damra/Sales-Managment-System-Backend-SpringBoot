@@ -65,19 +65,19 @@ public class Promotion {
     @ElementCollection
     @CollectionTable(
         name = "promotion_products",
-        joinColumns = @JoinColumn(name = "promotion_id"),
-        indexes = @Index(name = "idx_promotion_products", columnList = "promotion_id, product_id")
+        joinColumns = @JoinColumn(name = "promotion_id")
     )
     @Column(name = "product_id")
+    @OrderColumn(name = "product_order")
     private List<Long> applicableProducts;
 
     @ElementCollection
     @CollectionTable(
         name = "promotion_categories",
-        joinColumns = @JoinColumn(name = "promotion_id"),
-        indexes = @Index(name = "idx_promotion_categories", columnList = "promotion_id, category")
+        joinColumns = @JoinColumn(name = "promotion_id")
     )
     @Column(name = "category")
+    @OrderColumn(name = "category_order")
     private List<String> applicableCategories;
 
     @Column(name = "usage_limit")

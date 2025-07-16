@@ -130,10 +130,10 @@ public class Product {
     @ElementCollection
     @CollectionTable(
         name = "product_additional_images",
-        joinColumns = @JoinColumn(name = "product_id"),
-        indexes = @Index(name = "idx_product_images", columnList = "product_id, image_url")
+        joinColumns = @JoinColumn(name = "product_id")
     )
     @Column(name = "image_url")
+    @OrderColumn(name = "image_order")
     private List<String> additionalImages;
 
     @Column(name = "is_serialized")
