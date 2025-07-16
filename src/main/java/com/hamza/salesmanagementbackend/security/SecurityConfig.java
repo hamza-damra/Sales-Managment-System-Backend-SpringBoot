@@ -79,10 +79,34 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(Arrays.asList(corsProperties.getAllowedOrigins().split(",")));
-        configuration.setAllowedMethods(Arrays.asList(corsProperties.getAllowedMethods().split(",")));
-        configuration.setAllowedHeaders(Arrays.asList(corsProperties.getAllowedHeaders().split(",")));
-        configuration.setMaxAge(corsProperties.getMaxAge());
+
+        // Handle allowed origins
+        String allowedOrigins = corsProperties.getAllowedOrigins();
+        if (allowedOrigins != null && !allowedOrigins.trim().isEmpty()) {
+            configuration.setAllowedOrigins(Arrays.asList(allowedOrigins.split(",")));
+        } else {
+            configuration.setAllowedOrigins(Arrays.asList("*"));
+        }
+
+        // Handle allowed methods
+        String allowedMethods = corsProperties.getAllowedMethods();
+        if (allowedMethods != null && !allowedMethods.trim().isEmpty()) {
+            configuration.setAllowedMethods(Arrays.asList(allowedMethods.split(",")));
+        } else {
+            configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+        }
+
+        // Handle allowed headers
+        String allowedHeaders = corsProperties.getAllowedHeaders();
+        if (allowedHeaders != null && !allowedHeaders.trim().isEmpty()) {
+            configuration.setAllowedHeaders(Arrays.asList(allowedHeaders.split(",")));
+        } else {
+            configuration.setAllowedHeaders(Arrays.asList("*"));
+        }
+
+        configuration.setAllowCredentials(true);
+        configuration.setMaxAge(corsProperties.getMaxAge() > 0 ? corsProperties.getMaxAge() : 3600L);
+
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", configuration);
         return source;

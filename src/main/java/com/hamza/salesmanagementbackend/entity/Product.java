@@ -128,7 +128,11 @@ public class Product {
     private String imageUrl;
 
     @ElementCollection
-    @CollectionTable(name = "product_additional_images", joinColumns = @JoinColumn(name = "product_id"))
+    @CollectionTable(
+        name = "product_additional_images",
+        joinColumns = @JoinColumn(name = "product_id"),
+        indexes = @Index(name = "idx_product_images", columnList = "product_id, image_url")
+    )
     @Column(name = "image_url")
     private List<String> additionalImages;
 

@@ -1,6 +1,9 @@
 # Environment Variables for Render.com Deployment
 # Sales Management System Backend - Spring Boot Application
 # Copy these key-value pairs into Render.com Environment Variables section
+#
+# ⚠️  IMPORTANT: This file contains ACTUAL PRODUCTION VALUES
+# ⚠️  Keep this file secure and do not share publicly
 
 # =============================================================================
 # REQUIRED ENVIRONMENT VARIABLES
@@ -17,24 +20,24 @@ JWT_EXPIRATION=86400000
 
 # Server Configuration - Required for Render.com
 SPRING_PROFILES_ACTIVE=render
-PORT=8080
+PORT=8081
 
 # =============================================================================
 # RECOMMENDED PRODUCTION ENVIRONMENT VARIABLES
 # =============================================================================
 
 # Database Connection Pool Configuration
-DB_POOL_MAX_SIZE=15
-DB_POOL_MIN_IDLE=3
+DB_POOL_MAX_SIZE=20
+DB_POOL_MIN_IDLE=5
 DB_POOL_IDLE_TIMEOUT=300000
-DB_POOL_CONNECTION_TIMEOUT=30000
+DB_POOL_CONNECTION_TIMEOUT=20000
 DB_POOL_MAX_LIFETIME=1200000
 DB_POOL_LEAK_DETECTION=60000
 
 # Database Behavior Configuration
-DB_DDL_AUTO=validate
+DB_DDL_AUTO=update
 DB_SHOW_SQL=false
-DB_FORMAT_SQL=false
+DB_FORMAT_SQL=true
 
 # Logging Configuration
 LOG_LEVEL=INFO
@@ -57,7 +60,7 @@ MAX_FILE_SIZE=500MB
 MAX_REQUEST_SIZE=500MB
 
 # Update System Configuration
-UPDATE_STORAGE_PATH=/tmp/versions
+UPDATE_STORAGE_PATH=./versions
 UPDATE_MAX_FILE_SIZE=524288000
 UPDATE_ALLOWED_EXTENSIONS=jar
 UPDATE_ENABLE_RESUMABLE=true
@@ -77,11 +80,11 @@ UPDATE_JAR_MAX_MANIFEST_SIZE=65536
 # SECURITY NOTES FOR PRODUCTION DEPLOYMENT
 # =============================================================================
 
-# IMPORTANT SECURITY UPDATES NEEDED:
-# 1. CHANGE JWT_SECRET to a new secure random value (minimum 256 bits)
-# 2. UPDATE DB_PASSWORD with your actual Aiven MySQL password
-# 3. REPLACE CORS_ALLOWED_ORIGINS=* with your specific frontend domain
-# 4. SET DB_DDL_AUTO=validate after initial deployment (currently using update for development)
+# IMPORTANT SECURITY UPDATES RECOMMENDED:
+# 1. CONSIDER changing JWT_SECRET to a new secure random value for enhanced security
+# 2. REPLACE CORS_ALLOWED_ORIGINS=* with your specific frontend domain
+# 3. SET DB_DDL_AUTO=validate after initial deployment (currently using update for development)
+# 4. These values are from your actual application configuration
 
 # =============================================================================
 # RENDER.COM SPECIFIC INSTRUCTIONS

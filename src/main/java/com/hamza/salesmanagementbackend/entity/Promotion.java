@@ -63,12 +63,20 @@ public class Promotion {
     private Boolean isActive = true;
 
     @ElementCollection
-    @CollectionTable(name = "promotion_products", joinColumns = @JoinColumn(name = "promotion_id"))
+    @CollectionTable(
+        name = "promotion_products",
+        joinColumns = @JoinColumn(name = "promotion_id"),
+        indexes = @Index(name = "idx_promotion_products", columnList = "promotion_id, product_id")
+    )
     @Column(name = "product_id")
     private List<Long> applicableProducts;
 
     @ElementCollection
-    @CollectionTable(name = "promotion_categories", joinColumns = @JoinColumn(name = "promotion_id"))
+    @CollectionTable(
+        name = "promotion_categories",
+        joinColumns = @JoinColumn(name = "promotion_id"),
+        indexes = @Index(name = "idx_promotion_categories", columnList = "promotion_id, category")
+    )
     @Column(name = "category")
     private List<String> applicableCategories;
 
