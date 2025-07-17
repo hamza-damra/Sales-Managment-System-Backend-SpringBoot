@@ -2,6 +2,8 @@ package com.hamza.salesmanagementbackend.controller;
 
 
 import com.hamza.salesmanagementbackend.dto.ProductDTO;
+import com.hamza.salesmanagementbackend.dto.RecentProductsResponseDTO;
+import com.hamza.salesmanagementbackend.dto.InventorySummaryDTO;
 import com.hamza.salesmanagementbackend.exception.ResourceNotFoundException;
 import com.hamza.salesmanagementbackend.service.ProductService;
 import com.hamza.salesmanagementbackend.util.SortingUtils;
@@ -168,7 +170,7 @@ public class ProductController {
     }
 
     @GetMapping("/recent")
-    public ResponseEntity<Page<ProductDTO>> getRecentProducts(
+    public ResponseEntity<RecentProductsResponseDTO> getRecentProducts(
             @RequestParam(defaultValue = "30") Integer days,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
@@ -200,8 +202,26 @@ public class ProductController {
             // Get recent products
             Page<ProductDTO> recentProducts = productService.getRecentProducts(days, category, includeInventory, pageable);
 
-            log.debug("Successfully retrieved {} recent products", recentProducts.getTotalElements());
-            return ResponseEntity.ok(recentProducts);
+            // Calculate inventory summary
+            InventorySummaryDTO inventorySummary;
+            if (category != null && !category.trim().isEmpty()) {
+                // Calculate summary for the specific category if filtering is applied
+                inventorySummary = productService.calculateInventorySummaryByCategory(category);
+                log.debug("Calculated inventory summary for category: {}", category);
+            } else {
+                // Calculate overall inventory summary
+                inventorySummary = productService.calculateInventorySummary();
+                log.debug("Calculated overall inventory summary");
+            }
+
+            // Create response with both products and inventory summary
+            RecentProductsResponseDTO response = RecentProductsResponseDTO.builder()
+                    .products(recentProducts)
+                    .inventorySummary(inventorySummary)
+                    .build();
+
+            log.debug("Successfully retrieved {} recent products with inventory summary", recentProducts.getTotalElements());
+            return ResponseEntity.ok(response);
 
         } catch (IllegalArgumentException e) {
             log.warn("Invalid parameter in recent products request", e);

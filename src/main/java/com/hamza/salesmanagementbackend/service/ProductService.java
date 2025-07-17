@@ -1,6 +1,7 @@
 package com.hamza.salesmanagementbackend.service;
 
 import com.hamza.salesmanagementbackend.dto.ProductDTO;
+import com.hamza.salesmanagementbackend.dto.InventorySummaryDTO;
 import com.hamza.salesmanagementbackend.entity.Product;
 import com.hamza.salesmanagementbackend.entity.Category;
 import com.hamza.salesmanagementbackend.exception.BusinessLogicException;
@@ -9,6 +10,7 @@ import com.hamza.salesmanagementbackend.exception.InsufficientStockException;
 import com.hamza.salesmanagementbackend.exception.ResourceNotFoundException;
 import com.hamza.salesmanagementbackend.repository.ProductRepository;
 import com.hamza.salesmanagementbackend.repository.CategoryRepository;
+import lombok.extern.slf4j.Slf4j;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -25,6 +27,7 @@ import java.util.stream.Collectors;
 
 @Service
 @Transactional
+@Slf4j
 public class ProductService {
 
     private final ProductRepository productRepository;
@@ -211,6 +214,116 @@ public class ProductService {
 
             return dto;
         });
+    }
+
+    /**
+     * Calculates inventory summary statistics
+     */
+    @Transactional(readOnly = true)
+    public InventorySummaryDTO calculateInventorySummary() {
+        log.debug("Calculating inventory summary statistics");
+
+        try {
+            // Get basic metrics
+            Long totalProductsInStock = productRepository.countProductsInStock();
+            Long outOfStockProducts = productRepository.countOutOfStockProducts();
+            Long lowStockAlerts = productRepository.countLowStockProducts();
+            BigDecimal totalStockValue = productRepository.calculateTotalStockValue();
+            Long totalProducts = productRepository.countTotalProducts();
+            Long productsNeedingReorder = productRepository.countProductsNeedingReorder();
+
+            // Create summary DTO
+            InventorySummaryDTO summary = InventorySummaryDTO.builder()
+                    .totalProductsInStock(totalProductsInStock != null ? totalProductsInStock : 0L)
+                    .outOfStockProducts(outOfStockProducts != null ? outOfStockProducts : 0L)
+                    .lowStockAlerts(lowStockAlerts != null ? lowStockAlerts : 0L)
+                    .totalStockValue(totalStockValue != null ? totalStockValue : BigDecimal.ZERO)
+                    .totalProducts(totalProducts != null ? totalProducts : 0L)
+                    .productsNeedingReorder(productsNeedingReorder != null ? productsNeedingReorder : 0L)
+                    .build();
+
+            // Calculate derived metrics
+            summary.calculateDerivedMetrics();
+
+            log.debug("Inventory summary calculated: {} products in stock, {} out of stock, total value: {}",
+                    totalProductsInStock, outOfStockProducts, totalStockValue);
+
+            return summary;
+        } catch (Exception e) {
+            log.error("Error calculating inventory summary", e);
+            // Return empty summary on error
+            return InventorySummaryDTO.builder()
+                    .totalProductsInStock(0L)
+                    .outOfStockProducts(0L)
+                    .lowStockAlerts(0L)
+                    .totalStockValue(BigDecimal.ZERO)
+                    .totalProducts(0L)
+                    .productsNeedingReorder(0L)
+                    .lastUpdated(LocalDateTime.now())
+                    .build();
+        }
+    }
+
+    /**
+     * Calculates inventory summary statistics with category filter
+     */
+    @Transactional(readOnly = true)
+    public InventorySummaryDTO calculateInventorySummaryByCategory(String category) {
+        log.debug("Calculating inventory summary statistics for category: {}", category);
+
+        try {
+            Long totalProductsInStock;
+            Long outOfStockProducts;
+            Long lowStockAlerts;
+            BigDecimal totalStockValue;
+            Long totalProducts;
+
+            // Try to parse as category ID first, then fall back to category name
+            try {
+                Long categoryId = Long.parseLong(category.trim());
+                totalProductsInStock = productRepository.countProductsInStockByCategory(categoryId);
+                outOfStockProducts = productRepository.countOutOfStockProductsByCategory(categoryId);
+                lowStockAlerts = productRepository.countLowStockProductsByCategory(categoryId);
+                totalStockValue = productRepository.calculateTotalStockValueByCategory(categoryId);
+                totalProducts = productRepository.countTotalProductsByCategory(categoryId);
+            } catch (NumberFormatException e) {
+                totalProductsInStock = productRepository.countProductsInStockByCategoryName(category.trim());
+                outOfStockProducts = productRepository.countOutOfStockProductsByCategoryName(category.trim());
+                lowStockAlerts = productRepository.countLowStockProductsByCategoryName(category.trim());
+                totalStockValue = productRepository.calculateTotalStockValueByCategoryName(category.trim());
+                totalProducts = productRepository.countTotalProductsByCategoryName(category.trim());
+            }
+
+            // Create summary DTO
+            InventorySummaryDTO summary = InventorySummaryDTO.builder()
+                    .totalProductsInStock(totalProductsInStock != null ? totalProductsInStock : 0L)
+                    .outOfStockProducts(outOfStockProducts != null ? outOfStockProducts : 0L)
+                    .lowStockAlerts(lowStockAlerts != null ? lowStockAlerts : 0L)
+                    .totalStockValue(totalStockValue != null ? totalStockValue : BigDecimal.ZERO)
+                    .totalProducts(totalProducts != null ? totalProducts : 0L)
+                    .productsNeedingReorder(0L) // Not calculated for category filter
+                    .build();
+
+            // Calculate derived metrics
+            summary.calculateDerivedMetrics();
+
+            log.debug("Category inventory summary calculated for {}: {} products in stock, {} out of stock",
+                    category, totalProductsInStock, outOfStockProducts);
+
+            return summary;
+        } catch (Exception e) {
+            log.error("Error calculating inventory summary for category: {}", category, e);
+            // Return empty summary on error
+            return InventorySummaryDTO.builder()
+                    .totalProductsInStock(0L)
+                    .outOfStockProducts(0L)
+                    .lowStockAlerts(0L)
+                    .totalStockValue(BigDecimal.ZERO)
+                    .totalProducts(0L)
+                    .productsNeedingReorder(0L)
+                    .lastUpdated(LocalDateTime.now())
+                    .build();
+        }
     }
 
     /**
