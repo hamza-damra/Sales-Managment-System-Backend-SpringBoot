@@ -9,6 +9,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -58,4 +59,32 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
 
     @Query("SELECT COUNT(ri) FROM ReturnItem ri WHERE ri.product.id = :productId")
     Long countReturnItemsByProductId(@Param("productId") Long productId);
+
+    /**
+     * Find products created after a specific date
+     */
+    @Query("SELECT p FROM Product p WHERE p.createdAt >= :fromDate")
+    Page<Product> findRecentProducts(@Param("fromDate") LocalDateTime fromDate, Pageable pageable);
+
+    /**
+     * Find recent products by category ID
+     */
+    @Query("SELECT p FROM Product p WHERE p.createdAt >= :fromDate AND p.category.id = :categoryId")
+    Page<Product> findRecentProductsByCategoryId(@Param("fromDate") LocalDateTime fromDate,
+                                                @Param("categoryId") Long categoryId,
+                                                Pageable pageable);
+
+    /**
+     * Find recent products by category name
+     */
+    @Query("SELECT p FROM Product p WHERE p.createdAt >= :fromDate AND p.category.name = :categoryName")
+    Page<Product> findRecentProductsByCategoryName(@Param("fromDate") LocalDateTime fromDate,
+                                                  @Param("categoryName") String categoryName,
+                                                  Pageable pageable);
+
+    /**
+     * Count recent products
+     */
+    @Query("SELECT COUNT(p) FROM Product p WHERE p.createdAt >= :fromDate")
+    Long countRecentProducts(@Param("fromDate") LocalDateTime fromDate);
 }

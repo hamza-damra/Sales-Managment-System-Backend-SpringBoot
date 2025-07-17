@@ -5,6 +5,7 @@ import com.hamza.salesmanagementbackend.dto.ProductDTO;
 import com.hamza.salesmanagementbackend.exception.ResourceNotFoundException;
 import com.hamza.salesmanagementbackend.service.ProductService;
 import com.hamza.salesmanagementbackend.util.SortingUtils;
+import lombok.extern.slf4j.Slf4j;
 import javax.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -20,6 +21,7 @@ import java.util.Map;
 @RestController
 @RequestMapping("/api/v1/products")
 @CrossOrigin(origins = "*")
+@Slf4j
 public class ProductController {
 
     @Autowired
@@ -162,6 +164,51 @@ public class ProductController {
             return ResponseEntity.ok(updatedProduct);
         } catch (ResourceNotFoundException e) {
             return ResponseEntity.notFound().build();
+        }
+    }
+
+    @GetMapping("/recent")
+    public ResponseEntity<Page<ProductDTO>> getRecentProducts(
+            @RequestParam(defaultValue = "30") Integer days,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "createdAt") String sortBy,
+            @RequestParam(defaultValue = "desc") String sortDir,
+            @RequestParam(required = false) String category,
+            @RequestParam(defaultValue = "false") Boolean includeInventory) {
+
+        log.debug("Getting recent products with parameters: days={}, page={}, size={}, sortBy={}, sortDir={}, category={}, includeInventory={}",
+                days, page, size, sortBy, sortDir, category, includeInventory);
+
+        try {
+            // Validate input parameters
+            if (days != null && days <= 0) {
+                log.warn("Invalid days parameter: {}", days);
+                return ResponseEntity.badRequest().build();
+            }
+
+            if (days != null && days > 365) {
+                log.warn("Days parameter too large: {}, limiting to 365", days);
+                days = 365; // Limit to 1 year for performance
+            }
+
+            // Validate pagination and sorting parameters
+            SortingUtils.PaginationParams paginationParams = SortingUtils.validatePaginationParams(page, size);
+            Sort sort = SortingUtils.createProductSort(sortBy, sortDir);
+            Pageable pageable = PageRequest.of(paginationParams.page, paginationParams.size, sort);
+
+            // Get recent products
+            Page<ProductDTO> recentProducts = productService.getRecentProducts(days, category, includeInventory, pageable);
+
+            log.debug("Successfully retrieved {} recent products", recentProducts.getTotalElements());
+            return ResponseEntity.ok(recentProducts);
+
+        } catch (IllegalArgumentException e) {
+            log.warn("Invalid parameter in recent products request", e);
+            return ResponseEntity.badRequest().build();
+        } catch (Exception e) {
+            log.error("Error retrieving recent products", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
 }

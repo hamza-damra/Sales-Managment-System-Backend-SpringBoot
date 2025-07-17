@@ -178,6 +178,42 @@ public class ProductService {
     }
 
     /**
+     * Gets recently added products with optional category filtering and inventory inclusion
+     */
+    @Transactional(readOnly = true)
+    public Page<ProductDTO> getRecentProducts(Integer days, String category, Boolean includeInventory, Pageable pageable) {
+        // Calculate the date threshold
+        LocalDateTime fromDate = LocalDateTime.now().minusDays(days != null ? days : 30);
+
+        Page<Product> products;
+
+        // Apply category filtering if provided
+        if (category != null && !category.trim().isEmpty()) {
+            // Try to parse as category ID first, then fall back to category name
+            try {
+                Long categoryId = Long.parseLong(category.trim());
+                products = productRepository.findRecentProductsByCategoryId(fromDate, categoryId, pageable);
+            } catch (NumberFormatException e) {
+                products = productRepository.findRecentProductsByCategoryName(fromDate, category.trim(), pageable);
+            }
+        } else {
+            products = productRepository.findRecentProducts(fromDate, pageable);
+        }
+
+        // Map to DTOs with optional inventory information
+        return products.map(product -> {
+            ProductDTO dto = mapToDTO(product);
+
+            // Include additional inventory information if requested
+            if (Boolean.TRUE.equals(includeInventory)) {
+                enhanceWithInventoryInfo(dto, product);
+            }
+
+            return dto;
+        });
+    }
+
+    /**
      * Gets products within price range using streams for additional filtering
      */
     @Transactional(readOnly = true)
@@ -400,6 +436,77 @@ public class ProductService {
         Optional.ofNullable(productDTO.getDiscountPercentage()).ifPresent(existingProduct::setDiscountPercentage);
         Optional.ofNullable(productDTO.getLocationInWarehouse()).ifPresent(existingProduct::setLocationInWarehouse);
         Optional.ofNullable(productDTO.getNotes()).ifPresent(existingProduct::setNotes);
+    }
+
+    /**
+     * Enhances ProductDTO with additional inventory information
+     */
+    private void enhanceWithInventoryInfo(ProductDTO dto, Product product) {
+        // Add computed inventory fields that might not be in the basic DTO
+        dto.setIsLowStock(product.isLowStock());
+        dto.setIsOutOfStock(product.isOutOfStock());
+        dto.setNeedsReorder(product.needsReorder());
+
+        // Add calculated fields
+        if (product.getReorderPoint() != null && product.getStockQuantity() != null) {
+            dto.setStockStatus(determineStockStatus(product));
+            dto.setDaysUntilReorder(calculateDaysUntilReorder(product));
+        }
+
+        // Add profit margin information
+        dto.setProfitMargin(product.getMarginPercentage());
+
+        // Add effective price (with discount applied)
+        dto.setEffectivePrice(product.getEffectivePrice());
+
+        // Add stock value
+        if (product.getPrice() != null && product.getStockQuantity() != null) {
+            dto.setStockValue(product.getPrice().multiply(BigDecimal.valueOf(product.getStockQuantity())));
+        }
+    }
+
+    /**
+     * Determines the stock status based on current levels
+     */
+    private String determineStockStatus(Product product) {
+        if (product.isOutOfStock()) {
+            return "OUT_OF_STOCK";
+        } else if (product.isLowStock()) {
+            return "LOW_STOCK";
+        } else if (product.needsReorder()) {
+            return "NEEDS_REORDER";
+        } else {
+            return "ADEQUATE";
+        }
+    }
+
+    /**
+     * Calculates estimated days until reorder is needed (simplified calculation)
+     */
+    private Integer calculateDaysUntilReorder(Product product) {
+        if (product.getTotalSold() == null || product.getTotalSold() == 0) {
+            return null; // Cannot calculate without sales history
+        }
+
+        // Simple calculation: assume current sales rate continues
+        // This is a basic implementation - in reality you'd want more sophisticated forecasting
+        int currentStock = product.getStockQuantity();
+        int reorderPoint = product.getReorderPoint();
+
+        if (currentStock <= reorderPoint) {
+            return 0; // Already at or below reorder point
+        }
+
+        // Estimate based on last 30 days of sales (simplified)
+        // In a real implementation, you'd query actual sales data
+        double dailySalesRate = product.getTotalSold() / 30.0; // Rough estimate
+
+        if (dailySalesRate <= 0) {
+            return null; // No sales activity
+        }
+
+        int stockToConsume = currentStock - reorderPoint;
+        return (int) Math.ceil(stockToConsume / dailySalesRate);
     }
 
     private ProductDTO mapToDTO(Product product) {

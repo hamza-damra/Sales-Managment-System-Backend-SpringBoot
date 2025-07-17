@@ -78,6 +78,16 @@ public class ProductDTO {
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 
+    // Additional inventory fields for enhanced responses
+    private Boolean isLowStock;
+    private Boolean isOutOfStock;
+    private Boolean needsReorder;
+    private String stockStatus;
+    private Integer daysUntilReorder;
+    private BigDecimal profitMargin;
+    private BigDecimal effectivePrice;
+    private BigDecimal stockValue;
+
     // Utility methods
     public BigDecimal getProfitMargin() {
         if (costPrice != null && costPrice.compareTo(BigDecimal.ZERO) > 0) {
