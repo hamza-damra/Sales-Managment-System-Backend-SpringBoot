@@ -32,29 +32,25 @@ public class HibernateConfig {
 
                 // Add MySQL session variables to disable foreign key checks
                 hibernateProperties.put("hibernate.connection.provider_disables_autocommit", "true");
-                hibernateProperties.put("hibernate.hbm2ddl.schema_filter_provider", "none");
+                // Remove the problematic schema_filter_provider setting - let Spring Boot handle it
 
                 // Ensure proper schema creation order
                 hibernateProperties.put("hibernate.hbm2ddl.create_namespaces", "true");
 
-                // Use create-drop for fresh database deployment
-                hibernateProperties.put("hibernate.hbm2ddl.auto", "create-drop");
+                // Let Spring Boot handle DDL auto configuration from application.properties
+                // hibernateProperties.put("hibernate.hbm2ddl.auto", "create-drop");
 
-                // Enable SQL logging for debugging (can be disabled in production)
-                hibernateProperties.put("hibernate.show_sql", "false");
-                hibernateProperties.put("hibernate.format_sql", "false");
-
-                // MySQL-specific optimizations
-                hibernateProperties.put("hibernate.dialect", "org.hibernate.dialect.MySQL8Dialect");
-                hibernateProperties.put("hibernate.globally_quoted_identifiers", "true");
-                hibernateProperties.put("hibernate.id.new_generator_mappings", "true");
-
-                // Connection and transaction settings
-                hibernateProperties.put("hibernate.connection.autocommit", "false");
-                hibernateProperties.put("hibernate.jdbc.batch_size", "20");
-                hibernateProperties.put("hibernate.order_inserts", "true");
-                hibernateProperties.put("hibernate.order_updates", "true");
-                hibernateProperties.put("hibernate.jdbc.batch_versioned_data", "true");
+                // Let Spring Boot handle these configurations from application.properties
+                // hibernateProperties.put("hibernate.show_sql", "false");
+                // hibernateProperties.put("hibernate.format_sql", "false");
+                // hibernateProperties.put("hibernate.dialect", "org.hibernate.dialect.MySQL8Dialect");
+                // hibernateProperties.put("hibernate.globally_quoted_identifiers", "true");
+                // hibernateProperties.put("hibernate.id.new_generator_mappings", "true");
+                // hibernateProperties.put("hibernate.connection.autocommit", "false");
+                // hibernateProperties.put("hibernate.jdbc.batch_size", "20");
+                // hibernateProperties.put("hibernate.order_inserts", "true");
+                // hibernateProperties.put("hibernate.order_updates", "true");
+                // hibernateProperties.put("hibernate.jdbc.batch_versioned_data", "true");
 
                 // CRITICAL: Add custom SQL to disable foreign key checks
                 hibernateProperties.put("hibernate.hbm2ddl.import_files", "disable-fk-checks.sql");
