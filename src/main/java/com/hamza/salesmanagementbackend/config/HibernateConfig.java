@@ -32,13 +32,16 @@ public class HibernateConfig {
 
                 // Add MySQL session variables to disable foreign key checks
                 hibernateProperties.put("hibernate.connection.provider_disables_autocommit", "true");
-                // Remove the problematic schema_filter_provider setting - let Spring Boot handle it
 
                 // Ensure proper schema creation order
                 hibernateProperties.put("hibernate.hbm2ddl.create_namespaces", "true");
 
-                // Let Spring Boot handle DDL auto configuration from application.properties
-                // hibernateProperties.put("hibernate.hbm2ddl.auto", "create-drop");
+                // Force Hibernate to create tables first, then constraints
+                hibernateProperties.put("hibernate.hbm2ddl.auto", "create-drop");
+
+                // Additional MySQL-specific settings for better schema creation
+                hibernateProperties.put("hibernate.physical_naming_strategy", "org.springframework.boot.orm.jpa.hibernate.SpringPhysicalNamingStrategy");
+                hibernateProperties.put("hibernate.implicit_naming_strategy", "org.springframework.boot.orm.jpa.hibernate.SpringImplicitNamingStrategy");
 
                 // Let Spring Boot handle these configurations from application.properties
                 // hibernateProperties.put("hibernate.show_sql", "false");

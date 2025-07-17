@@ -36,6 +36,8 @@ build/
 application-local.properties
 application-dev.properties
 application-prod.properties
+.env
+.env.local
 
 ### Test files ###
 test_*.ps1
