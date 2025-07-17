@@ -9,6 +9,7 @@ import com.hamza.salesmanagementbackend.payload.response.TokenRefreshResponse;
 import com.hamza.salesmanagementbackend.service.AuthService;
 import javax.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -47,7 +48,7 @@ public class AuthController {
     @PostMapping("/signup")
     public ResponseEntity<SignUpResponse> registerUser(@Valid @RequestBody SignUpRequest signUpRequest) {
         log.info("Signup attempt for user: {} with email: {}", signUpRequest.getUsername(), signUpRequest.getEmail());
-        return ResponseEntity.ok(authService.signUp(signUpRequest));
+        return ResponseEntity.status(HttpStatus.CREATED).body(authService.signUp(signUpRequest));
     }
 
     @PostMapping("/refresh")

@@ -1,6 +1,7 @@
 package com.hamza.salesmanagementbackend.controller;
 
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -20,8 +21,8 @@ public class FallbackController {
     public ResponseEntity<Map<String, Object>> handleAuthRequests() {
         log.warn("Request received at /auth/* - should be /api/v1/auth/*");
 
-        return ResponseEntity.badRequest().body(Map.of(
-            "error", "Invalid endpoint",
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of(
+            "error", "Endpoint Not Found",
             "message", "Authentication endpoints are available at /api/v1/auth/*",
             "correctEndpoints", Map.of(
                 "login", "POST /api/v1/auth/login",
@@ -39,8 +40,8 @@ public class FallbackController {
     public ResponseEntity<Map<String, Object>> handleSignupRequests() {
         log.warn("Request received at /signup - should be /api/v1/auth/signup");
 
-        return ResponseEntity.badRequest().body(Map.of(
-            "error", "Invalid endpoint",
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of(
+            "error", "Endpoint Not Found",
             "message", "Signup endpoint is available at /api/v1/auth/signup",
             "correctEndpoint", "POST /api/v1/auth/signup",
             "requiredHeaders", Map.of(

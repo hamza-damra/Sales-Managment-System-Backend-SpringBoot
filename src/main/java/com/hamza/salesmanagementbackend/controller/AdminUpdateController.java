@@ -240,14 +240,8 @@ public class AdminUpdateController {
         
         try {
             updateManagementService.deleteVersion(id);
-            
-            ApiResponse<String> response = ApiResponse.<String>builder()
-                .success(true)
-                .data("Version deleted successfully")
-                .message("Version deleted successfully")
-                .build();
-            
-            return ResponseEntity.ok(response);
+
+            return ResponseEntity.noContent().build();
             
         } catch (Exception e) {
             log.error("Error deleting version {}: {}", id, e.getMessage());

@@ -2,6 +2,7 @@ package com.hamza.salesmanagementbackend.service.impl;
 
 import com.hamza.salesmanagementbackend.entity.RefreshToken;
 import com.hamza.salesmanagementbackend.entity.User;
+import com.hamza.salesmanagementbackend.exception.AuthenticationFailedException;
 import com.hamza.salesmanagementbackend.exception.BusinessLogicException;
 import com.hamza.salesmanagementbackend.payload.request.SignInRequest;
 import com.hamza.salesmanagementbackend.payload.request.SignUpRequest;
@@ -62,10 +63,10 @@ public class AuthServiceImpl implements AuthService {
 
         } catch (BadCredentialsException e) {
             log.error("Invalid credentials for user: {}", signInRequest.getUsername());
-            throw new BusinessLogicException("Invalid username or password");
+            throw AuthenticationFailedException.invalidCredentials();
         } catch (AuthenticationException e) {
             log.error("Authentication failed for user: {}", signInRequest.getUsername(), e);
-            throw new BusinessLogicException("Authentication failed: " + e.getMessage());
+            throw new AuthenticationFailedException("AUTHENTICATION_FAILED", "Authentication failed: " + e.getMessage());
         } catch (Exception e) {
             log.error("Unexpected error during authentication for user: {}", signInRequest.getUsername(), e);
             throw new BusinessLogicException("An error occurred during authentication. Please try again.");
