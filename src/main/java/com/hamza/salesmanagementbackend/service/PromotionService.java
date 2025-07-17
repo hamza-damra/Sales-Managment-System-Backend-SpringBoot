@@ -5,8 +5,10 @@ import com.hamza.salesmanagementbackend.entity.Promotion;
 import com.hamza.salesmanagementbackend.exception.BusinessLogicException;
 import com.hamza.salesmanagementbackend.exception.ResourceNotFoundException;
 import com.hamza.salesmanagementbackend.repository.PromotionRepository;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -18,6 +20,7 @@ import java.util.stream.Collectors;
 
 @Service
 @Transactional
+@Slf4j
 public class PromotionService {
 
     @Autowired
@@ -166,6 +169,50 @@ public class PromotionService {
     }
 
     /**
+     * Gets promotions by computed status (SCHEDULED, ACTIVE, EXPIRED, etc.)
+     */
+    @Transactional(readOnly = true)
+    public Page<PromotionDTO> getPromotionsByStatus(String status, Pageable pageable) {
+        LocalDateTime now = LocalDateTime.now();
+        List<Promotion> promotions;
+
+        switch (status.toUpperCase()) {
+            case "SCHEDULED":
+                promotions = promotionRepository.findScheduledPromotions(now);
+                break;
+            case "ACTIVE":
+                promotions = promotionRepository.findActivePromotions(now);
+                break;
+            case "EXPIRED":
+                promotions = promotionRepository.findExpiredPromotions(now);
+                break;
+            case "USAGE_LIMIT_REACHED":
+                promotions = promotionRepository.findUsageLimitReachedPromotions();
+                break;
+            case "INACTIVE":
+                promotions = promotionRepository.findByIsActive(false);
+                break;
+            case "AVAILABLE":
+                promotions = promotionRepository.findAvailablePromotions(now);
+                break;
+            default:
+                throw new IllegalArgumentException("Invalid status: " + status +
+                    ". Valid values are: SCHEDULED, ACTIVE, EXPIRED, USAGE_LIMIT_REACHED, INACTIVE, AVAILABLE");
+        }
+
+        // Convert List to Page manually since repository methods return List
+        int start = (int) pageable.getOffset();
+        int end = Math.min((start + pageable.getPageSize()), promotions.size());
+
+        List<PromotionDTO> pageContent = promotions.subList(start, end)
+                .stream()
+                .map(this::mapToDTO)
+                .collect(Collectors.toList());
+
+        return new PageImpl<>(pageContent, pageable, promotions.size());
+    }
+
+    /**
      * Gets promotions for a specific product
      */
     @Transactional(readOnly = true)
@@ -309,46 +356,51 @@ public class PromotionService {
     }
 
     public PromotionDTO mapToDTO(Promotion promotion) {
-        PromotionDTO dto = PromotionDTO.builder()
-                .id(promotion.getId())
-                .name(promotion.getName())
-                .description(promotion.getDescription())
-                .type(promotion.getType())
-                .discountValue(promotion.getDiscountValue())
-                .minimumOrderAmount(promotion.getMinimumOrderAmount())
-                .maximumDiscountAmount(promotion.getMaximumDiscountAmount())
-                .startDate(promotion.getStartDate())
-                .endDate(promotion.getEndDate())
-                .isActive(promotion.getIsActive())
-                .applicableProducts(promotion.getApplicableProducts())
-                .applicableCategories(promotion.getApplicableCategories())
-                .usageLimit(promotion.getUsageLimit())
-                .usageCount(promotion.getUsageCount())
-                .customerEligibility(promotion.getCustomerEligibility())
-                .couponCode(promotion.getCouponCode())
-                .autoApply(promotion.getAutoApply())
-                .stackable(promotion.getStackable())
-                .createdAt(promotion.getCreatedAt())
-                .updatedAt(promotion.getUpdatedAt())
-                .build();
+        try {
+            PromotionDTO dto = PromotionDTO.builder()
+                    .id(promotion.getId())
+                    .name(promotion.getName())
+                    .description(promotion.getDescription())
+                    .type(promotion.getType())
+                    .discountValue(promotion.getDiscountValue())
+                    .minimumOrderAmount(promotion.getMinimumOrderAmount())
+                    .maximumDiscountAmount(promotion.getMaximumDiscountAmount())
+                    .startDate(promotion.getStartDate())
+                    .endDate(promotion.getEndDate())
+                    .isActive(promotion.getIsActive())
+                    .applicableProducts(promotion.getApplicableProducts())
+                    .applicableCategories(promotion.getApplicableCategories())
+                    .usageLimit(promotion.getUsageLimit())
+                    .usageCount(promotion.getUsageCount())
+                    .customerEligibility(promotion.getCustomerEligibility())
+                    .couponCode(promotion.getCouponCode())
+                    .autoApply(promotion.getAutoApply())
+                    .stackable(promotion.getStackable())
+                    .createdAt(promotion.getCreatedAt())
+                    .updatedAt(promotion.getUpdatedAt())
+                    .build();
 
-        // Computed fields
-        dto.setStatusDisplay(promotion.getStatusDisplay());
-        dto.setTypeDisplay(promotion.getTypeDisplay());
-        dto.setEligibilityDisplay(promotion.getEligibilityDisplay());
-        dto.setIsCurrentlyActive(promotion.isCurrentlyActive());
-        dto.setIsExpired(promotion.isExpired());
-        dto.setIsNotYetStarted(promotion.isNotYetStarted());
-        dto.setIsUsageLimitReached(promotion.isUsageLimitReached());
-        dto.setDaysUntilExpiry(promotion.getDaysUntilExpiry());
-        
-        if (promotion.getUsageLimit() != null) {
-            dto.setRemainingUsage(Math.max(0, promotion.getUsageLimit() - 
-                    (promotion.getUsageCount() != null ? promotion.getUsageCount() : 0)));
-            dto.setUsagePercentage(((double) (promotion.getUsageCount() != null ? promotion.getUsageCount() : 0) 
-                    / promotion.getUsageLimit()) * 100.0);
+            // Computed fields
+            dto.setStatusDisplay(promotion.getStatusDisplay());
+            dto.setTypeDisplay(promotion.getTypeDisplay());
+            dto.setEligibilityDisplay(promotion.getEligibilityDisplay());
+            dto.setIsCurrentlyActive(promotion.isCurrentlyActive());
+            dto.setIsExpired(promotion.isExpired());
+            dto.setIsNotYetStarted(promotion.isNotYetStarted());
+            dto.setIsUsageLimitReached(promotion.isUsageLimitReached());
+            dto.setDaysUntilExpiry(promotion.getDaysUntilExpiry());
+
+            if (promotion.getUsageLimit() != null) {
+                dto.setRemainingUsage(Math.max(0, promotion.getUsageLimit() -
+                        (promotion.getUsageCount() != null ? promotion.getUsageCount() : 0)));
+                dto.setUsagePercentage(((double) (promotion.getUsageCount() != null ? promotion.getUsageCount() : 0)
+                        / promotion.getUsageLimit()) * 100.0);
+            }
+
+            return dto;
+        } catch (Exception e) {
+            log.error("Error mapping promotion to DTO for promotion ID: {}", promotion.getId(), e);
+            throw new RuntimeException("Failed to map promotion to DTO", e);
         }
-
-        return dto;
     }
 }

@@ -5,6 +5,7 @@ import com.hamza.salesmanagementbackend.dto.PromotionDTO;
 import com.hamza.salesmanagementbackend.exception.ResourceNotFoundException;
 import com.hamza.salesmanagementbackend.service.PromotionService;
 import com.hamza.salesmanagementbackend.util.SortingUtils;
+import lombok.extern.slf4j.Slf4j;
 import javax.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -23,6 +24,7 @@ import java.util.Map;
 @RestController
 @RequestMapping("/api/v1/promotions")
 @CrossOrigin(origins = "*")
+@Slf4j
 public class PromotionController {
 
     @Autowired
@@ -34,21 +36,44 @@ public class PromotionController {
             @RequestParam(defaultValue = "10") int size,
             @RequestParam(defaultValue = "id") String sortBy,
             @RequestParam(defaultValue = "desc") String sortDir,
-            @RequestParam(required = false) Boolean isActive) {
+            @RequestParam(required = false) Boolean isActive,
+            @RequestParam(required = false) String status) {
 
-        // Validate pagination and sorting parameters
-        SortingUtils.PaginationParams paginationParams = SortingUtils.validatePaginationParams(page, size);
-        Sort sort = SortingUtils.createPromotionSort(sortBy, sortDir);
-        Pageable pageable = PageRequest.of(paginationParams.page, paginationParams.size, sort);
+        log.debug("Getting promotions with parameters: page={}, size={}, sortBy={}, sortDir={}, isActive={}, status={}",
+                page, size, sortBy, sortDir, isActive, status);
 
-        Page<PromotionDTO> promotions;
-        if (isActive != null) {
-            promotions = promotionService.getPromotionsByStatus(isActive, pageable);
-        } else {
-            promotions = promotionService.getAllPromotions(pageable);
+        try {
+            // Validate pagination and sorting parameters
+            SortingUtils.PaginationParams paginationParams = SortingUtils.validatePaginationParams(page, size);
+            Sort sort = SortingUtils.createPromotionSort(sortBy, sortDir);
+            Pageable pageable = PageRequest.of(paginationParams.page, paginationParams.size, sort);
+
+            Page<PromotionDTO> promotions;
+
+            // Handle status parameter (takes precedence over isActive)
+            if (status != null && !status.trim().isEmpty()) {
+                log.debug("Filtering promotions by status: {}", status);
+                try {
+                    promotions = promotionService.getPromotionsByStatus(status.trim().toUpperCase(), pageable);
+                } catch (IllegalArgumentException e) {
+                    log.warn("Invalid status parameter: {}", status, e);
+                    return ResponseEntity.badRequest().build();
+                }
+            } else if (isActive != null) {
+                log.debug("Filtering promotions by isActive: {}", isActive);
+                promotions = promotionService.getPromotionsByStatus(isActive, pageable);
+            } else {
+                log.debug("Getting all promotions without filters");
+                promotions = promotionService.getAllPromotions(pageable);
+            }
+
+            log.debug("Successfully retrieved {} promotions", promotions.getTotalElements());
+            return ResponseEntity.ok(promotions);
+
+        } catch (Exception e) {
+            log.error("Error retrieving promotions", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
-
-        return ResponseEntity.ok(promotions);
     }
 
     @GetMapping("/{id}")

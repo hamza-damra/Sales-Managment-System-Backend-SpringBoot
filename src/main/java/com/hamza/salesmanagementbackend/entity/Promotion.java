@@ -7,6 +7,7 @@ import javax.validation.constraints.NotNull;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
+import com.fasterxml.jackson.annotation.JsonInclude;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -62,22 +63,24 @@ public class Promotion {
     @Builder.Default
     private Boolean isActive = true;
 
-    @ElementCollection
+    @ElementCollection(fetch = FetchType.EAGER)
     @CollectionTable(
         name = "promotion_products",
         joinColumns = @JoinColumn(name = "promotion_id")
     )
     @Column(name = "product_id")
     @OrderColumn(name = "product_order")
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
     private List<Long> applicableProducts;
 
-    @ElementCollection
+    @ElementCollection(fetch = FetchType.EAGER)
     @CollectionTable(
         name = "promotion_categories",
         joinColumns = @JoinColumn(name = "promotion_id")
     )
     @Column(name = "category")
     @OrderColumn(name = "category_order")
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
     private List<String> applicableCategories;
 
     @Column(name = "usage_limit")
