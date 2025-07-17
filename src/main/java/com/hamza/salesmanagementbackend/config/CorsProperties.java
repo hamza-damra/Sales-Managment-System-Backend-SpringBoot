@@ -17,7 +17,7 @@ import org.springframework.context.annotation.Configuration;
 @Setter
 public class CorsProperties {
 
-    /**
+    /**  jdbc:mysql://mysql-28deff92-hamzatemp3123-95b3.e.aivencloud.com:26632/defaultdb?createDatabaseIfNotExist=true&ssl-mode=REQUIRED&useSSL=true&requireSSL=true&allowPublicKeyRetrieval=true&serverTimezone=UTC&useUnicode=true&characterEncoding=utf8&autoReconnect=true&failOverReadOnly=false&maxReconnects=10&connectTimeout=60000&socketTimeout=60000
      * Comma-separated list of allowed CORS origins.
      * Use "*" to allow all origins (not recommended for production).
      */
