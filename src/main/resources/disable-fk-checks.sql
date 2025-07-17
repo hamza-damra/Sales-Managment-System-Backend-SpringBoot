@@ -4,7 +4,8 @@
 SET FOREIGN_KEY_CHECKS = 0;
 SET sql_require_primary_key = 0;
 SET sql_mode = 'TRADITIONAL';
-SET autocommit = 1;
+-- Remove autocommit setting to let Spring manage transactions
+-- SET autocommit = 1;
 
 -- Additional MySQL settings for better schema creation compatibility
 SET unique_checks = 0;

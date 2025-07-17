@@ -30,14 +30,11 @@ public class HibernateConfig {
                 hibernateProperties.put("hibernate.hbm2ddl.halt_on_error", "false");
                 hibernateProperties.put("hibernate.hbm2ddl.import_files_sql_extractor", "org.hibernate.tool.hbm2ddl.MultipleLinesSqlCommandExtractor");
 
-                // Add MySQL session variables to disable foreign key checks
-                hibernateProperties.put("hibernate.connection.provider_disables_autocommit", "true");
-
                 // Ensure proper schema creation order
                 hibernateProperties.put("hibernate.hbm2ddl.create_namespaces", "true");
 
-                // Force Hibernate to create tables first, then constraints
-                hibernateProperties.put("hibernate.hbm2ddl.auto", "create-drop");
+                // Let Spring Boot handle DDL auto configuration from application.properties
+                // hibernateProperties.put("hibernate.hbm2ddl.auto", "update");
 
                 // Additional MySQL-specific settings for better schema creation
                 hibernateProperties.put("hibernate.physical_naming_strategy", "org.springframework.boot.orm.jpa.hibernate.SpringPhysicalNamingStrategy");

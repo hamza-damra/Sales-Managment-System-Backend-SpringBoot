@@ -39,7 +39,8 @@ public class DatabaseConfig implements CommandLineRunner {
             
             // Set other MySQL session variables for better compatibility
             statement.execute("SET sql_mode = 'TRADITIONAL'");
-            statement.execute("SET autocommit = 1");
+            // Remove autocommit setting to let Spring manage transactions
+            // statement.execute("SET autocommit = 1");
             
             log.info("Database session variables configured successfully");
             log.info("=== DATABASE CONFIGURATION COMPLETED ===");
