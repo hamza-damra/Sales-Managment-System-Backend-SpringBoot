@@ -302,6 +302,32 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
     }
 
+    @ExceptionHandler(org.springframework.validation.BindException.class)
+    public ResponseEntity<ErrorResponse> handleBindException(org.springframework.validation.BindException ex) {
+        Map<String, String> fieldErrors = ex.getBindingResult().getFieldErrors().stream()
+                .collect(Collectors.toMap(
+                    FieldError::getField,
+                    FieldError::getDefaultMessage,
+                    (existing, replacement) -> existing + "; " + replacement
+                ));
+
+        String mainMessage = fieldErrors.size() == 1
+            ? "There is 1 validation error that needs to be corrected:"
+            : String.format("There are %d validation errors that need to be corrected:", fieldErrors.size());
+
+        ErrorResponse errorResponse = ErrorResponse.builder()
+                .status(HttpStatus.BAD_REQUEST.value())
+                .error("Validation Failed")
+                .message(mainMessage)
+                .errorCode("VALIDATION_ERROR")
+                .timestamp(LocalDateTime.now())
+                .validationErrors(fieldErrors)
+                .suggestions("Please correct the highlighted fields and submit again. All required fields must be properly filled.")
+                .build();
+
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
+    }
+
     @ExceptionHandler(MethodArgumentTypeMismatchException.class)
     public ResponseEntity<ErrorResponse> handleTypeMismatchException(MethodArgumentTypeMismatchException ex) {
         String parameterName = ex.getName() != null ? ex.getName() : "unknown";
