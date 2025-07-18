@@ -56,4 +56,105 @@ public interface SaleRepository extends JpaRepository<Sale, Long> {
 
     @Query("SELECT COUNT(s) FROM Sale s WHERE s.customer.id = :customerId")
     Long countSalesByCustomerId(@Param("customerId") Long customerId);
+
+    // Enhanced financial reporting queries
+    @Query("SELECT s FROM Sale s " +
+           "LEFT JOIN FETCH s.items si " +
+           "LEFT JOIN FETCH si.product p " +
+           "LEFT JOIN FETCH p.category c " +
+           "LEFT JOIN FETCH s.customer cu " +
+           "WHERE s.saleDate BETWEEN :startDate AND :endDate " +
+           "AND s.status = 'COMPLETED'")
+    List<Sale> findCompletedSalesWithDetailsForPeriod(@Param("startDate") LocalDateTime startDate,
+                                                      @Param("endDate") LocalDateTime endDate);
+
+    @Query("SELECT s.paymentMethod, " +
+           "COUNT(s) as transactionCount, " +
+           "SUM(s.totalAmount) as totalRevenue, " +
+           "AVG(s.totalAmount) as avgTransactionValue " +
+           "FROM Sale s " +
+           "WHERE s.saleDate BETWEEN :startDate AND :endDate " +
+           "AND s.status = 'COMPLETED' " +
+           "GROUP BY s.paymentMethod")
+    List<Object[]> getRevenueByPaymentMethod(@Param("startDate") LocalDateTime startDate,
+                                           @Param("endDate") LocalDateTime endDate);
+
+    @Query("SELECT c.name as categoryName, " +
+           "COUNT(DISTINCT s.id) as salesCount, " +
+           "SUM(si.quantity) as totalQuantitySold, " +
+           "SUM(si.totalPrice) as totalRevenue, " +
+           "SUM(si.costPrice * si.quantity) as totalCost, " +
+           "AVG(si.unitPrice) as avgUnitPrice " +
+           "FROM Sale s " +
+           "JOIN s.items si " +
+           "JOIN si.product p " +
+           "JOIN p.category c " +
+           "WHERE s.saleDate BETWEEN :startDate AND :endDate " +
+           "AND s.status = 'COMPLETED' " +
+           "GROUP BY c.id, c.name " +
+           "ORDER BY totalRevenue DESC")
+    List<Object[]> getRevenueByCategoryForPeriod(@Param("startDate") LocalDateTime startDate,
+                                                @Param("endDate") LocalDateTime endDate);
+
+    @Query("SELECT p.name as productName, " +
+           "p.sku as productSku, " +
+           "c.name as categoryName, " +
+           "SUM(si.quantity) as totalQuantitySold, " +
+           "SUM(si.totalPrice) as totalRevenue, " +
+           "SUM(si.costPrice * si.quantity) as totalCost, " +
+           "AVG(si.unitPrice) as avgUnitPrice, " +
+           "COUNT(DISTINCT s.id) as salesCount " +
+           "FROM Sale s " +
+           "JOIN s.items si " +
+           "JOIN si.product p " +
+           "JOIN p.category c " +
+           "WHERE s.saleDate BETWEEN :startDate AND :endDate " +
+           "AND s.status = 'COMPLETED' " +
+           "GROUP BY p.id, p.name, p.sku, c.name " +
+           "ORDER BY totalRevenue DESC")
+    List<Object[]> getRevenueByProductForPeriod(@Param("startDate") LocalDateTime startDate,
+                                              @Param("endDate") LocalDateTime endDate);
+
+    @Query("SELECT cu.id as customerId, " +
+           "cu.name as customerName, " +
+           "cu.customerType as customerType, " +
+           "COUNT(s.id) as totalOrders, " +
+           "SUM(s.totalAmount) as totalRevenue, " +
+           "AVG(s.totalAmount) as avgOrderValue, " +
+           "MAX(s.saleDate) as lastPurchaseDate " +
+           "FROM Sale s " +
+           "JOIN s.customer cu " +
+           "WHERE s.saleDate BETWEEN :startDate AND :endDate " +
+           "AND s.status = 'COMPLETED' " +
+           "GROUP BY cu.id, cu.name, cu.customerType " +
+           "ORDER BY totalRevenue DESC")
+    List<Object[]> getCustomerRevenueAnalysisForPeriod(@Param("startDate") LocalDateTime startDate,
+                                                      @Param("endDate") LocalDateTime endDate);
+
+    @Query("SELECT DATE(s.saleDate) as saleDate, " +
+           "COUNT(s.id) as dailySalesCount, " +
+           "SUM(s.totalAmount) as dailyRevenue, " +
+           "SUM(s.costOfGoodsSold) as dailyCost, " +
+           "AVG(s.totalAmount) as avgOrderValue " +
+           "FROM Sale s " +
+           "WHERE s.saleDate BETWEEN :startDate AND :endDate " +
+           "AND s.status = 'COMPLETED' " +
+           "GROUP BY DATE(s.saleDate) " +
+           "ORDER BY saleDate")
+    List<Object[]> getDailyRevenueAnalysis(@Param("startDate") LocalDateTime startDate,
+                                         @Param("endDate") LocalDateTime endDate);
+
+    @Query("SELECT " +
+           "SUM(s.totalAmount) as totalRevenue, " +
+           "SUM(s.costOfGoodsSold) as totalCost, " +
+           "SUM(s.taxAmount) as totalTax, " +
+           "SUM(s.discountAmount) as totalDiscounts, " +
+           "SUM(s.shippingCost) as totalShipping, " +
+           "COUNT(s.id) as totalTransactions, " +
+           "COUNT(DISTINCT s.customer.id) as uniqueCustomers " +
+           "FROM Sale s " +
+           "WHERE s.saleDate BETWEEN :startDate AND :endDate " +
+           "AND s.status = 'COMPLETED'")
+    Object[] getFinancialSummaryForPeriod(@Param("startDate") LocalDateTime startDate,
+                                        @Param("endDate") LocalDateTime endDate);
 }

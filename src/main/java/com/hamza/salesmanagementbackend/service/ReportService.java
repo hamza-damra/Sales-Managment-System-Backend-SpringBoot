@@ -816,23 +816,50 @@ public class ReportService {
     }
 
     /**
-     * Generate financial revenue report
+     * Generate comprehensive financial revenue report with detailed business intelligence
      */
     public Map<String, Object> generateFinancialRevenueReport(ReportRequestDTO request) {
-        log.info("Generating financial revenue report");
+        log.info("Generating comprehensive financial revenue report for period: {} to {}",
+                request.getStartDate(), request.getEndDate());
 
-        List<Sale> sales = saleRepository.findBySaleDateBetween(request.getStartDate(), request.getEndDate())
-                .stream()
-                .filter(sale -> sale.getStatus() == SaleStatus.COMPLETED)
-                .collect(Collectors.toList());
+        // Get comprehensive sales data with all related entities
+        List<Sale> sales = saleRepository.findCompletedSalesWithDetailsForPeriod(
+                request.getStartDate(), request.getEndDate());
+
+        // Get financial summary data
+        Object[] financialSummary = saleRepository.getFinancialSummaryForPeriod(
+                request.getStartDate(), request.getEndDate());
+
+        // Handle case where no financial data is found
+        if (financialSummary == null) {
+            financialSummary = new Object[]{BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO,
+                                          BigDecimal.ZERO, BigDecimal.ZERO, 0L, 0L};
+        }
 
         Map<String, Object> financial = new HashMap<>();
-        financial.put("revenueBreakdown", generateRevenueBreakdown(sales));
-        financial.put("profitMargins", calculateProfitMargins(sales));
-        financial.put("taxAnalysis", generateTaxAnalysis(sales));
-        financial.put("paymentMethodRevenue", analyzeRevenueByPaymentMethod(sales));
-        financial.put("costAnalysis", generateCostAnalysis(sales));
 
+        // 1. Revenue Analysis
+        financial.put("revenueAnalysis", generateComprehensiveRevenueAnalysis(sales, financialSummary, request));
+
+        // 2. Profit Margin Analysis
+        financial.put("profitMarginAnalysis", generateDetailedProfitMarginAnalysis(sales, request));
+
+        // 3. Payment Method Revenue Breakdown
+        financial.put("paymentMethodAnalysis", generatePaymentMethodRevenueAnalysis(request));
+
+        // 4. Tax Analysis
+        financial.put("taxAnalysis", generateComprehensiveTaxAnalysis(sales, request));
+
+        // 5. Cost Analysis
+        financial.put("costAnalysis", generateDetailedCostAnalysis(sales, request));
+
+        // 6. Advanced Metrics
+        financial.put("advancedMetrics", generateAdvancedFinancialMetrics(sales, request));
+
+        // 7. Executive Summary
+        financial.put("executiveSummary", generateExecutiveFinancialSummary(sales, financialSummary, request));
+
+        log.info("Financial revenue report generated successfully with {} sales records", sales.size());
         return financial;
     }
 
@@ -3164,12 +3191,955 @@ public class ReportService {
     private Map<String, Object> analyzePromotionByCustomerSegment(List<AppliedPromotion> promotions) { return new HashMap<>(); }
     private Map<String, Object> calculatePromotionConversionRates(List<AppliedPromotion> promotions) { return new HashMap<>(); }
 
-    // Financial helper methods
-    private Map<String, Object> generateRevenueBreakdown(List<Sale> sales) { return new HashMap<>(); }
-    private Map<String, Object> calculateProfitMargins(List<Sale> sales) { return new HashMap<>(); }
-    private Map<String, Object> generateTaxAnalysis(List<Sale> sales) { return new HashMap<>(); }
-    private Map<String, Object> analyzeRevenueByPaymentMethod(List<Sale> sales) { return new HashMap<>(); }
-    private Map<String, Object> generateCostAnalysis(List<Sale> sales) { return new HashMap<>(); }
+    // ==================== COMPREHENSIVE FINANCIAL ANALYSIS METHODS ====================
+
+    /**
+     * Generate comprehensive revenue analysis with trends and growth metrics
+     */
+    private Map<String, Object> generateComprehensiveRevenueAnalysis(List<Sale> sales, Object[] financialSummary, ReportRequestDTO request) {
+        Map<String, Object> analysis = new HashMap<>();
+
+        // Basic revenue metrics from summary - with safe casting
+        BigDecimal totalRevenue = safeCastToBigDecimal(financialSummary, 0);
+        BigDecimal totalCost = safeCastToBigDecimal(financialSummary, 1);
+        BigDecimal totalTax = safeCastToBigDecimal(financialSummary, 2);
+        BigDecimal totalDiscounts = safeCastToBigDecimal(financialSummary, 3);
+        BigDecimal totalShipping = safeCastToBigDecimal(financialSummary, 4);
+        Long totalTransactions = safeCastToLong(financialSummary, 5);
+        Long uniqueCustomers = safeCastToLong(financialSummary, 6);
+
+        BigDecimal grossProfit = totalRevenue.subtract(totalCost);
+        BigDecimal netRevenue = totalRevenue.subtract(totalDiscounts);
+        BigDecimal netProfit = grossProfit.subtract(totalTax).subtract(totalShipping);
+
+        // Revenue summary
+        Map<String, Object> revenueSummary = new HashMap<>();
+        revenueSummary.put("totalRevenue", totalRevenue);
+        revenueSummary.put("grossRevenue", totalRevenue.add(totalDiscounts)); // Revenue before discounts
+        revenueSummary.put("netRevenue", netRevenue);
+        revenueSummary.put("grossProfit", grossProfit);
+        revenueSummary.put("netProfit", netProfit);
+        revenueSummary.put("totalCost", totalCost);
+        revenueSummary.put("totalTax", totalTax);
+        revenueSummary.put("totalDiscounts", totalDiscounts);
+        revenueSummary.put("totalShipping", totalShipping);
+        revenueSummary.put("totalTransactions", totalTransactions);
+        revenueSummary.put("uniqueCustomers", uniqueCustomers);
+        revenueSummary.put("averageOrderValue", totalTransactions > 0 ?
+            totalRevenue.divide(BigDecimal.valueOf(totalTransactions), 2, RoundingMode.HALF_UP) : BigDecimal.ZERO);
+        revenueSummary.put("revenuePerCustomer", uniqueCustomers > 0 ?
+            totalRevenue.divide(BigDecimal.valueOf(uniqueCustomers), 2, RoundingMode.HALF_UP) : BigDecimal.ZERO);
+
+        analysis.put("summary", revenueSummary);
+
+        // Revenue by category
+        List<Object[]> categoryRevenue = saleRepository.getRevenueByCategoryForPeriod(request.getStartDate(), request.getEndDate());
+        List<Map<String, Object>> categoryAnalysis = categoryRevenue.stream()
+            .map(row -> {
+                Map<String, Object> category = new HashMap<>();
+                category.put("categoryName", row[0]);
+                category.put("salesCount", row[1]);
+                category.put("totalQuantitySold", row[2]);
+                category.put("totalRevenue", row[3]);
+                category.put("totalCost", row[4]);
+                category.put("avgUnitPrice", row[5]);
+                BigDecimal revenue = (BigDecimal) row[3];
+                BigDecimal cost = (BigDecimal) row[4];
+                category.put("grossProfit", revenue.subtract(cost));
+                category.put("profitMargin", revenue.compareTo(BigDecimal.ZERO) > 0 ?
+                    revenue.subtract(cost).divide(revenue, 4, RoundingMode.HALF_UP).multiply(BigDecimal.valueOf(100)) : BigDecimal.ZERO);
+                category.put("revenuePercentage", totalRevenue.compareTo(BigDecimal.ZERO) > 0 ?
+                    revenue.divide(totalRevenue, 4, RoundingMode.HALF_UP).multiply(BigDecimal.valueOf(100)) : BigDecimal.ZERO);
+                return category;
+            })
+            .collect(Collectors.toList());
+        analysis.put("revenueByCategory", categoryAnalysis);
+
+        // Revenue trends (daily breakdown)
+        List<Object[]> dailyRevenue = saleRepository.getDailyRevenueAnalysis(request.getStartDate(), request.getEndDate());
+        List<Map<String, Object>> trendAnalysis = dailyRevenue.stream()
+            .map(row -> {
+                Map<String, Object> day = new HashMap<>();
+                day.put("date", row[0].toString());
+                day.put("salesCount", row[1]);
+                day.put("revenue", row[2]);
+                day.put("cost", row[3]);
+                day.put("avgOrderValue", row[4]);
+                BigDecimal dayRevenue = (BigDecimal) row[2];
+                BigDecimal dayCost = (BigDecimal) row[3];
+                day.put("profit", dayRevenue.subtract(dayCost));
+                return day;
+            })
+            .collect(Collectors.toList());
+        analysis.put("dailyTrends", trendAnalysis);
+
+        // Growth calculations (compare with previous period)
+        LocalDateTime previousStart = request.getStartDate().minusDays(
+            ChronoUnit.DAYS.between(request.getStartDate(), request.getEndDate()));
+        LocalDateTime previousEnd = request.getStartDate().minusDays(1);
+
+        Object[] previousSummary = saleRepository.getFinancialSummaryForPeriod(previousStart, previousEnd);
+        BigDecimal previousRevenue = safeCastToBigDecimal(previousSummary, 0);
+
+        Map<String, Object> growthMetrics = new HashMap<>();
+        if (previousRevenue.compareTo(BigDecimal.ZERO) > 0) {
+            BigDecimal revenueGrowth = totalRevenue.subtract(previousRevenue)
+                .divide(previousRevenue, 4, RoundingMode.HALF_UP)
+                .multiply(BigDecimal.valueOf(100));
+            growthMetrics.put("revenueGrowthPercentage", revenueGrowth);
+        } else {
+            growthMetrics.put("revenueGrowthPercentage", BigDecimal.ZERO);
+        }
+        growthMetrics.put("previousPeriodRevenue", previousRevenue);
+        growthMetrics.put("currentPeriodRevenue", totalRevenue);
+        analysis.put("growthMetrics", growthMetrics);
+
+        return analysis;
+    }
+
+    /**
+     * Generate detailed profit margin analysis by product and category
+     */
+    private Map<String, Object> generateDetailedProfitMarginAnalysis(List<Sale> sales, ReportRequestDTO request) {
+        Map<String, Object> analysis = new HashMap<>();
+
+        // Overall profit margin metrics
+        BigDecimal totalRevenue = sales.stream()
+            .map(Sale::getTotalAmount)
+            .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        BigDecimal totalCost = sales.stream()
+            .map(Sale::getCostOfGoodsSold)
+            .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        BigDecimal grossProfit = totalRevenue.subtract(totalCost);
+        BigDecimal grossMarginPercentage = totalRevenue.compareTo(BigDecimal.ZERO) > 0 ?
+            grossProfit.divide(totalRevenue, 4, RoundingMode.HALF_UP).multiply(BigDecimal.valueOf(100)) : BigDecimal.ZERO;
+
+        Map<String, Object> overallMargins = new HashMap<>();
+        overallMargins.put("totalRevenue", totalRevenue);
+        overallMargins.put("totalCost", totalCost);
+        overallMargins.put("grossProfit", grossProfit);
+        overallMargins.put("grossMarginPercentage", grossMarginPercentage);
+
+        // Calculate net margin (after taxes and discounts)
+        BigDecimal totalTax = sales.stream()
+            .map(Sale::getTaxAmount)
+            .reduce(BigDecimal.ZERO, BigDecimal::add);
+        BigDecimal totalDiscounts = sales.stream()
+            .map(Sale::getDiscountAmount)
+            .reduce(BigDecimal.ZERO, BigDecimal::add);
+        BigDecimal totalShipping = sales.stream()
+            .map(Sale::getShippingCost)
+            .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        BigDecimal netProfit = grossProfit.subtract(totalTax).subtract(totalShipping);
+        BigDecimal netMarginPercentage = totalRevenue.compareTo(BigDecimal.ZERO) > 0 ?
+            netProfit.divide(totalRevenue, 4, RoundingMode.HALF_UP).multiply(BigDecimal.valueOf(100)) : BigDecimal.ZERO;
+
+        overallMargins.put("totalTax", totalTax);
+        overallMargins.put("totalDiscounts", totalDiscounts);
+        overallMargins.put("totalShipping", totalShipping);
+        overallMargins.put("netProfit", netProfit);
+        overallMargins.put("netMarginPercentage", netMarginPercentage);
+
+        analysis.put("overallMargins", overallMargins);
+
+        // Product-level profit margin analysis
+        List<Object[]> productMargins = saleRepository.getRevenueByProductForPeriod(request.getStartDate(), request.getEndDate());
+        List<Map<String, Object>> productAnalysis = productMargins.stream()
+            .map(row -> {
+                Map<String, Object> product = new HashMap<>();
+                product.put("productName", row[0]);
+                product.put("productSku", row[1]);
+                product.put("categoryName", row[2]);
+                product.put("totalQuantitySold", row[3]);
+                BigDecimal productRevenue = (BigDecimal) row[4];
+                BigDecimal productCost = (BigDecimal) row[5];
+                product.put("totalRevenue", productRevenue);
+                product.put("totalCost", productCost);
+                product.put("avgUnitPrice", row[6]);
+                product.put("salesCount", row[7]);
+
+                BigDecimal productProfit = productRevenue.subtract(productCost);
+                BigDecimal productMargin = productRevenue.compareTo(BigDecimal.ZERO) > 0 ?
+                    productProfit.divide(productRevenue, 4, RoundingMode.HALF_UP).multiply(BigDecimal.valueOf(100)) : BigDecimal.ZERO;
+
+                product.put("grossProfit", productProfit);
+                product.put("profitMarginPercentage", productMargin);
+                product.put("profitPerUnit", row[3] != null && ((Number) row[3]).longValue() > 0 ?
+                    productProfit.divide(BigDecimal.valueOf(((Number) row[3]).longValue()), 2, RoundingMode.HALF_UP) : BigDecimal.ZERO);
+
+                return product;
+            })
+            .sorted((a, b) -> ((BigDecimal) b.get("profitMarginPercentage")).compareTo((BigDecimal) a.get("profitMarginPercentage")))
+            .collect(Collectors.toList());
+
+        analysis.put("productMargins", productAnalysis);
+
+        // Top and bottom performers
+        List<Map<String, Object>> topPerformers = productAnalysis.stream()
+            .limit(10)
+            .collect(Collectors.toList());
+
+        List<Map<String, Object>> bottomPerformers = productAnalysis.stream()
+            .skip(Math.max(0, productAnalysis.size() - 10))
+            .collect(Collectors.toList());
+
+        analysis.put("topPerformingProducts", topPerformers);
+        analysis.put("bottomPerformingProducts", bottomPerformers);
+
+        // Category-level margin analysis
+        List<Object[]> categoryMargins = saleRepository.getRevenueByCategoryForPeriod(request.getStartDate(), request.getEndDate());
+        List<Map<String, Object>> categoryAnalysis = categoryMargins.stream()
+            .map(row -> {
+                Map<String, Object> category = new HashMap<>();
+                category.put("categoryName", row[0]);
+                BigDecimal categoryRevenue = (BigDecimal) row[3];
+                BigDecimal categoryCost = (BigDecimal) row[4];
+                BigDecimal categoryProfit = categoryRevenue.subtract(categoryCost);
+                BigDecimal categoryMargin = categoryRevenue.compareTo(BigDecimal.ZERO) > 0 ?
+                    categoryProfit.divide(categoryRevenue, 4, RoundingMode.HALF_UP).multiply(BigDecimal.valueOf(100)) : BigDecimal.ZERO;
+
+                category.put("totalRevenue", categoryRevenue);
+                category.put("totalCost", categoryCost);
+                category.put("grossProfit", categoryProfit);
+                category.put("profitMarginPercentage", categoryMargin);
+                category.put("salesCount", row[1]);
+                category.put("totalQuantitySold", row[2]);
+
+                return category;
+            })
+            .sorted((a, b) -> ((BigDecimal) b.get("profitMarginPercentage")).compareTo((BigDecimal) a.get("profitMarginPercentage")))
+            .collect(Collectors.toList());
+
+        analysis.put("categoryMargins", categoryAnalysis);
+
+        // Margin variance analysis
+        Map<String, Object> varianceAnalysis = new HashMap<>();
+        if (!productAnalysis.isEmpty()) {
+            BigDecimal avgMargin = productAnalysis.stream()
+                .map(p -> (BigDecimal) p.get("profitMarginPercentage"))
+                .reduce(BigDecimal.ZERO, BigDecimal::add)
+                .divide(BigDecimal.valueOf(productAnalysis.size()), 2, RoundingMode.HALF_UP);
+
+            BigDecimal maxMargin = productAnalysis.stream()
+                .map(p -> (BigDecimal) p.get("profitMarginPercentage"))
+                .max(BigDecimal::compareTo)
+                .orElse(BigDecimal.ZERO);
+
+            BigDecimal minMargin = productAnalysis.stream()
+                .map(p -> (BigDecimal) p.get("profitMarginPercentage"))
+                .min(BigDecimal::compareTo)
+                .orElse(BigDecimal.ZERO);
+
+            varianceAnalysis.put("averageMargin", avgMargin);
+            varianceAnalysis.put("maxMargin", maxMargin);
+            varianceAnalysis.put("minMargin", minMargin);
+            varianceAnalysis.put("marginRange", maxMargin.subtract(minMargin));
+        }
+
+        analysis.put("marginVariance", varianceAnalysis);
+
+        return analysis;
+    }
+
+    /**
+     * Generate payment method revenue analysis
+     */
+    private Map<String, Object> generatePaymentMethodRevenueAnalysis(ReportRequestDTO request) {
+        Map<String, Object> analysis = new HashMap<>();
+
+        // Get payment method data from repository
+        List<Object[]> paymentMethodData = saleRepository.getRevenueByPaymentMethod(request.getStartDate(), request.getEndDate());
+
+        BigDecimal totalRevenue = paymentMethodData.stream()
+            .map(row -> safeCastToBigDecimal(row, 2))
+            .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        Long totalTransactions = paymentMethodData.stream()
+            .map(row -> safeCastToLong(row, 1))
+            .reduce(0L, Long::sum);
+
+        // Payment method breakdown
+        List<Map<String, Object>> paymentMethodBreakdown = paymentMethodData.stream()
+            .map(row -> {
+                Map<String, Object> method = new HashMap<>();
+                method.put("paymentMethod", row[0] != null ? row[0].toString() : "Unknown");
+                Long transactionCount = safeCastToLong(row, 1);
+                BigDecimal methodRevenue = safeCastToBigDecimal(row, 2);
+                BigDecimal avgTransactionValue = safeCastToBigDecimal(row, 3);
+
+                method.put("transactionCount", transactionCount);
+                method.put("totalRevenue", methodRevenue);
+                method.put("avgTransactionValue", avgTransactionValue);
+
+                // Calculate percentages
+                method.put("revenuePercentage", totalRevenue.compareTo(BigDecimal.ZERO) > 0 ?
+                    methodRevenue.divide(totalRevenue, 4, RoundingMode.HALF_UP).multiply(BigDecimal.valueOf(100)) : BigDecimal.ZERO);
+                method.put("transactionPercentage", totalTransactions > 0 ?
+                    BigDecimal.valueOf(transactionCount).divide(BigDecimal.valueOf(totalTransactions), 4, RoundingMode.HALF_UP).multiply(BigDecimal.valueOf(100)) : BigDecimal.ZERO);
+
+                return method;
+            })
+            .sorted((a, b) -> ((BigDecimal) b.get("totalRevenue")).compareTo((BigDecimal) a.get("totalRevenue")))
+            .collect(Collectors.toList());
+
+        analysis.put("paymentMethodBreakdown", paymentMethodBreakdown);
+
+        // Summary statistics
+        Map<String, Object> summary = new HashMap<>();
+        summary.put("totalRevenue", totalRevenue);
+        summary.put("totalTransactions", totalTransactions);
+        summary.put("overallAvgTransactionValue", totalTransactions > 0 ?
+            totalRevenue.divide(BigDecimal.valueOf(totalTransactions), 2, RoundingMode.HALF_UP) : BigDecimal.ZERO);
+        summary.put("uniquePaymentMethods", paymentMethodBreakdown.size());
+
+        analysis.put("summary", summary);
+
+        // Payment method preferences analysis
+        Map<String, Object> preferences = new HashMap<>();
+        if (!paymentMethodBreakdown.isEmpty()) {
+            Map<String, Object> mostPopular = paymentMethodBreakdown.stream()
+                .max((a, b) -> ((Long) a.get("transactionCount")).compareTo((Long) b.get("transactionCount")))
+                .orElse(new HashMap<>());
+
+            Map<String, Object> highestRevenue = paymentMethodBreakdown.get(0); // Already sorted by revenue
+
+            Map<String, Object> highestAvgValue = paymentMethodBreakdown.stream()
+                .max((a, b) -> ((BigDecimal) a.get("avgTransactionValue")).compareTo((BigDecimal) b.get("avgTransactionValue")))
+                .orElse(new HashMap<>());
+
+            preferences.put("mostPopularByTransactions", mostPopular);
+            preferences.put("highestRevenueMethod", highestRevenue);
+            preferences.put("highestAvgTransactionValue", highestAvgValue);
+        }
+
+        analysis.put("preferences", preferences);
+
+        // Trends analysis (if we have daily data)
+        Map<String, Object> trends = new HashMap<>();
+        // Calculate growth trends for each payment method compared to previous period
+        LocalDateTime previousStart = request.getStartDate().minusDays(
+            ChronoUnit.DAYS.between(request.getStartDate(), request.getEndDate()));
+        LocalDateTime previousEnd = request.getStartDate().minusDays(1);
+
+        List<Object[]> previousPaymentData = saleRepository.getRevenueByPaymentMethod(previousStart, previousEnd);
+        Map<String, BigDecimal> previousRevenueMap = previousPaymentData.stream()
+            .collect(Collectors.toMap(
+                row -> row[0].toString(),
+                row -> safeCastToBigDecimal(row, 2),
+                (existing, replacement) -> existing
+            ));
+
+        List<Map<String, Object>> growthAnalysis = paymentMethodBreakdown.stream()
+            .map(method -> {
+                Map<String, Object> growth = new HashMap<>();
+                String paymentMethod = (String) method.get("paymentMethod");
+                BigDecimal currentRevenue = (BigDecimal) method.get("totalRevenue");
+                BigDecimal previousRevenue = previousRevenueMap.getOrDefault(paymentMethod, BigDecimal.ZERO);
+
+                growth.put("paymentMethod", paymentMethod);
+                growth.put("currentRevenue", currentRevenue);
+                growth.put("previousRevenue", previousRevenue);
+
+                if (previousRevenue.compareTo(BigDecimal.ZERO) > 0) {
+                    BigDecimal growthPercentage = currentRevenue.subtract(previousRevenue)
+                        .divide(previousRevenue, 4, RoundingMode.HALF_UP)
+                        .multiply(BigDecimal.valueOf(100));
+                    growth.put("growthPercentage", growthPercentage);
+                } else {
+                    growth.put("growthPercentage", currentRevenue.compareTo(BigDecimal.ZERO) > 0 ? BigDecimal.valueOf(100) : BigDecimal.ZERO);
+                }
+
+                return growth;
+            })
+            .collect(Collectors.toList());
+
+        trends.put("paymentMethodGrowth", growthAnalysis);
+        analysis.put("trends", trends);
+
+        return analysis;
+    }
+
+    /**
+     * Generate comprehensive tax analysis
+     */
+    private Map<String, Object> generateComprehensiveTaxAnalysis(List<Sale> sales, ReportRequestDTO request) {
+        Map<String, Object> analysis = new HashMap<>();
+
+        // Overall tax summary
+        BigDecimal totalTaxCollected = sales.stream()
+            .map(Sale::getTaxAmount)
+            .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        BigDecimal totalTaxableRevenue = sales.stream()
+            .map(sale -> sale.getTotalAmount().subtract(sale.getTaxAmount()))
+            .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        BigDecimal totalRevenue = sales.stream()
+            .map(Sale::getTotalAmount)
+            .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        Map<String, Object> taxSummary = new HashMap<>();
+        taxSummary.put("totalTaxCollected", totalTaxCollected);
+        taxSummary.put("totalTaxableRevenue", totalTaxableRevenue);
+        taxSummary.put("totalRevenue", totalRevenue);
+        taxSummary.put("effectiveTaxRate", totalTaxableRevenue.compareTo(BigDecimal.ZERO) > 0 ?
+            totalTaxCollected.divide(totalTaxableRevenue, 4, RoundingMode.HALF_UP).multiply(BigDecimal.valueOf(100)) : BigDecimal.ZERO);
+        taxSummary.put("taxAsPercentageOfRevenue", totalRevenue.compareTo(BigDecimal.ZERO) > 0 ?
+            totalTaxCollected.divide(totalRevenue, 4, RoundingMode.HALF_UP).multiply(BigDecimal.valueOf(100)) : BigDecimal.ZERO);
+
+        analysis.put("taxSummary", taxSummary);
+
+        // Tax rate analysis
+        Map<BigDecimal, List<Sale>> salesByTaxRate = sales.stream()
+            .filter(sale -> sale.getTaxPercentage() != null)
+            .collect(Collectors.groupingBy(Sale::getTaxPercentage));
+
+        List<Map<String, Object>> taxRateBreakdown = salesByTaxRate.entrySet().stream()
+            .map(entry -> {
+                BigDecimal taxRate = entry.getKey();
+                List<Sale> rateSales = entry.getValue();
+
+                BigDecimal rateRevenue = rateSales.stream()
+                    .map(Sale::getTotalAmount)
+                    .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+                BigDecimal rateTaxCollected = rateSales.stream()
+                    .map(Sale::getTaxAmount)
+                    .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+                Map<String, Object> rateAnalysis = new HashMap<>();
+                rateAnalysis.put("taxRate", taxRate);
+                rateAnalysis.put("transactionCount", rateSales.size());
+                rateAnalysis.put("totalRevenue", rateRevenue);
+                rateAnalysis.put("taxCollected", rateTaxCollected);
+                rateAnalysis.put("revenuePercentage", totalRevenue.compareTo(BigDecimal.ZERO) > 0 ?
+                    rateRevenue.divide(totalRevenue, 4, RoundingMode.HALF_UP).multiply(BigDecimal.valueOf(100)) : BigDecimal.ZERO);
+                rateAnalysis.put("taxPercentage", totalTaxCollected.compareTo(BigDecimal.ZERO) > 0 ?
+                    rateTaxCollected.divide(totalTaxCollected, 4, RoundingMode.HALF_UP).multiply(BigDecimal.valueOf(100)) : BigDecimal.ZERO);
+
+                return rateAnalysis;
+            })
+            .sorted((a, b) -> ((BigDecimal) b.get("totalRevenue")).compareTo((BigDecimal) a.get("totalRevenue")))
+            .collect(Collectors.toList());
+
+        analysis.put("taxRateBreakdown", taxRateBreakdown);
+
+        // Tax by product category
+        Map<String, List<Sale>> salesByCategory = sales.stream()
+            .filter(sale -> sale.getItems() != null && !sale.getItems().isEmpty())
+            .collect(Collectors.groupingBy(sale ->
+                sale.getItems().get(0).getProduct().getCategory().getName()));
+
+        List<Map<String, Object>> categoryTaxAnalysis = salesByCategory.entrySet().stream()
+            .map(entry -> {
+                String categoryName = entry.getKey();
+                List<Sale> categorySales = entry.getValue();
+
+                BigDecimal categoryRevenue = categorySales.stream()
+                    .map(Sale::getTotalAmount)
+                    .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+                BigDecimal categoryTax = categorySales.stream()
+                    .map(Sale::getTaxAmount)
+                    .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+                Map<String, Object> categoryAnalysis = new HashMap<>();
+                categoryAnalysis.put("categoryName", categoryName);
+                categoryAnalysis.put("totalRevenue", categoryRevenue);
+                categoryAnalysis.put("taxCollected", categoryTax);
+                categoryAnalysis.put("effectiveTaxRate", categoryRevenue.subtract(categoryTax).compareTo(BigDecimal.ZERO) > 0 ?
+                    categoryTax.divide(categoryRevenue.subtract(categoryTax), 4, RoundingMode.HALF_UP).multiply(BigDecimal.valueOf(100)) : BigDecimal.ZERO);
+                categoryAnalysis.put("transactionCount", categorySales.size());
+
+                return categoryAnalysis;
+            })
+            .sorted((a, b) -> ((BigDecimal) b.get("taxCollected")).compareTo((BigDecimal) a.get("taxCollected")))
+            .collect(Collectors.toList());
+
+        analysis.put("taxByCategory", categoryTaxAnalysis);
+
+        // Daily tax collection trends
+        Map<String, List<Sale>> salesByDate = sales.stream()
+            .collect(Collectors.groupingBy(sale ->
+                sale.getSaleDate().toLocalDate().toString()));
+
+        List<Map<String, Object>> dailyTaxTrends = salesByDate.entrySet().stream()
+            .map(entry -> {
+                String date = entry.getKey();
+                List<Sale> dailySales = entry.getValue();
+
+                BigDecimal dailyRevenue = dailySales.stream()
+                    .map(Sale::getTotalAmount)
+                    .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+                BigDecimal dailyTax = dailySales.stream()
+                    .map(Sale::getTaxAmount)
+                    .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+                Map<String, Object> dayAnalysis = new HashMap<>();
+                dayAnalysis.put("date", date);
+                dayAnalysis.put("revenue", dailyRevenue);
+                dayAnalysis.put("taxCollected", dailyTax);
+                dayAnalysis.put("transactionCount", dailySales.size());
+                dayAnalysis.put("avgTaxPerTransaction", dailySales.size() > 0 ?
+                    dailyTax.divide(BigDecimal.valueOf(dailySales.size()), 2, RoundingMode.HALF_UP) : BigDecimal.ZERO);
+
+                return dayAnalysis;
+            })
+            .sorted((a, b) -> ((String) a.get("date")).compareTo((String) b.get("date")))
+            .collect(Collectors.toList());
+
+        analysis.put("dailyTaxTrends", dailyTaxTrends);
+
+        // Tax compliance metrics
+        Map<String, Object> complianceMetrics = new HashMap<>();
+        long taxableTransactions = sales.stream()
+            .filter(sale -> sale.getTaxAmount() != null && sale.getTaxAmount().compareTo(BigDecimal.ZERO) > 0)
+            .count();
+
+        long totalTransactions = sales.size();
+
+        complianceMetrics.put("taxableTransactions", taxableTransactions);
+        complianceMetrics.put("totalTransactions", totalTransactions);
+        complianceMetrics.put("taxComplianceRate", totalTransactions > 0 ?
+            BigDecimal.valueOf(taxableTransactions).divide(BigDecimal.valueOf(totalTransactions), 4, RoundingMode.HALF_UP).multiply(BigDecimal.valueOf(100)) : BigDecimal.ZERO);
+
+        // Calculate average tax rates
+        BigDecimal avgTaxRate = sales.stream()
+            .filter(sale -> sale.getTaxPercentage() != null)
+            .map(Sale::getTaxPercentage)
+            .reduce(BigDecimal.ZERO, BigDecimal::add)
+            .divide(BigDecimal.valueOf(Math.max(1, sales.size())), 2, RoundingMode.HALF_UP);
+
+        complianceMetrics.put("averageTaxRate", avgTaxRate);
+        analysis.put("complianceMetrics", complianceMetrics);
+
+        return analysis;
+    }
+
+    /**
+     * Generate detailed cost analysis including COGS and operational costs
+     */
+    private Map<String, Object> generateDetailedCostAnalysis(List<Sale> sales, ReportRequestDTO request) {
+        Map<String, Object> analysis = new HashMap<>();
+
+        // Overall cost summary
+        BigDecimal totalRevenue = sales.stream()
+            .map(Sale::getTotalAmount)
+            .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        BigDecimal totalCOGS = sales.stream()
+            .map(Sale::getCostOfGoodsSold)
+            .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        BigDecimal totalShipping = sales.stream()
+            .map(Sale::getShippingCost)
+            .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        BigDecimal totalDiscounts = sales.stream()
+            .map(Sale::getDiscountAmount)
+            .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        BigDecimal totalOperationalCosts = totalShipping; // Can be expanded to include other operational costs
+        BigDecimal totalCosts = totalCOGS.add(totalOperationalCosts);
+
+        Map<String, Object> costSummary = new HashMap<>();
+        costSummary.put("totalRevenue", totalRevenue);
+        costSummary.put("totalCOGS", totalCOGS);
+        costSummary.put("totalShippingCosts", totalShipping);
+        costSummary.put("totalDiscounts", totalDiscounts);
+        costSummary.put("totalOperationalCosts", totalOperationalCosts);
+        costSummary.put("totalCosts", totalCosts);
+        costSummary.put("grossProfit", totalRevenue.subtract(totalCosts));
+        costSummary.put("cogsPercentage", totalRevenue.compareTo(BigDecimal.ZERO) > 0 ?
+            totalCOGS.divide(totalRevenue, 4, RoundingMode.HALF_UP).multiply(BigDecimal.valueOf(100)) : BigDecimal.ZERO);
+        costSummary.put("operationalCostPercentage", totalRevenue.compareTo(BigDecimal.ZERO) > 0 ?
+            totalOperationalCosts.divide(totalRevenue, 4, RoundingMode.HALF_UP).multiply(BigDecimal.valueOf(100)) : BigDecimal.ZERO);
+
+        analysis.put("costSummary", costSummary);
+
+        // Cost per sale analysis
+        Map<String, Object> costPerSale = new HashMap<>();
+        int totalSales = sales.size();
+        if (totalSales > 0) {
+            costPerSale.put("avgCOGSPerSale", totalCOGS.divide(BigDecimal.valueOf(totalSales), 2, RoundingMode.HALF_UP));
+            costPerSale.put("avgShippingPerSale", totalShipping.divide(BigDecimal.valueOf(totalSales), 2, RoundingMode.HALF_UP));
+            costPerSale.put("avgTotalCostPerSale", totalCosts.divide(BigDecimal.valueOf(totalSales), 2, RoundingMode.HALF_UP));
+            costPerSale.put("avgRevenuePerSale", totalRevenue.divide(BigDecimal.valueOf(totalSales), 2, RoundingMode.HALF_UP));
+            costPerSale.put("avgProfitPerSale", totalRevenue.subtract(totalCosts).divide(BigDecimal.valueOf(totalSales), 2, RoundingMode.HALF_UP));
+        }
+        costPerSale.put("totalSales", totalSales);
+        analysis.put("costPerSale", costPerSale);
+
+        // Cost by product category
+        List<Object[]> categoryData = saleRepository.getRevenueByCategoryForPeriod(request.getStartDate(), request.getEndDate());
+        List<Map<String, Object>> categoryCostAnalysis = categoryData.stream()
+            .map(row -> {
+                Map<String, Object> category = new HashMap<>();
+                category.put("categoryName", row[0]);
+                category.put("salesCount", row[1]);
+                category.put("totalQuantitySold", row[2]);
+                BigDecimal categoryRevenue = (BigDecimal) row[3];
+                BigDecimal categoryCost = (BigDecimal) row[4];
+
+                category.put("totalRevenue", categoryRevenue);
+                category.put("totalCost", categoryCost);
+                category.put("grossProfit", categoryRevenue.subtract(categoryCost));
+                category.put("costRatio", categoryRevenue.compareTo(BigDecimal.ZERO) > 0 ?
+                    categoryCost.divide(categoryRevenue, 4, RoundingMode.HALF_UP).multiply(BigDecimal.valueOf(100)) : BigDecimal.ZERO);
+                category.put("profitMargin", categoryRevenue.compareTo(BigDecimal.ZERO) > 0 ?
+                    categoryRevenue.subtract(categoryCost).divide(categoryRevenue, 4, RoundingMode.HALF_UP).multiply(BigDecimal.valueOf(100)) : BigDecimal.ZERO);
+
+                return category;
+            })
+            .sorted((a, b) -> ((BigDecimal) a.get("costRatio")).compareTo((BigDecimal) b.get("costRatio")))
+            .collect(Collectors.toList());
+
+        analysis.put("costByCategory", categoryCostAnalysis);
+
+        // Cost efficiency metrics
+        Map<String, Object> efficiencyMetrics = new HashMap<>();
+
+        // Calculate cost efficiency trends
+        List<Object[]> dailyData = saleRepository.getDailyRevenueAnalysis(request.getStartDate(), request.getEndDate());
+        List<Map<String, Object>> dailyCostEfficiency = dailyData.stream()
+            .map(row -> {
+                Map<String, Object> day = new HashMap<>();
+                day.put("date", row[0].toString());
+                BigDecimal dayRevenue = (BigDecimal) row[2];
+                BigDecimal dayCost = (BigDecimal) row[3];
+
+                day.put("revenue", dayRevenue);
+                day.put("cost", dayCost);
+                day.put("profit", dayRevenue.subtract(dayCost));
+                day.put("costRatio", dayRevenue.compareTo(BigDecimal.ZERO) > 0 ?
+                    dayCost.divide(dayRevenue, 4, RoundingMode.HALF_UP).multiply(BigDecimal.valueOf(100)) : BigDecimal.ZERO);
+                day.put("profitMargin", dayRevenue.compareTo(BigDecimal.ZERO) > 0 ?
+                    dayRevenue.subtract(dayCost).divide(dayRevenue, 4, RoundingMode.HALF_UP).multiply(BigDecimal.valueOf(100)) : BigDecimal.ZERO);
+
+                return day;
+            })
+            .collect(Collectors.toList());
+
+        efficiencyMetrics.put("dailyCostEfficiency", dailyCostEfficiency);
+
+        // Calculate average cost ratios
+        if (!dailyCostEfficiency.isEmpty()) {
+            BigDecimal avgCostRatio = dailyCostEfficiency.stream()
+                .map(day -> (BigDecimal) day.get("costRatio"))
+                .reduce(BigDecimal.ZERO, BigDecimal::add)
+                .divide(BigDecimal.valueOf(dailyCostEfficiency.size()), 2, RoundingMode.HALF_UP);
+
+            BigDecimal avgProfitMargin = dailyCostEfficiency.stream()
+                .map(day -> (BigDecimal) day.get("profitMargin"))
+                .reduce(BigDecimal.ZERO, BigDecimal::add)
+                .divide(BigDecimal.valueOf(dailyCostEfficiency.size()), 2, RoundingMode.HALF_UP);
+
+            efficiencyMetrics.put("averageCostRatio", avgCostRatio);
+            efficiencyMetrics.put("averageProfitMargin", avgProfitMargin);
+        }
+
+        analysis.put("efficiencyMetrics", efficiencyMetrics);
+
+        // Top cost-efficient and cost-inefficient products
+        List<Object[]> productData = saleRepository.getRevenueByProductForPeriod(request.getStartDate(), request.getEndDate());
+        List<Map<String, Object>> productCostAnalysis = productData.stream()
+            .map(row -> {
+                Map<String, Object> product = new HashMap<>();
+                product.put("productName", row[0]);
+                product.put("productSku", row[1]);
+                BigDecimal productRevenue = (BigDecimal) row[4];
+                BigDecimal productCost = (BigDecimal) row[5];
+
+                product.put("totalRevenue", productRevenue);
+                product.put("totalCost", productCost);
+                product.put("costRatio", productRevenue.compareTo(BigDecimal.ZERO) > 0 ?
+                    productCost.divide(productRevenue, 4, RoundingMode.HALF_UP).multiply(BigDecimal.valueOf(100)) : BigDecimal.ZERO);
+                product.put("profitMargin", productRevenue.compareTo(BigDecimal.ZERO) > 0 ?
+                    productRevenue.subtract(productCost).divide(productRevenue, 4, RoundingMode.HALF_UP).multiply(BigDecimal.valueOf(100)) : BigDecimal.ZERO);
+
+                return product;
+            })
+            .collect(Collectors.toList());
+
+        // Most cost-efficient products (lowest cost ratio)
+        List<Map<String, Object>> mostEfficient = productCostAnalysis.stream()
+            .sorted((a, b) -> ((BigDecimal) a.get("costRatio")).compareTo((BigDecimal) b.get("costRatio")))
+            .limit(10)
+            .collect(Collectors.toList());
+
+        // Least cost-efficient products (highest cost ratio)
+        List<Map<String, Object>> leastEfficient = productCostAnalysis.stream()
+            .sorted((a, b) -> ((BigDecimal) b.get("costRatio")).compareTo((BigDecimal) a.get("costRatio")))
+            .limit(10)
+            .collect(Collectors.toList());
+
+        analysis.put("mostCostEfficientProducts", mostEfficient);
+        analysis.put("leastCostEfficientProducts", leastEfficient);
+
+        return analysis;
+    }
+
+    /**
+     * Generate advanced financial metrics including CLV, conversion rates, and seasonal patterns
+     */
+    private Map<String, Object> generateAdvancedFinancialMetrics(List<Sale> sales, ReportRequestDTO request) {
+        Map<String, Object> metrics = new HashMap<>();
+
+        // Customer Lifetime Value Impact Analysis
+        List<Object[]> customerData = saleRepository.getCustomerRevenueAnalysisForPeriod(request.getStartDate(), request.getEndDate());
+        List<Map<String, Object>> customerAnalysis = customerData.stream()
+            .map(row -> {
+                Map<String, Object> customer = new HashMap<>();
+                customer.put("customerId", row[0]);
+                customer.put("customerName", row[1]);
+                customer.put("customerType", row[2]);
+                customer.put("totalOrders", row[3]);
+                customer.put("totalRevenue", row[4]);
+                customer.put("avgOrderValue", row[5]);
+                customer.put("lastPurchaseDate", row[6]);
+
+                // Calculate customer value metrics
+                Long totalOrders = (Long) row[3];
+                BigDecimal totalRevenue = (BigDecimal) row[4];
+
+                if (totalOrders > 0) {
+                    customer.put("revenuePerOrder", totalRevenue.divide(BigDecimal.valueOf(totalOrders), 2, RoundingMode.HALF_UP));
+                }
+
+                return customer;
+            })
+            .sorted((a, b) -> ((BigDecimal) b.get("totalRevenue")).compareTo((BigDecimal) a.get("totalRevenue")))
+            .collect(Collectors.toList());
+
+        // Top customers by revenue contribution
+        List<Map<String, Object>> topCustomers = customerAnalysis.stream()
+            .limit(20)
+            .collect(Collectors.toList());
+
+        metrics.put("topCustomersByRevenue", topCustomers);
+
+        // Customer segmentation analysis
+        BigDecimal totalCustomerRevenue = customerAnalysis.stream()
+            .map(c -> (BigDecimal) c.get("totalRevenue"))
+            .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        Map<String, Object> customerSegmentation = new HashMap<>();
+        customerSegmentation.put("totalCustomers", customerAnalysis.size());
+        customerSegmentation.put("totalRevenue", totalCustomerRevenue);
+
+        if (!customerAnalysis.isEmpty()) {
+            BigDecimal avgRevenuePerCustomer = totalCustomerRevenue.divide(BigDecimal.valueOf(customerAnalysis.size()), 2, RoundingMode.HALF_UP);
+            customerSegmentation.put("avgRevenuePerCustomer", avgRevenuePerCustomer);
+
+            // Pareto analysis (80/20 rule)
+            BigDecimal top20PercentRevenue = customerAnalysis.stream()
+                .limit((int) Math.ceil(customerAnalysis.size() * 0.2))
+                .map(c -> (BigDecimal) c.get("totalRevenue"))
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+            customerSegmentation.put("top20PercentCustomers", (int) Math.ceil(customerAnalysis.size() * 0.2));
+            customerSegmentation.put("top20PercentRevenue", top20PercentRevenue);
+            customerSegmentation.put("paretoRatio", totalCustomerRevenue.compareTo(BigDecimal.ZERO) > 0 ?
+                top20PercentRevenue.divide(totalCustomerRevenue, 4, RoundingMode.HALF_UP).multiply(BigDecimal.valueOf(100)) : BigDecimal.ZERO);
+        }
+
+        metrics.put("customerSegmentation", customerSegmentation);
+
+        // Sales conversion analysis
+        Map<String, Object> conversionMetrics = new HashMap<>();
+        long totalSales = sales.size();
+        long uniqueCustomers = sales.stream()
+            .filter(sale -> sale.getCustomer() != null)
+            .map(sale -> sale.getCustomer().getId())
+            .distinct()
+            .count();
+
+        conversionMetrics.put("totalSales", totalSales);
+        conversionMetrics.put("uniqueCustomers", uniqueCustomers);
+        conversionMetrics.put("salesPerCustomer", uniqueCustomers > 0 ?
+            BigDecimal.valueOf(totalSales).divide(BigDecimal.valueOf(uniqueCustomers), 2, RoundingMode.HALF_UP) : BigDecimal.ZERO);
+
+        // Repeat customer analysis
+        Map<Long, Long> customerOrderCounts = sales.stream()
+            .filter(sale -> sale.getCustomer() != null)
+            .collect(Collectors.groupingBy(
+                sale -> sale.getCustomer().getId(),
+                Collectors.counting()
+            ));
+
+        long repeatCustomers = customerOrderCounts.values().stream()
+            .filter(count -> count > 1)
+            .count();
+
+        conversionMetrics.put("repeatCustomers", repeatCustomers);
+        conversionMetrics.put("repeatCustomerRate", uniqueCustomers > 0 ?
+            BigDecimal.valueOf(repeatCustomers).divide(BigDecimal.valueOf(uniqueCustomers), 4, RoundingMode.HALF_UP).multiply(BigDecimal.valueOf(100)) : BigDecimal.ZERO);
+
+        metrics.put("conversionMetrics", conversionMetrics);
+
+        // Seasonal patterns analysis
+        Map<String, Object> seasonalAnalysis = new HashMap<>();
+
+        // Group sales by month
+        Map<String, List<Sale>> salesByMonth = sales.stream()
+            .collect(Collectors.groupingBy(sale ->
+                sale.getSaleDate().getYear() + "-" + String.format("%02d", sale.getSaleDate().getMonthValue())));
+
+        List<Map<String, Object>> monthlyPatterns = salesByMonth.entrySet().stream()
+            .map(entry -> {
+                String month = entry.getKey();
+                List<Sale> monthlySales = entry.getValue();
+
+                BigDecimal monthlyRevenue = monthlySales.stream()
+                    .map(Sale::getTotalAmount)
+                    .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+                Map<String, Object> monthData = new HashMap<>();
+                monthData.put("month", month);
+                monthData.put("salesCount", monthlySales.size());
+                monthData.put("revenue", monthlyRevenue);
+                monthData.put("avgOrderValue", monthlySales.size() > 0 ?
+                    monthlyRevenue.divide(BigDecimal.valueOf(monthlySales.size()), 2, RoundingMode.HALF_UP) : BigDecimal.ZERO);
+
+                return monthData;
+            })
+            .sorted((a, b) -> ((String) a.get("month")).compareTo((String) b.get("month")))
+            .collect(Collectors.toList());
+
+        seasonalAnalysis.put("monthlyPatterns", monthlyPatterns);
+
+        // Day of week analysis
+        Map<String, List<Sale>> salesByDayOfWeek = sales.stream()
+            .collect(Collectors.groupingBy(sale ->
+                sale.getSaleDate().getDayOfWeek().toString()));
+
+        List<Map<String, Object>> dayOfWeekPatterns = salesByDayOfWeek.entrySet().stream()
+            .map(entry -> {
+                String dayOfWeek = entry.getKey();
+                List<Sale> daySales = entry.getValue();
+
+                BigDecimal dayRevenue = daySales.stream()
+                    .map(Sale::getTotalAmount)
+                    .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+                Map<String, Object> dayData = new HashMap<>();
+                dayData.put("dayOfWeek", dayOfWeek);
+                dayData.put("salesCount", daySales.size());
+                dayData.put("revenue", dayRevenue);
+                dayData.put("avgOrderValue", daySales.size() > 0 ?
+                    dayRevenue.divide(BigDecimal.valueOf(daySales.size()), 2, RoundingMode.HALF_UP) : BigDecimal.ZERO);
+
+                return dayData;
+            })
+            .collect(Collectors.toList());
+
+        seasonalAnalysis.put("dayOfWeekPatterns", dayOfWeekPatterns);
+        metrics.put("seasonalAnalysis", seasonalAnalysis);
+
+        return metrics;
+    }
+
+    /**
+     * Generate executive financial summary with key insights and recommendations
+     */
+    private Map<String, Object> generateExecutiveFinancialSummary(List<Sale> sales, Object[] financialSummary, ReportRequestDTO request) {
+        Map<String, Object> summary = new HashMap<>();
+
+        // Key financial indicators - with safe casting
+        BigDecimal totalRevenue = safeCastToBigDecimal(financialSummary, 0);
+        BigDecimal totalCost = safeCastToBigDecimal(financialSummary, 1);
+        BigDecimal totalTax = safeCastToBigDecimal(financialSummary, 2);
+        Long totalTransactions = safeCastToLong(financialSummary, 5);
+        Long uniqueCustomers = safeCastToLong(financialSummary, 6);
+
+        Map<String, Object> kpis = new HashMap<>();
+        kpis.put("totalRevenue", totalRevenue);
+        kpis.put("grossProfit", totalRevenue.subtract(totalCost));
+        kpis.put("grossMargin", totalRevenue.compareTo(BigDecimal.ZERO) > 0 ?
+            totalRevenue.subtract(totalCost).divide(totalRevenue, 4, RoundingMode.HALF_UP).multiply(BigDecimal.valueOf(100)) : BigDecimal.ZERO);
+        kpis.put("totalTransactions", totalTransactions);
+        kpis.put("uniqueCustomers", uniqueCustomers);
+        kpis.put("avgOrderValue", totalTransactions > 0 ?
+            totalRevenue.divide(BigDecimal.valueOf(totalTransactions), 2, RoundingMode.HALF_UP) : BigDecimal.ZERO);
+        kpis.put("revenuePerCustomer", uniqueCustomers > 0 ?
+            totalRevenue.divide(BigDecimal.valueOf(uniqueCustomers), 2, RoundingMode.HALF_UP) : BigDecimal.ZERO);
+
+        summary.put("keyPerformanceIndicators", kpis);
+
+        // Performance insights
+        List<String> insights = new ArrayList<>();
+
+        BigDecimal grossMargin = totalRevenue.compareTo(BigDecimal.ZERO) > 0 ?
+            totalRevenue.subtract(totalCost).divide(totalRevenue, 4, RoundingMode.HALF_UP).multiply(BigDecimal.valueOf(100)) : BigDecimal.ZERO;
+
+        if (grossMargin.compareTo(BigDecimal.valueOf(30)) >= 0) {
+            insights.add("Excellent gross margin of " + grossMargin + "% indicates strong pricing strategy and cost control.");
+        } else if (grossMargin.compareTo(BigDecimal.valueOf(20)) >= 0) {
+            insights.add("Good gross margin of " + grossMargin + "% with room for improvement in cost optimization.");
+        } else {
+            insights.add("Low gross margin of " + grossMargin + "% requires immediate attention to pricing and cost structure.");
+        }
+
+        BigDecimal avgOrderValue = totalTransactions > 0 ?
+            totalRevenue.divide(BigDecimal.valueOf(totalTransactions), 2, RoundingMode.HALF_UP) : BigDecimal.ZERO;
+
+        if (avgOrderValue.compareTo(BigDecimal.valueOf(100)) >= 0) {
+            insights.add("Strong average order value of $" + avgOrderValue + " indicates effective upselling strategies.");
+        } else {
+            insights.add("Average order value of $" + avgOrderValue + " suggests opportunities for cross-selling and upselling.");
+        }
+
+        if (uniqueCustomers > 0 && totalTransactions > 0) {
+            BigDecimal salesPerCustomer = BigDecimal.valueOf(totalTransactions).divide(BigDecimal.valueOf(uniqueCustomers), 2, RoundingMode.HALF_UP);
+            if (salesPerCustomer.compareTo(BigDecimal.valueOf(2)) >= 0) {
+                insights.add("Good customer retention with " + salesPerCustomer + " average transactions per customer.");
+            } else {
+                insights.add("Focus needed on customer retention - only " + salesPerCustomer + " transactions per customer on average.");
+            }
+        }
+
+        summary.put("insights", insights);
+
+        // Recommendations
+        List<String> recommendations = new ArrayList<>();
+
+        if (grossMargin.compareTo(BigDecimal.valueOf(25)) < 0) {
+            recommendations.add("Review pricing strategy and negotiate better supplier terms to improve gross margins.");
+        }
+
+        if (avgOrderValue.compareTo(BigDecimal.valueOf(75)) < 0) {
+            recommendations.add("Implement cross-selling and upselling strategies to increase average order value.");
+        }
+
+        if (uniqueCustomers > 0 && totalTransactions > 0) {
+            BigDecimal salesPerCustomer = BigDecimal.valueOf(totalTransactions).divide(BigDecimal.valueOf(uniqueCustomers), 2, RoundingMode.HALF_UP);
+            if (salesPerCustomer.compareTo(BigDecimal.valueOf(1.5)) < 0) {
+                recommendations.add("Develop customer loyalty programs to increase repeat purchase rates.");
+            }
+        }
+
+        recommendations.add("Monitor daily revenue trends to identify peak performance periods and optimize operations.");
+        recommendations.add("Analyze top-performing products and categories to focus marketing and inventory investments.");
+
+        summary.put("recommendations", recommendations);
+
+        // Period comparison
+        Map<String, Object> periodInfo = new HashMap<>();
+        periodInfo.put("startDate", request.getStartDate().format(DATE_FORMATTER));
+        periodInfo.put("endDate", request.getEndDate().format(DATE_FORMATTER));
+        periodInfo.put("periodDays", ChronoUnit.DAYS.between(request.getStartDate(), request.getEndDate()) + 1);
+        periodInfo.put("avgDailyRevenue", totalRevenue.divide(
+            BigDecimal.valueOf(ChronoUnit.DAYS.between(request.getStartDate(), request.getEndDate()) + 1),
+            2, RoundingMode.HALF_UP));
+
+        summary.put("periodInformation", periodInfo);
+
+        return summary;
+    }
 
     // Dashboard helper methods
     private Map<String, Object> generateExecutiveKPIs(LocalDateTime start, LocalDateTime end) { return new HashMap<>(); }
@@ -3316,5 +4286,37 @@ public class ReportService {
         quickStats.put("lowStockItems", getLowStockItemsCount());
 
         return quickStats;
+    }
+
+    // ==================== UTILITY METHODS FOR SAFE CASTING ====================
+
+    /**
+     * Safely cast array element to BigDecimal with null and bounds checking
+     */
+    private BigDecimal safeCastToBigDecimal(Object[] array, int index) {
+        if (array == null || index >= array.length || array[index] == null) {
+            return BigDecimal.ZERO;
+        }
+        try {
+            return (BigDecimal) array[index];
+        } catch (ClassCastException e) {
+            log.warn("Failed to cast array[{}] to BigDecimal: {}", index, array[index]);
+            return BigDecimal.ZERO;
+        }
+    }
+
+    /**
+     * Safely cast array element to Long with null and bounds checking
+     */
+    private Long safeCastToLong(Object[] array, int index) {
+        if (array == null || index >= array.length || array[index] == null) {
+            return 0L;
+        }
+        try {
+            return (Long) array[index];
+        } catch (ClassCastException e) {
+            log.warn("Failed to cast array[{}] to Long: {}", index, array[index]);
+            return 0L;
+        }
     }
 }
